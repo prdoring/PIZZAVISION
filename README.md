@@ -20,8 +20,7 @@ Your drop‑in party companion for scoring Eurovision with friends. Guests choos
 ## Features
 
 * **One‑command launch** – run the server from any laptop and share the local address with party‑goers.
-* **Mobile‑friendly voting** – each guest ranks entries from their phone, identified by a custom or auto‑generated band name.
-* **Live scoreboard** – points update instantly on every device via SocketIO.
+* **Mobile‑friendly voting** – each guest ranks entries from their phone, identified by a an auto‑generated band name (which they can re-roll).
 * **Tongue‑in‑cheek awards** – Pop Diva, Rockstar, Big 5 Champion, Tastemaker, Contrarian, drink‑themed prizes, and more.
 * **Admin control panel** – reorder or remove songs, clear votes, and restore the database.
 * **Zero cloud setup** – everything runs locally, data stored in TinyDB.
