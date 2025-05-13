@@ -69,6 +69,8 @@ The **Admin** page ( `/pizzavision/admin` ) lets the host manage the night witho
 | **Delete Vote**     | Clear all votes and users from the DB (useful after testing)                                 |
 | **Restore / Reset** | Bring back all songs from the original list                                                  |
 
+default PW: changeme
+
 > **Heads‑up:** After heavy admin changes some browsers may cache stale data. If a guest’s screen acts weird, ask them to *hard‑refresh* or clear site data.
 
 ---
