@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PIZZAVISION – Admin</title>
+
+<link rel="icon" type="image/x-icon" href="{{ url_for('voting.static', filename='pizza.png') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+
+<style>
+/* ---- core dark‑neon look copied from main page ---- */
+body{
+    font-family:'Montserrat',sans-serif;
+    background:#121212 url(/pizzavision/voting/static/pv25-3.png) no-repeat center 0/455px;
+    color:#fff;margin:0;
+}
+body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:-2;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><circle cx='50' cy='50' r='0.5' fill='rgba(255,255,255,0.2)'/></svg>");
+    background-repeat:repeat;opacity:.1;
+}
+.spot{
+    position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.4;
+    background:radial-gradient(circle at 50% 30%,rgba(100,40,200,.1) 0%,rgba(20,20,20,0) 50%);
+}
+
+.wrap{
+    max-width:680px;margin:0 auto;padding:150px 20px 60px;
+    display:flex;flex-direction:column;gap:40px;
+}
+h1{
+    font-size:clamp(26px,4vw,40px);margin:0;text-align:center;
+    color:#4CAF50;font-weight:800;
+}
+
+/* ---- sortable list ---- */
+#optlist{list-style:none;margin:0;padding:0}
+#optlist li{
+    background:rgba(45,45,45,.7);border:1px solid rgba(255,255,255,.1);
+    border-radius:8px;margin:12px 0;padding:14px 18px;
+    font-weight:600;display:flex;justify-content:space-between;align-items:center;
+    cursor:grab;transition:.3s all;
+}
+#optlist li:hover{background:rgba(60,60,60,.85);transform:translateY(-3px)}
+#optlist button{
+    background:#d04444;border:none;color:#fff;border-radius:6px;
+    padding:6px 10px;font-size:12px;cursor:pointer;
+}
+#optlist button:hover{opacity:.8}
+
+/* ---- action bar ---- */
+.bar{
+    display:flex;flex-wrap:wrap;gap:12px;justify-content:center;
+}
+.bar input[type=password],.bar button{
+    font-weight:700;border:none;border-radius:6px;padding:12px 18px
+}
+.pw{background:#333;color:#fff;width:180px;text-align:center}
+.save   {background:#4CAF50;color:#fff}
+.clear  {background:#c0392b;color:#fff}
+.restore{background:#2196f3;color:#fff}
+
+.save:hover   {background:#45a049}
+.clear:hover  {background:#992d22}
+.restore:hover{background:#1e7dd1}
+
+.linkback{text-align:center}
+.linkback a{color:#ddd;text-decoration:none}
+.linkback a:hover{color:#fff}
+</style>
+</head>
+<body>
+<div class="spot"></div>
+
+<div class="wrap">
+    <h1>Admin Control Panel</h1>
+
+    <!-- sortable + deletable list -->
+    <ul id="optlist">
+        {% for opt in options %}
+          <li data-label="{{ opt.label|e }}"><span>{{ opt.label }}</span><button class="rm">✕</button></li>
+        {% endfor %}
+    </ul>
+
+    <!-- password + buttons -->
+    <div class="bar">
+        <input class="pw" type="password" id="pw" placeholder="Admin password" required>
+        <button class="save">Save order / deletions</button>
+        <button class="clear">Clear vote DB</button>
+        <button class="restore">Restore from backup</button>
+    </div>
+
+    <div class="linkback">
+        <a href="{{ url_for('voting.index') }}">← back to voting</a>
+    </div>
+</div>
+
+<script>
+/* spotlight follows mouse */
+document.addEventListener("mousemove",e=>{
+  const s=document.querySelector(".spot");
+  s.style.background=`radial-gradient(circle at ${e.clientX/window.innerWidth*100}% ${e.clientY/window.innerHeight*100}%,rgba(100,40,200,.1) 0%,rgba(20,20,20,0) 50%)`;
+});
+
+/* drag‑drop */
+$("#optlist").sortable({tolerance:"pointer"}).disableSelection();
+
+/* remove row */
+$(document).on("click",".rm",function(){
+  $(this).closest("li").fadeOut(200,function(){$(this).remove();});
+});
+
+/* helper for AJAX calls */
+function adminAction(action, extra={}){
+  const pw=$("#pw").val();
+  if(!pw){alert("Enter admin password first");return;}
+  $.post({
+    url:"{{ url_for('voting.admin_panel') }}",
+    data:{password:pw,action:action,...extra},
+    success:()=>{alert("Success!");location.reload();},
+    error:x=>alert("Error: "+x.responseText)
+  });
+}
+
+/* save */
+$(".save").on("click",()=>{
+  const labels=$("#optlist li").map((_,li)=>$(li).data("label")).get();
+  adminAction("save_options",{"labels[]":labels});
+});
+
+/* clear DB */
+$(".clear").on("click",()=>{
+  if(confirm("Really clear every vote?")) adminAction("clear_db");
+});
+
+/* restore */
+$(".restore").on("click",()=>{
+  if(confirm("Replace options.json with options_bak.json?")) adminAction("restore_options");
+});
+</script>
+</body>
+</html>

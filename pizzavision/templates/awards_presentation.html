@@ -1,0 +1,518 @@
+<!-- templates/awards_presentation.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('voting.static', filename='pizza.png') }}">
+
+    <title>PIZZAWARDS</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #1e1e1e;
+            color: white;
+        }
+        .logo {
+            position: absolute;
+            top: -46px;
+            left: 50%;
+            margin-left: -266px;
+            max-width: 525px;
+            z-index: 100;
+            border-radius: 66px 66px 66px 66px;
+            opacity: 56%;
+            box-shadow: 3px 14px 15px 13px rgb(0 0 0 / 79%);
+        }
+        .presentation-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.8s ease;
+            background: linear-gradient(135deg, #2c3e50, #1a1a2e);
+            background-size: cover;
+            background-position: center;
+        }
+        .slide-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay for better text visibility */
+            z-index: 1;
+        }
+        .slide-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+            padding: 20px;
+            background: #00000094;
+            border-radius: 23px;
+            box-shadow: 3px 14px 15px 13px rgb(0 0 0 / 79%);
+            padding-left: 90px;
+            padding-right: 90px;
+        }
+        .slide.active {
+            opacity: 1;
+            z-index: 10;
+        }
+        .award-title {
+            font-size: 4.5rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            color: #e0e0e0;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .award-description {
+            font-size: 2rem;
+            color: #ffd700;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+        .award-subtext {
+            font-size: 2.5rem;
+            color: #e0e0e0;
+            margin-top: 1rem;
+            text-align: center;
+            max-width: 800px;
+        }
+        .winner-title {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+        .winner-name {
+            font-size: 5rem;
+            color: #ffd700;
+            text-align: center;
+            font-weight: bold;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            text-transform: uppercase;
+        }
+        .winner-subtext {
+            font-size: 2.5rem;
+            color: #e0e0e0;
+            margin-top: 1rem;
+            text-align: center;
+            padding-left: 100px;
+            padding-right: 100px;
+        }
+        .controls {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            z-index: 100;
+            font-size: 14px;
+        }
+        .progress {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            color: rgba(255, 255, 255, 0.6);
+            z-index: 100;
+        }
+        .progress-bar {
+            display: flex;
+            margin-top: 5px;
+        }
+        .progress-step {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: rgba(255, 255, 255, 0.3);
+            margin-right: 5px;
+        }
+        .progress-step.active {
+            background-color: #ffd700;
+        }
+        .transition-effect {
+            animation: fadeIn 1s ease-in;
+        }
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(20px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .error-message {
+            background: rgba(255, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            max-width: 800px;
+            font-size: 1.2rem;
+        }
+
+         .confetti {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background-color: #f2d74e;
+            opacity: 0;
+            top: -400px;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .flag-confetti {
+            background-color: transparent;
+            z-index: 20; /* Ensure flags appear on top of regular confetti */
+        }
+
+        
+    </style>
+</head>
+<body>
+    <!-- Logo that appears on all slides -->
+    <img src="{{ url_for('voting.static', filename='pv25.png') }}" alt="PV25 Logo" class="logo">
+    
+    <div class="presentation-container" id="presentation">
+        <!-- Slides will be dynamically created here -->
+        <!-- Loading indicator -->
+        <div class="slide active">
+            <div class="slide-overlay"></div>
+            <div class="slide-content">
+                <div class="award-title transition-effect">Loading Awards...</div>
+                <div class="award-subtext transition-effect">Please wait</div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="controls">
+        <div>← Previous | Next →</div>
+        <div>Press arrow keys or spacebar to navigate</div>
+    </div>
+    
+    <div class="progress">
+        <div id="slide-counter">Slide 1 of 1</div>
+        <div class="progress-bar" id="progress-bar">
+            <!-- Progress indicators will be added here -->
+            <div class="progress-step active"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Award data will be loaded from the server
+            let awards = [];
+            let currentSlideIndex = 0;
+            let totalSlides = 0;
+            
+            // Fallback awards in case the API fails
+            const fallbackAwards = [
+                {
+                    "award": "🎤 Pop Diva 🎤",
+                    "winner": "John Doe",
+                    "subtext": "For exceptional taste in pop music"
+                },
+                {
+                    "award": "🎸 Rockstar 🎸",
+                    "winner": "Jane Smith",
+                    "subtext": "For rocking the hardest"
+                },
+                {
+                    "award": "🪕 Folk Hero 🪕",
+                    "winner": "Bob Johnson",
+                    "subtext": "For keeping traditions alive"
+                }
+            ];
+            
+            // Try to load award data - use hardcoded URL to avoid template rendering issues
+            fetch('/pizzavision/api/awards')
+                .then(response => {
+                    if (!response.ok) {
+                        console.error("API Error:", response.status, response.statusText);
+                        throw new Error(`API Error: ${response.status} ${response.statusText}`);
+                    }
+                    return response.text(); // Get the raw text first to debug
+                })
+                .then(text => {
+                    try {
+                        // Try to parse the JSON response
+                        const data = JSON.parse(text);
+                        console.log("Awards data loaded successfully:", data);
+                        awards = data;
+                        createSlides(awards);
+                        initializePresentation();
+                    } catch (e) {
+                        console.error("JSON Parse Error:", e);
+                        console.log("Raw response:", text);
+                        throw new Error(`Failed to parse JSON: ${e.message}. API returned: ${text.substring(0, 100)}...`);
+                    }
+                })
+                .catch(error => {
+                    console.error("Error loading awards:", error);
+                    
+                    // Show error and use fallback data
+                    const presentation = document.getElementById('presentation');
+                    presentation.innerHTML = `
+                        <div class="slide active">
+                            <div class="slide-overlay"></div>
+                            <div class="slide-content">
+                                <div class="award-title transition-effect">PIZZAVISION AWARDS</div>
+                                <div class="award-subtext transition-effect">2025</div>
+                                <div class="error-message">
+                                    Failed to load awards from API. Using sample data instead.<br>
+                                    Error: ${error.message}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Use fallback awards
+                    setTimeout(() => {
+                        awards = fallbackAwards;
+                        createSlides(awards);
+                        initializePresentation();
+                    }, 3000); // Show the error for 3 seconds before proceeding
+                });
+            
+            function createSlides(awards) {
+                const presentationContainer = document.getElementById('presentation');
+                presentationContainer.innerHTML = '';
+
+                // Award slide
+                const awardSlide = document.createElement('div');
+                awardSlide.className = 'slide';
+                
+                // Use a hardcoded URL for the first slide background as a fallback
+                try {
+                    awardSlide.style.backgroundImage = `url('/pizzavision/voting/static/images/firstslide.webp')`;
+                } catch (e) {
+                    console.error("Error setting background image:", e);
+                }
+                
+                awardSlide.innerHTML = `
+                    <div class="slide-overlay"></div>
+                    <div class="slide-content">
+                        <div class="award-title transition-effect">PIZZAVISION AWARDS</div>
+                        <div class="award-subtext transition-effect">2025</div>
+                    </div>`;
+                presentationContainer.appendChild(awardSlide);
+                
+                // For each award, create two slides: award announcement and winner
+                awards.forEach((award, index) => {
+                    // Award slide
+                    const awardSlide = document.createElement('div');
+                    awardSlide.className = 'slide';
+                    
+                    // Apply custom background image if provided
+                    if (award.image_url) {
+                        // Make sure image URLs are correct
+                        let imageUrl = award.image_url;
+                        // If image URL is relative, adjust it
+                        if (imageUrl.startsWith('/static/')) {
+                            imageUrl = '/pizzavision/voting' + imageUrl;
+                        }
+                        awardSlide.style.backgroundImage = `url('${imageUrl}')`;
+                    }
+                    
+                    awardSlide.innerHTML = `
+                        <div class="slide-overlay"></div>
+                        <div class="slide-content">
+                            <div class="award-title transition-effect">${award.award}</div>
+                            <div class="award-description transition-effect">Award</div>
+                            ${award.subtext ? `<div class="award-subtext transition-effect">${award.subtext}</div>` : ''}
+                        </div>
+                    `;
+                    presentationContainer.appendChild(awardSlide);
+                    
+                    // Winner slide
+                    const winnerSlide = document.createElement('div');
+                    winnerSlide.className = 'slide';
+                    
+                    // Apply same background image to winner slide if provided
+                    if (award.image_url) {
+                        // Make sure image URLs are correct
+                        let imageUrl = award.image_url;
+                        // If image URL is relative, adjust it
+                        if (imageUrl.startsWith('/static/')) {
+                            imageUrl = '/pizzavision/voting' + imageUrl;
+                        }
+                        winnerSlide.style.backgroundImage = `url('${imageUrl}')`;
+                    }
+                    
+                    winnerSlide.innerHTML = `
+                        <div class="slide-overlay"></div>
+                        <div class="slide-content">
+                            <div class="winner-title transition-effect">And the winner is...</div>
+                            <div class="winner-name transition-effect">${award.winner}</div>
+                            <div class="winner-subtext transition-effect">${award.insight}</div>
+                        </div>
+                    `;
+                    presentationContainer.appendChild(winnerSlide);
+                });
+                
+                // Get all slides and set the first one as active
+                const slides = document.querySelectorAll('.slide');
+                totalSlides = slides.length;
+                if (slides.length > 0) {
+                    slides[0].classList.add('active');
+                }
+                
+                // Create progress indicators
+                createProgressIndicators(totalSlides);
+                updateSlideCounter();
+            }
+            
+            function createProgressIndicators(count) {
+                const progressBar = document.getElementById('progress-bar');
+                progressBar.innerHTML = '';
+                
+                for (let i = 0; i < count; i++) {
+                    const indicator = document.createElement('div');
+                    indicator.className = 'progress-step';
+                    if (i === 0) indicator.classList.add('active');
+                    progressBar.appendChild(indicator);
+                }
+            }
+            
+            function initializePresentation() {
+                // Add keyboard event listeners
+                document.addEventListener('keydown', handleKeyboardNavigation);
+                
+                // Optional: Add click navigation
+                document.addEventListener('click', function(event) {
+                    // Check if click is on the right or left side of the screen
+                    if (event.clientX > window.innerWidth / 2) {
+                        nextSlide();
+                    } else {
+                        previousSlide();
+                    }
+                });
+            }
+            
+            function handleKeyboardNavigation(event) {
+                if (event.key === 'ArrowRight' || event.key === ' ' || event.key === 'Enter') {
+                    nextSlide();
+                } else if (event.key === 'ArrowLeft') {
+                    previousSlide();
+                }
+            }
+            
+            function nextSlide() {
+                if (currentSlideIndex < totalSlides - 1) {
+                    updateSlide(currentSlideIndex + 1);
+                    if((currentSlideIndex%2)==0){
+                        createConfetti();
+                        setTimeout(() => {
+                            createConfetti();
+                        }, 500); // Show the error for 3 seconds before proceeding
+                        setTimeout(() => {
+                            createConfetti();
+                        }, 1000); // Show the error for 3 seconds before proceeding
+                    }
+                }
+            }
+            
+            function previousSlide() {
+                if (currentSlideIndex > 0) {
+                    updateSlide(currentSlideIndex - 1);
+                }
+            }
+            
+            function updateSlide(newIndex) {
+                // Update current slide
+                const slides = document.querySelectorAll('.slide');
+                slides[currentSlideIndex].classList.remove('active');
+                slides[newIndex].classList.add('active');
+                
+                // Update progress indicators
+                const indicators = document.querySelectorAll('.progress-step');
+                indicators[currentSlideIndex].classList.remove('active');
+                indicators[newIndex].classList.add('active');
+                
+                currentSlideIndex = newIndex;
+                updateSlideCounter();
+            }
+            
+            function updateSlideCounter() {
+                document.getElementById('slide-counter').textContent = `Slide ${currentSlideIndex + 1} of ${totalSlides}`;
+            }
+
+                // Create confetti animation with flag images
+            function createConfetti() {
+                const colors = ['#f94144', '#f3722c', '#f8961e', '#f9c74f', '#90be6d', '#43aa8b', '#577590'];
+                
+                // Create regular confetti pieces
+                for (let i = 0; i < 50; i++) {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    
+                    confetti.style.top = confetti.style.top - Math.random() * 500;
+                    confetti.style.left = Math.random() * 100 + 'vw';
+                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                    confetti.style.opacity = Math.random() * 0.7 + 0.3; // More visible
+                    confetti.style.width = Math.random() * 40 + 5 + 'px';
+                    confetti.style.height = Math.random() * 40 + 5 + 'px';
+                    document.body.appendChild(confetti);
+                    
+                    const animation = confetti.animate([
+                        { transform: 'translate3d(0, -${Math.random() * 500}px, 0) rotate(0deg)', opacity: 1 },
+                        { transform: `translate3d(${Math.random() * 600 - 300}px, ${Math.random() * 600 + 1000}px, 0) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+                    ], {
+                        duration: Math.random() * 3000 + 3000,
+                        easing: 'cubic-bezier(.59,.87,.5,.95)'
+                    });
+                    
+                    animation.onfinish = () => confetti.remove();
+                }
+
+                for (let i = 0; i < 50; i++) { // More flag confetti
+                    const flagConfetti = document.createElement('div');
+                    flagConfetti.className = 'confetti flag-confetti';
+                    flagConfetti.style.left = Math.random() * 100 + 'vw';
+                    
+                    // Size randomization
+                    const size = Math.random() * 60 + 30; // 40-70px width - even larger!
+                    const ratio = 1; // Standard flag ratio
+                    flagConfetti.style.width = `${size}px`;
+                    flagConfetti.style.height = `${size * ratio}px`;
+
+                    const possibleUrls = [
+                        "{{ url_for('voting.static', filename='luna.png') }}",
+                        "{{ url_for('voting.static', filename='nev.png') }}",
+                        "{{ url_for('voting.static', filename='reb.png') }}"
+                        ];
+
+                    // Randomly select one URL from the array
+                    var url = possibleUrls[Math.floor(Math.random() * possibleUrls.length)];
+
+                    // Higher quality flag images
+                    flagConfetti.style.backgroundImage = `url(${url})`;
+                    flagConfetti.style.backgroundSize = 'cover';
+                    flagConfetti.style.opacity = Math.random() * 0.3 + 0.7; // Very visible
+                    document.body.appendChild(flagConfetti);
+                    
+                    // More dynamic animation
+                    const animation = flagConfetti.animate([
+                        { transform: 'translate3d(0, -${Math.random() * 500}px, 0) rotate(0deg)', opacity: 1 },
+                        { transform: `translate3d(${Math.random() * 600 - 300}px, ${Math.random() * 600 + 1000}px, 0) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+                    ], {
+                        duration: Math.random() * 3000 + 3000, // Even longer duration
+                        
+                        easing: 'cubic-bezier(.59,.87,.5,.95)'
+                    });
+                    
+                    animation.onfinish = () => flagConfetti.remove();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

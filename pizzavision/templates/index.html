@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('voting.static', filename='pizza.png') }}">
+    <title>PIZZAVISION</title>
+
+    <!-- Google Fonts import for sleeker typography -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+    <style>
+        body {
+            font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #121212;
+            background-image: url(/pizzavision/voting/static/pv25-3.png);
+            background-position: center 0px;
+            background-size: 455px;
+            background-repeat: no-repeat;
+            color: #fff;
+            margin: 0;
+            padding: 0;
+            transition: all 0.5s ease;
+        }
+
+        /* Add a subtle particle effect in the background */
+        .container::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><circle cx="50" cy="50" r="0.5" fill="rgba(255,255,255,0.2)"/></svg>');
+            background-repeat: repeat;
+            opacity: 0.1;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .container {
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            padding-top: 145px;
+            position: relative;
+            z-index: 1;
+        }
+
+        h1 {
+            color: #4CAF50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .static-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            position: relative;
+        }
+
+        .static-list li {
+            background-color: rgba(35, 35, 35, 0.6);
+            border-radius: 8px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin: 12px 0;
+            padding: 16px;
+            transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            font-weight: 600;
+            letter-spacing: 0.7px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            max-height: 20px;
+            min-height: 20px;
+            transform-origin: center center;
+        }
+
+        .static-list li:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        }
+
+        .sortable-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            padding-left: 5px;
+            padding-right: 20px;
+        }
+
+        .sortable-list li {
+            background-color: rgba(45, 45, 45, 0.7);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 8px;
+            padding: 14px 18px 14px 50px;
+            margin: 14px 0 14px -10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            min-height: 22px;
+            max-height: 22px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+        }
+
+        .sortable-list li:hover {
+            background-color: rgba(60, 60, 60, 0.85);
+            transform: translateY(-4px) scale(1.02);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        }
+
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            display: block;
+            margin: 20px auto 0;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        #vote_container {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            padding: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        @media screen and (max-width: 600px) {
+            .container {
+                padding: 10px;
+                padding-top: 142px;
+            }
+
+            .sortable-list li {
+                padding: 12px;
+                margin-bottom: 10px;
+            }
+
+            .static-list li {
+                padding: 12px;
+                margin-bottom: 15.6px;
+            }
+
+            .static-list {
+                margin-top: 17px;
+            }
+        }
+
+        input[type="text"] {
+            background-color: #333;
+            text-align: center;
+            color: white;
+            border: 1px solid #444;
+            padding: 12px 24px;
+            border-radius: 5px;
+            display: block;
+            width: calc(10% - 48px);
+            box-sizing: border-box;
+            margin-bottom: 20px;
+            transition: background-color 0.3s ease;
+        }
+
+        input[type="text"]:hover {
+            background-color: #444;
+        }
+
+        img.emoji {
+            height: 1.2em;
+            width: 1.2em;
+            margin-right: 6px;
+            filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.3));
+            transform: translateY(1px);
+        }
+
+        #bandname {
+            text-align: center;
+            font-size: clamp(10px, 2.2vw, 14px);
+            /* Responsive font size */
+            font-weight: 800;
+            animation: rainbow 8s linear infinite, textShadowRainbow 8s linear infinite;
+            letter-spacing: clamp(0.5px, 0vw, 1.5px);
+            /* Responsive letter spacing */
+            text-transform: uppercase;
+            transition: all 0.5s ease;
+            text-wrap: nowrap;
+            padding: 0 5px;
+            padding-bottom: 3px;
+            position: relative;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 60vw;
+            /* Limit maximum width */
+        }
+
+        @keyframes rainbow {
+            0% {
+                color: #ff0088;
+            }
+
+            14% {
+                color: #ff5500;
+            }
+
+            28% {
+                color: #ffcc00;
+            }
+
+            42% {
+                color: #22cc88;
+            }
+
+            56% {
+                color: #00ccff;
+            }
+
+            70% {
+                color: #8855ff;
+            }
+
+            85% {
+                color: #ff00dd;
+            }
+
+            100% {
+                color: #ff0088;
+            }
+        }
+
+        @keyframes textShadowRainbow {
+            0% {
+                text-shadow: 0 0 8px rgba(255, 0, 136, 0.7);
+            }
+
+            14% {
+                text-shadow: 0 0 8px rgba(255, 85, 0, 0.7);
+            }
+
+            28% {
+                text-shadow: 0 0 8px rgba(255, 204, 0, 0.7);
+            }
+
+            42% {
+                text-shadow: 0 0 8px rgba(34, 204, 136, 0.7);
+            }
+
+            56% {
+                text-shadow: 0 0 8px rgba(0, 204, 255, 0.7);
+            }
+
+            70% {
+                text-shadow: 0 0 8px rgba(136, 85, 255, 0.7);
+            }
+
+            85% {
+                text-shadow: 0 0 8px rgba(255, 0, 221, 0.7);
+            }
+
+            100% {
+                text-shadow: 0 0 8px rgba(255, 0, 136, 0.7);
+            }
+        }
+
+        /* Name change flash animation */
+        @keyframes nameChangeFlash {
+            0% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+
+            50% {
+                transform: scale(1.2);
+                filter: brightness(1.7);
+                letter-spacing: 3px;
+            }
+
+            100% {
+                transform: scale(1);
+                filter: brightness(1);
+            }
+        }
+
+        /* Gradient background animation for the button */
+        @keyframes gradientBackground {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        /* More sophisticated animations */
+        @keyframes floatingAnimation {
+            0% {
+                transform: translateY(0px);
+            }
+
+            50% {
+                transform: translateY(-5px);
+            }
+
+            100% {
+                transform: translateY(0px);
+            }
+        }
+
+        /* Additional visual effects for the change name button */
+        @keyframes pulseGlow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+        }
+
+        /* Band name styling */
+        #bandnamelabel {
+            text-align: right;
+            font-size: clamp(8px, 2.2vw, 12px);
+            /* Responsive font size */
+            font-weight: 700;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            padding-right: 5px;
+            padding-top: 9px;
+            padding-bottom:3px;
+            white-space: nowrap;
+            color: rgba(255, 255, 255, 0.7);
+            letter-spacing: 0.5px;
+        }
+
+        /* Eurovision star emojis around the band name */
+        #bandname::after,
+        #bandname::before {
+            font-size: clamp(14px, 3vw, 20px);
+            /* Responsive size for stars */
+            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
+            transition: all 1s ease;
+        }
+
+        #bandname::after {
+            content: "✨";
+            margin-left: clamp(5px, 1vw, 10px);
+            /* Responsive margin */
+            animation: rainbow 10s linear infinite;
+        }
+
+        #bandname::before {
+            content: "✨";
+            margin-right: clamp(5px, 1vw, 10px);
+            /* Responsive margin */
+            animation: rainbow 10s linear infinite reverse;
+        }
+
+        #bandname:hover::after,
+        #bandname:hover::before {
+            transform: scale(1.2) rotate(5deg);
+        }
+
+        /* Flash animation class */
+        .name-change-flash {
+            animation: nameChangeFlash 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* Change Name button styling */
+        #change_name {
+            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #264d26, #0000ff, #4b0082, #9400d3);
+            background-size: 400% 400%;
+            animation: gradientBackground 40s ease infinite;
+            border-radius: 50%;
+            cursor: pointer;
+            width: clamp(20px, 5vw, 28px);
+            /* Responsive width */
+            height: clamp(20px, 5vw, 28px);
+            /* Responsive height */
+            min-width: 20px;
+            min-height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            border: none;
+            font-size: clamp(8px, 2.5vw, 12px);
+            /* Responsive font size */
+            margin-left: clamp(5px, 2vw, 10px);
+            /* Responsive margin */
+            position: relative;
+            overflow: hidden;
+        }
+
+        #change_name::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(transparent,
+                    transparent,
+                    transparent,
+                    rgba(255, 255, 255, 0.1),
+                    rgba(255, 255, 255, 0.3));
+            transform: rotate(45deg);
+            pointer-events: none;
+        }
+
+        #change_name:hover {
+            transform: scale(1.1) rotate(10deg);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
+            animation: gradientBackground 3s ease infinite;
+        }
+
+        #change_name:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Updated centered band name container */
+        #bandnamecontainer {
+            text-align: center;
+            position: absolute;
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: nowrap;
+            top: 0;
+            transform: translateX(-50%);
+            /* Center horizontally */
+            width: fit-content;
+            max-width: 90vw;
+            /* Limit width on small screens */
+            padding: 2px 12px;
+            background: rgba(25, 25, 25, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            margin-top: 1px;
+            z-index: 10;
+            /* Ensure it's above other content */
+        }
+
+        #bandnamecontainer:hover {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.15);
+            transform: translateX(-50%) translateY(-2px);
+            /* Keep centered while raising */
+        }
+
+        /* Add a hint of depth with a background element */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Add a subtle glow to the highest points */
+        .static-list li:first-child {
+            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            animation: floatingAnimation 3s ease-in-out infinite;
+        }
+
+        /* Modern scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 30, 30, 0.4);
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(100, 100, 100, 0.5);
+            border-radius: 10px;
+            transition: all 0.3s ease;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(120, 120, 120, 0.7);
+        }
+
+        /* Improve the look of drag and drop */
+        .ui-sortable-helper {
+            transform: scale(1.05) rotate(1deg) !important;
+            box-shadow: 0 15px 25px rgba(0, 0, 0, 0.3) !important;
+            transition: none !important;
+            cursor: grabbing !important;
+        }
+
+        /* Add this class for items being dragged */
+        .dragging {
+            opacity: 0.9;
+            cursor: grabbing;
+            background: rgba(70, 70, 70, 0.8) !important;
+        }
+
+        /* Add a subtle spotlight effect to the background */
+        .spotlight {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+            opacity: 0.4;
+            background: radial-gradient(circle at 50% 30%,
+                    rgba(100, 40, 200, 0.1) 0%,
+                    rgba(20, 20, 20, 0) 50%);
+        }
+
+        /* Extra adjustments for very small screens */
+        @media screen and (max-width: 400px) {
+            #bandnamecontainer {
+                padding: 0px 10px;
+            }
+
+            #bandnamelabel {
+                padding-top: 6px;
+            }
+
+            #change_name {
+                margin-top: 2px !important;
+                margin-bottom: 2px !important;
+            }
+        }
+
+        /* For extremely small screens */
+        @media screen and (max-width: 280px) {
+            #bandnamecontainer {
+                padding: 4px 8px;
+            }
+
+            #bandname::before,
+            #bandname::after {
+                font-size: 12px;
+                margin: 0 2px;
+            }
+
+            #change_name {
+                margin-left: 4px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Spotlight effect background -->
+    <div class="spotlight"></div>
+
+    <div class="container">
+        <br /><br /><br /><br /><br />
+        <div id="bandnamecontainer">
+            <div id="bandnamelabel">Band Name</div>
+            <div id="bandname"></div>
+            <div id="change_name" title="Generate new band name">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 2v6h-6"></path>
+                    <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
+                    <path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path>
+                </svg>
+            </div>
+        </div>
+
+
+        <!-- Name input field -->
+        <div id="vote_container">
+            <div id="votes">
+                <ul class="static-list">
+                    {% for vote in votes %}
+                    <li>{{ vote }} Points</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div id="candidates">
+                <ul class="sortable-list">
+                    {% for option in options %}
+                    <li>{{ option }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
+    <!-- Include jQuery UI Touch Punch -->
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+
+    <script>
+        var socket = io();
+        $(document).ready(function () {
+            var list = $(".sortable-list");
+
+            // Add subtle hover animation to the sortable list items
+            $('.sortable-list').on('mouseenter', 'li', function () {
+                $(this).css('z-index', '10');
+            }).on('mouseleave', 'li', function () {
+                $(this).css('z-index', '1');
+            });
+
+            // Enhance the dragging experience
+            list.sortable({
+                update: function (event, ui) {
+                    // Your existing update code here
+                    var itemsOrder = $(this).children().map(function () {
+                        return $(this).text().trim();
+                    }).get();
+
+                    var jsonOutput = JSON.stringify(itemsOrder);
+                    console.log(jsonOutput);
+                    socket.emit('rankchanged', { 'user': savedName, 'rank': itemsOrder });
+
+                    // Store order in localStorage
+                    localStorage.setItem('itemsOrder', jsonOutput);
+                },
+                // Add these new options for better UX
+                placeholder: "ui-sortable-placeholder",
+                start: function (e, ui) {
+                    // Add a class to the item being dragged
+                    ui.item.addClass('dragging');
+
+                    // Create a fancy placeholder
+                    ui.placeholder.html('<div style="height: 100%; border: 2px dashed rgba(255,255,255,0.3); border-radius: 8px;"></div>');
+                    ui.placeholder.css({
+                        'visibility': 'visible',
+                        'background': 'rgba(80, 80, 80, 0.2)',
+                        'backdrop-filter': 'blur(5px)',
+                        'border-radius': '8px',
+                        'margin': '14px 0 14px -10px',
+                        'height': ui.item.height() + 'px'
+                    });
+                },
+                stop: function (e, ui) {
+                    // Remove the class when dragging stops
+                    ui.item.removeClass('dragging');
+
+                    // Add a subtle highlight effect when dropped
+                    ui.item.css('background-color', 'rgba(100, 100, 100, 0.9)');
+                    setTimeout(function () {
+                        ui.item.css('background-color', '');
+                    }, 300);
+                },
+                // Make the animation smoother
+                revert: 200,
+                // Constrain movement to vertical only
+                axis: 'y',
+                // Add a delay before sorting starts (helps on mobile)
+                delay: 150,
+                // Distance required before sorting begins
+                distance: 5,
+                // Scroll adjustment
+                scrollSensitivity: 40,
+                scrollSpeed: 10
+            });
+
+            function updateList(itemsOrder) {
+                list.empty();
+                itemsOrder.forEach(function (item) {
+                    list.append($('<li>').text(item));
+                });
+            }
+
+            // Save the name to localStorage as it's typed
+            $('#nameField').on('input', function () {
+                savedName = $(this).val();
+            });
+
+            // Load order and name from localStorage on page load
+            var savedOrder = localStorage.getItem('itemsOrder');
+            var savedName = localStorage.getItem('userName');
+            if (!savedName) {
+                savedName = randomEurovisionName();
+                localStorage.setItem('userName', savedName);
+            }
+            document.getElementById("bandname").innerHTML = savedName
+            if (savedOrder) {
+                updateList(JSON.parse(savedOrder));
+                list.sortable('refresh');
+            }
+            if (savedName) {
+                $('#nameField').val(savedName);
+            }
+
+            function getRandomInt(max) {
+                return Math.floor(Math.random() * max);
+            }
+
+            // eurovisionKitsch.js
+            function randomEurovisionName() {
+                /* helpers */
+                const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+                const maybe = (arr, p = 0.5) => Math.random() < p ? pick(arr) : '';
+
+                /* ---------- WORD BANKS ---------- */
+                /* All single‑token strings to honor the 3‑word cap */
+
+                const adjectives = [
+                    // Glam & glitter
+                    'Electric', 'Velvet', 'Neon', 'Golden', 'Crystal', 'Retro', 'Cosmic', 'Prismatic',
+                    'Laser', 'Turbo', 'Hyper', 'Digital', 'Analog', 'Pixelated', 'Chromatic',
+                    'Strobing', 'Ultraviolet', 'Cyber', 'Synth', 'Holographic', 'Disco', 'Boogie',
+                    'Glittering', 'Shimmering', 'Sparkling', 'Sequined', 'Glam', 'Bedazzled',
+                    'Fluorescent', 'Iridescent', 'Kaleidoscopic', 'Opalescent',
+                    // Campy & cheeky
+                    'Bubblegum', 'Cheesy', 'Zany', 'Wacky', 'Groovy', 'Funky', 'Snazzy', 'Dizzy',
+                    'Bubbly', 'Spicy', 'Saucy', 'Sassy', 'Sauerkrauty', 'Peppery', 'Giggly',
+                    'Glitterbomb', 'Partyfied', 'Boombastic', 'Fantabulous', 'Ridiculicious',
+                    // Languages – Spanish / Portuguese
+                    'Brillante', 'Radiante', 'Magnético', 'Lúcido', 'Vibrante', 'Sabrosón',
+                    'Picante', 'Salvaje', 'Rumbero', 'Festivo',
+                    // Italian
+                    'Galattico', 'Tempestoso', 'Splendente', 'Favoloso', 'Cromato', 'Dolcissimo',
+                    'Bravissimo', 'Futuristico', 'Sfavillante',
+                    // French
+                    'Écarlate', 'Solaire', 'Chromatique', 'Mystique', 'Sereine', 'Fluide', 'Coquette',
+                    'Formidable', 'Frénétique', 'Électrique',
+                    // German / Dutch
+                    'Glitzernd', 'Blitzend', 'Wunderbar', 'Traumhaft', 'Fröhlich', 'Knallbunt',
+                    'Spektakulär', 'Gemütlich', 'Lecker',
+                    // Nordic
+                    'Stjärnklart', 'Norrsken', 'Pulserande', 'Iskall', 'Lagom', 'Koselig', 'Mysig',
+                    'Hygge', 'Sauna‑hot',
+                    // Slavic / Balkan
+                    'Vatrena', 'Zvjezdana', 'Srebrna', 'Zlatna', 'Čudesna', 'Magijska', 'Raskošna',
+                    // Misc
+                    'Cosmic', 'Galactic', 'Interstellar', 'Planetary', 'Nocturnal', 'Celestial',
+                    'Tidal', 'Aerial', 'Tempestuous', 'Euphoric', 'Epic', 'Infinite', 'Limitless'
+                ];
+
+                /* ───────────────── COLORS (100) ───────────────── */
+                const colors = [
+                    'Scarlet', 'Crimson', 'Ruby', 'Cherry', 'Sangria', 'Rouge', 'Vermilion', 'Burgundy',
+                    'Rose', 'Hotpink', 'Bubblegum', 'Fuchsia', 'Magenta', 'Cerise',
+                    'Peach', 'Coral', 'Salmon', 'Apricot', 'Mango', 'Saffron', 'Marigold', 'Amber',
+                    'Gold', 'Goldenrod', 'Bronze', 'Copper', 'Honey', 'Butterscotch',
+                    'Lemon', 'Canary', 'Daffodil', 'Chartreuse', 'Lime', 'Neonlime',
+                    'Mint', 'Celadon', 'Jade', 'Emerald', 'Shamrock', 'Malachite',
+                    'Turquoise', 'Aquamarine', 'Cyan', 'Teal', 'Aqua', 'Azure', 'Sky', 'Ultramarine',
+                    'Royal', 'Cobalt', 'Indigo', 'Denim', 'Sapphire', 'Prussian',
+                    'Lavender', 'Lilac', 'Periwinkle', 'Mauve', 'Violet', 'Iris', 'Plum', 'Eggplant',
+                    'Purple', 'Grape', 'Amethyst', 'Orchid', 'Ultraviolet',
+                    'Ivory', 'Pearl', 'Alabaster', 'Snow', 'Ghost', 'Platinum', 'Silver', 'Steel',
+                    'Onyx', 'Obsidian', 'Jet', 'Charcoal', 'Graphite', 'Slate', 'Smoke', 'Ash',
+                    'Coffee', 'Mocha', 'Cocoa', 'Chocolate', 'Chestnut', 'Mahogany',
+                    // fun extras
+                    'Rainbow', 'Pastel', 'Glittergold', 'Neonorange', 'Cybercyan', 'Lasergreen',
+                    'Glitterblack', 'Discorose', 'Hologold', 'UVwhite'
+                ];
+
+                /* ───────────────── NOUNS (160) ───────────────── */
+                const nouns = [
+                    // Epic & poetic
+                    'Voyagers', 'Dynasty', 'Symphony', 'Mirage', 'Eclipse', 'Odyssey', 'Aurora',
+                    'Nebula', 'Galaxy', 'Supernova', 'Meteor', 'Comet', 'Stardust', 'Horizon',
+                    'Cosmos', 'Planetarium', 'Equinox', 'Solstice', 'Polaris', 'Zenith',
+                    // Party & food
+                    'Confetti', 'Piñatas', 'Bubbles', 'Fandango', 'Fiesta', 'Carnaval', 'Discoteca',
+                    'Mojito', 'Sangria', 'Kebab', 'Falafel', 'Schnitzels', 'Bratwursts', 'Souvlakis',
+                    'Pierogis', 'Cannoli', 'Gelatos', 'Baklavas', 'Poffertjes', 'Churros',
+                    'Tacos', 'Waffles', 'Pizzas', 'Sausages', 'Donuts', 'Pretzels', 'Cupcakes',
+                    // Animals & mascots
+                    'Llamas', 'Alpacas', 'Unicorns', 'Dragons', 'Phoenixes', 'Narwhals', 'Penguins',
+                    'Puffins', 'Koalas', 'Axolotls', 'Sloths', 'Otters', 'Hedgehogs', 'Manatees',
+                    'Chihuahuas', 'Capybaras', 'Fennecs', 'Octopi', 'Hamsters',
+                    // Objects & vibes
+                    'Boombox', 'Cassette', 'Vinyls', 'Lasers', 'Pixels', 'Phasers', 'Holograms',
+                    'Synths', 'Keytars', 'Karaokes', 'Rollerblades', 'DiscoBalls', 'Spotlights',
+                    'Glowsticks', 'Fireworks', 'Bongos', 'Maracas', 'Tambourines', 'Triangles',
+                    // Romance & feels
+                    'Corazón', 'Pasión', 'Amor', 'Besos', 'Sueños', 'Felicità', 'Dolcè', 'Luz',
+                    'Herz', 'Liebe', 'Traum', 'Freude', 'Rakkaus', 'Sisu', 'Kärlek', 'Drøm', 'Glädje',
+                    'Esperanza', 'Libertà', 'Kismet', 'Destiny', 'Serenade', 'Balada', 'Rhapsody',
+                    // Slavic & Balkan zest
+                    'Iskra', 'Zvezda', 'Zvuk', 'Balada', 'Labirint', 'Legija', 'Kaskada', 'Čarolija',
+                    'Gusle', 'Tamburitza', 'Fiasko',
+                    // Myth & legend
+                    'Valkyries', 'Sirens', 'Centaurs', 'Pegasi', 'Hydras', 'Minotaurs', 'Satyrs',
+                    'Fauns', 'Nereids', 'Oracles', 'Muses', 'Titans', 'Olympians', 'Atlanteans',
+                    // Random whimsy
+                    'Moustache', 'Lollipop', 'Bubblewrap', 'UnicornFluff', 'SillyWalks', 'Zigzags',
+                    'MemeLords', 'TikToks', 'Emoji', 'Selfies', 'FOMO', 'YOLO', 'Fizz', 'Zigzag',
+                    'Jamboree', 'Shenanigans', 'Hooplas', 'Hootenannies', 'Hubbubs', 'Kerfuffles',
+                    'Hullabaloos', 'Brouhahas', 'Skadooshes'
+                ];
+
+                /* ───────────────── SUFFIXES (60) ───────────────── */
+                const suffixes = [
+                    // Common
+                    'Collective', 'Express', 'Ensemble', 'Project', 'Connexion', 'Crew', 'Squad',
+                    'Club', 'Band', 'Group', 'Unit', 'Cartel', 'Brigade', 'Legion', 'Company',
+                    // Orchestral & choral
+                    'Orchestra', 'Philharmonic', 'Sinfonietta', 'Chorale', 'GleeClub', 'Barbershop',
+                    'Orkester', 'Kapela', 'Conjunto', 'Syndikat', 'Fanfare', 'Combo',
+                    // Over‑the‑top show terms
+                    'Extravaganza', 'Spectacular', 'Showtime', 'Bonanza', 'Fieston', 'Blockbuster',
+                    'Megamix', 'Revue', 'Showband', 'Cabaret', 'Pageant', 'Snowstorm', 'DiscoInferno',
+                    'ThunderDome', 'LaserDome', 'PowerPlay', 'SuperShow', 'Maxximum', 'Ultimatum',
+                    // Multilingual bits
+                    'Union', 'Federation', 'Förening', 'Brigada', 'Batalion', 'Dominion', 'Republic',
+                    'Companhia', 'Corporazione', 'Kooperativa', 'Affair', 'Affäre', 'Affaire'
+                ];
+
+                /* BIG mononyms list */
+                const mononyms = [
+                    // Classic Eurovision faves
+                    'Fuego', 'Euphoria', 'Brividi', 'Amar', 'Polaris', 'Svea', 'Alba', 'Saga',
+                    // Quirky food & fun words
+                    'Schnitzel', 'Falafel', 'Tzatziki', 'Baklava', 'Mojito', 'Gelato', 'Pretzel',
+                    'Kebab', 'Goulash', 'Pierogi', 'Borscht', 'Waffle', 'Souvlaki', 'Crêpe', 'Bratwurst',
+                    // Silly onomatopoeia & sounds
+                    'BoomBoom', 'BamBam', 'KaPOW', 'Zooma', 'Zing', 'Wham', 'Bop', 'Fizz', 'ZsaZsa',
+                    'ChaCha', 'LaLa', 'Ta‑Da', 'Opa', 'Olé', 'Yolo', 'Woop', 'Bazinga',
+                    // Sparkly / fantasy
+                    'Glitterazzi', 'Sparkle', 'Twinkle', 'Shimmer', 'Starburst', 'Aurorae', 'Nebulae',
+                    'Meteorra', 'Supernova', 'Stardust', 'Moonlight', 'Eclipsea', 'Galaxyx',
+                    // Myth / legend
+                    'Valkyria', 'Phoenix', 'Hydra', 'Minerva', 'Sirena', 'Nereid', 'Pegasus', 'Centaur',
+                    'Orpheus', 'Lotus', 'Calypso', 'Odyssea', 'Pandora', 'Avalona',
+                    // Multilingual emotions & nouns
+                    'Corazón', 'Pasión', 'Esperanza', 'Libertà', 'Felicità', 'Dolcè', 'Luz', 'Sueño',
+                    'Herz', 'Liebe', 'Traum', 'Freude', 'Rakkaus', 'Sisu', 'Kärlek', 'Drøm', 'Glädje',
+                    'Iskra', 'Zvezda', 'Zvuk', 'Balada', 'Zvijezda', 'Mir', 'Nada', 'Kismet', 'Takdir',
+                    // Color & style
+                    'Rouge', 'Turquesa', 'Porpora', 'Azzurro', 'Verde', 'Cyan', 'Safir', 'Obsidian',
+                    'Goldie', 'Silvera', 'Saffron', 'Mauve', 'Ultraviolet', 'Neonlime', 'Hotpink',
+                    // Tech & future
+                    'Synthwave', 'Bitpop', 'Laseron', 'Quantum', 'Pixel', 'Cyberia', 'Datastream',
+                    'Hologram', 'Modem', 'Analog', 'Matrixx', 'Phaser', 'Kryptex',
+                    // Animals & creatures
+                    'Llama', 'Alpaca', 'Unicorn', 'Pegacorn', 'Dragonet', 'Puffin', 'Pengu', 'Koala',
+                    'Chinchilla', 'Axolotl', 'Narwhal', 'Manatee', 'Sloth', 'Geko', 'Octopoda',
+                    // Random Euro‑fun
+                    'Europhoria', 'Nostalgiq', 'Fiasko', 'Extravaganza', 'Fieston', 'Discoteca',
+                    'Balkanika', 'Baltika', 'Nordica', 'Galactica', 'Atlantica', 'Oceania',
+                    'Valkea', 'Åska', 'Äppel', 'Ørn', 'Æra', 'Živio', 'Čudo', 'Łuna',
+                    // Short punchy syllables
+                    'Kiki', 'Lolo', 'Mimi', 'Nunu', 'Dodo', 'Zuzu', 'Pipi', 'Riri', 'Gigi', 'Yaya',
+                    // Accented spice (already includes diacritics)
+                    'Auróra', 'Lumière', 'Zéphyr', 'Élan', 'Éclipse', 'Brillánte', 'Sérénade',
+                    'Glóriá', 'Máxima', 'Fábula', 'Čačak', 'Šok', 'Žura', 'Řeka', 'Ħajja',
+                    // More filler—feel free to prune or add!
+                    'Calyptra', 'Kaleido', 'Meteorik', 'Voltana', 'Xanadu', 'Orionis', 'Cassiopeia',
+                    'Elektra', 'Foxtrot', 'Rumbita', 'Mamboon', 'Zorba', 'Katarza', 'Bolero',
+                    'Fantazija', 'Illúmina', 'Mysteria', 'Arcadia'
+                ];
+
+                /* accent helper */
+                const accent = {
+                    a: ['á', 'à', 'ä', 'å'], e: ['é', 'è', 'ë'], i: ['í', 'ì'], o: ['ó', 'ò', 'ö', 'ø'],
+                    u: ['ú', 'ù', 'ü'], A: ['Á', 'À', 'Ä', 'Å'], E: ['É', 'È', 'Ë'], I: ['Í', 'Ì'],
+                    O: ['Ó', 'Ò', 'Ö', 'Ø'], U: ['Ú', 'Ù', 'Ü']
+                };
+                const addAccent = w => w.replace(/[aeiouAEIOU]/, v => pick(accent[v] ?? [v]));
+
+                /* ---------- MONONYM BRANCH ---------- */
+                if (Math.random() < 0.20) {          // 20 % single‑word stage name
+                    let solo = pick(mononyms);
+                    if (Math.random() < 0.40) solo = addAccent(solo);
+                    return solo;
+                }
+
+                /* ---------- MULTI‑WORD BRANCH ---------- */
+                const tokens = [];
+
+                /*  new weight table:
+                    10 % → 2 modifiers  (==3‑word)
+                    70 % → 1 modifier   (==2‑word, occasionally 3 if suffix attaches)
+                    20 % → 0 modifiers  (==1‑word, occasionally 2 if suffix attaches)
+                */
+                const r = Math.random();
+                const preCount = r < 0.10 ? 2 : r < 0.80 ? 1 : 0;
+
+                if (preCount >= 1) tokens.push(pick([...adjectives, ...colors]));
+                if (preCount === 2) {
+                    const pool = colors.includes(tokens[0]) ? adjectives : colors;
+                    tokens.push(pick(pool));
+                }
+
+                tokens.push(pick(nouns));
+
+                /* rarer suffix → keeps most names at 2 words */
+                if (tokens.length < 3 && Math.random() < 0.15) {
+                    tokens.push(pick(suffixes));
+                }
+
+                /* accent flair (unchanged) */
+                if (Math.random() < 0.35) {
+                    const i = Math.floor(Math.random() * tokens.length);
+                    tokens[i] = addAccent(tokens[i]);
+                }
+
+                document.getElementById("bandname").innerHTML = tokens.join(' ');
+                console.log(tokens.join(" "));
+                return tokens.join(' ');
+            }
+
+            // Enhance the band name generator with a more dramatic effect
+            $('#change_name').on('click', function () {
+                var oldName = savedName;
+                savedName = randomEurovisionName();
+                localStorage.setItem('userName', savedName);
+
+                // Enhanced animation effect
+                $('#bandname').addClass('name-change-flash');
+
+                // Add a pulse effect to the button
+                $(this).css('animation', 'pulseGlow 0.8s ease-out');
+
+                setTimeout(function () {
+                    document.getElementById("bandname").innerHTML = savedName;
+                    setTimeout(function () {
+                        $('#bandname').removeClass('name-change-flash');
+                        $('#change_name').css('animation', 'gradientBackground 3s ease infinite');
+                    }, 600);
+                }, 300);
+
+                // Emit socket event
+                socket.emit('nameChanged', {
+                    'old_name': oldName,
+                    'new_name': savedName
+                });
+            });
+
+            // Enhance the points colors for a more vibrant experience
+            function getEnhancedColorForPoints(points, maxPoints) {
+                const pointValue = parseInt(points);
+                const ratio = pointValue / maxPoints;
+
+                // Create more vibrant, glossy colors based on point value
+                if (ratio < 0.33) {
+                    // Lower points: copper/bronze tones
+                    return `linear-gradient(135deg, 
+                        rgba(170, 110, 70, 0.95) 0%, 
+                        rgba(145, 90, 50, 0.9) 50%, 
+                        rgba(120, 70, 40, 0.85) 100%)`;
+                } else if (ratio < 0.66) {
+                    // Mid points: silver/metallic tones
+                    return `linear-gradient(135deg, 
+                        rgba(180, 180, 190, 0.95) 0%, 
+                        rgba(150, 150, 160, 0.9) 50%, 
+                        rgba(130, 130, 140, 0.85) 100%)`;
+                } else {
+                    // Higher points: gold/vibrant tones
+                    return `linear-gradient(135deg, 
+                        rgba(220, 190, 60, 0.95) 0%, 
+                        rgba(200, 170, 40, 0.9) 50%, 
+                        rgba(180, 150, 30, 0.85) 100%)`;
+                }
+            }
+
+            // Apply enhanced colors to the points
+            function applyEnhancedPointsColors() {
+                const staticItems = $('.static-list li');
+
+                // Find the maximum points
+                let maxPoints = 0;
+                staticItems.each(function () {
+                    const pointsText = $(this).text();
+                    const pointsValue = parseInt(pointsText);
+                    if (pointsValue > maxPoints) {
+                        maxPoints = pointsValue;
+                    }
+                });
+
+                // Apply enhanced styling
+                staticItems.each(function (index) {
+                    const pointsText = $(this).text();
+                    const backgroundGradient = getEnhancedColorForPoints(pointsText, maxPoints);
+
+                    // Apply styling based on rank
+                    $(this).css({
+                        'background': backgroundGradient,
+                        'color': '#ffffff',
+                        'text-shadow': '0 1px 2px rgba(0, 0, 0, 0.5)',
+                        'font-weight': '600',
+                        'border': '1px solid rgba(255, 255, 255, 0.15)',
+                        'box-shadow': '0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+                    });
+
+                    // Special styling for top 3
+                    if (index === 0) {
+                        // First place - gold effect
+                        $(this).css({
+                            'transform': 'scale(1.05)',
+                            'box-shadow': '0 6px 15px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
+                            'animation': 'floatingAnimation 3s ease-in-out infinite'
+                        });
+                    } else if (index === 1) {
+                        // Second place - silver effect
+                        $(this).css({
+                            'transform': 'scale(1.03)',
+                            'box-shadow': '0 5px 12px rgba(192, 192, 192, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                            'animation': 'floatingAnimation 3.5s ease-in-out infinite'
+                        });
+                    } else if (index === 2) {
+                        // Third place - bronze effect
+                        $(this).css({
+                            'transform': 'scale(1.01)',
+                            'box-shadow': '0 4px 10px rgba(205, 127, 50, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+                            'animation': 'floatingAnimation 4s ease-in-out infinite'
+                        });
+                    }
+                });
+            }
+
+            // Call enhanced colors function
+            applyEnhancedPointsColors();
+
+            // Update colors when list changes
+            const targetNode = document.getElementById('votes');
+            if (targetNode) {
+                const observer = new MutationObserver(function () {
+                    applyEnhancedPointsColors();
+                });
+
+                observer.observe(targetNode, { childList: true, subtree: true });
+            }
+
+            // Socket event listener for updates
+            if (socket) {
+                socket.on('votesUpdated', function () {
+                    applyEnhancedPointsColors();
+                });
+                
+
+                    socket.on('options_updated', function () {
+                        // Remove any local storage the page uses
+                        localStorage.removeItem('itemsOrder');
+
+                        // Best‑effort cookie clear (HTTP‑only cookies can’t be touched)
+                        document.cookie.split(';').forEach(function (c) {
+                            document.cookie = c
+                            .replace(/^ +/, '')
+                            .replace(/=.*/, '=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/');
+                        });
+
+
+                        // Hard reload
+                        location.reload(true);
+                    });
+            }
+
+            // Add page load animations
+            function addPageLoadAnimations() {
+                // Stagger the appearance of list items
+                $('.static-list li, .sortable-list li').each(function (index) {
+                    $(this).css({
+                        'opacity': '0',
+                        'transform': 'translateY(20px)'
+                    });
+
+                    setTimeout(() => {
+                        $(this).css({
+                            'opacity': '1',
+                            'transform': 'translateY(0)',
+                            'transition': 'all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                        });
+                    }, 100 + (index * 50));
+                });
+
+                // Fancy entrance for the band name container
+                $('#bandnamecontainer').css({
+                    'opacity': '0',
+                    'transform': 'translateY(-10px)'
+                });
+
+                setTimeout(() => {
+                    $('#bandnamecontainer').css({
+                        'opacity': '1',
+                        'transform': 'translateY(0)',
+                        'transition': 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
+                    });
+                }, 300);
+            }
+
+            // Run page load animations
+            addPageLoadAnimations();
+        });
+    </script>
+    <!-- New (working) -->
+    <script src="https://cdn.jsdelivr.net/npm/twemoji@14.0.2/dist/twemoji.min.js"></script>
+    <script>
+        // Wait until everything is loaded
+        window.addEventListener('load', function () {
+            // Add flags to countries - only need to do this once
+            const listItems = document.querySelectorAll('.sortable-list li');
+            listItems.forEach(item => {
+                const text = item.textContent.trim();
+                const country = text.split(':')[0].trim();
+
+                // Full list of Eurovision countries with flag emojis
+                switch (country) {
+                    // Current and recent participants
+                    case "Sweden": item.innerHTML = "🇸🇪 " + text; break;
+                    case "Ukraine": item.innerHTML = "🇺🇦 " + text; break;
+                    case "Germany": item.innerHTML = "🇩🇪 " + text; break;
+                    case "Luxembourg": item.innerHTML = "🇱🇺 " + text; break;
+                    case "Netherlands": item.innerHTML = "🇳🇱 " + text; break;
+                    case "Israel": item.innerHTML = "🇮🇱 " + text; break;
+                    case "Lithuania": item.innerHTML = "🇱🇹 " + text; break;
+                    case "Spain": item.innerHTML = "🇪🇸 " + text; break;
+                    case "Estonia": item.innerHTML = "🇪🇪 " + text; break;
+                    case "Ireland": item.innerHTML = "🇮🇪 " + text; break;
+                    case "Latvia": item.innerHTML = "🇱🇻 " + text; break;
+                    case "Greece": item.innerHTML = "🇬🇷 " + text; break;
+                    case "United Kingdom": item.innerHTML = "🇬🇧 " + text; break;
+                    case "Norway": item.innerHTML = "🇳🇴 " + text; break;
+                    case "Italy": item.innerHTML = "🇮🇹 " + text; break;
+                    case "Serbia": item.innerHTML = "🇷🇸 " + text; break;
+                    case "Finland": item.innerHTML = "🇫🇮 " + text; break;
+                    case "Portugal": item.innerHTML = "🇵🇹 " + text; break;
+                    case "Armenia": item.innerHTML = "🇦🇲 " + text; break;
+                    case "Cyprus": item.innerHTML = "🇨🇾 " + text; break;
+                    case "Switzerland": item.innerHTML = "🇨🇭 " + text; break;
+                    case "Slovenia": item.innerHTML = "🇸🇮 " + text; break;
+                    case "Croatia": item.innerHTML = "🇭🇷 " + text; break;
+                    case "Georgia": item.innerHTML = "🇬🇪 " + text; break;
+                    case "France": item.innerHTML = "🇫🇷 " + text; break;
+                    case "Austria": item.innerHTML = "🇦🇹 " + text; break;
+                    case "Denmark": item.innerHTML = "🇩🇰 " + text; break;
+                    case "Poland": item.innerHTML = "🇵🇱 " + text; break;
+                    case "San Marino": item.innerHTML = "🇸🇲 " + text; break;
+                    case "Belgium": item.innerHTML = "🇧🇪 " + text; break;
+                    case "Romania": item.innerHTML = "🇷🇴 " + text; break;
+                    case "Iceland": item.innerHTML = "🇮🇸 " + text; break;
+                    case "Malta": item.innerHTML = "🇲🇹 " + text; break;
+                    case "Albania": item.innerHTML = "🇦🇱 " + text; break;
+                    case "Azerbaijan": item.innerHTML = "🇦🇿 " + text; break;
+                    case "Moldova": item.innerHTML = "🇲🇩 " + text; break;
+                    case "Czech Republic": item.innerHTML = "🇨🇿 " + text; break;
+                    case "Czechia": item.innerHTML = "🇨🇿 " + text; break;
+                    case "Australia": item.innerHTML = "🇦🇺 " + text; break;
+                    case "Bulgaria": item.innerHTML = "🇧🇬 " + text; break;
+                    case "Hungary": item.innerHTML = "🇭🇺 " + text; break;
+                    case "Montenegro": item.innerHTML = "🇲🇪 " + text; break;
+                    case "North Macedonia": item.innerHTML = "🇲🇰 " + text; break;
+                    case "Macedonia": item.innerHTML = "🇲🇰 " + text; break;
+
+                    // Historical participants
+                    case "Bosnia and Herzegovina": item.innerHTML = "🇧🇦 " + text; break;
+                    case "Slovakia": item.innerHTML = "🇸🇰 " + text; break;
+                    case "Turkey": item.innerHTML = "🇹🇷 " + text; break;
+                    case "Monaco": item.innerHTML = "🇲🇨 " + text; break;
+                    case "Belarus": item.innerHTML = "🇧🇾 " + text; break;
+                    case "Russia": item.innerHTML = "🇷🇺 " + text; break;
+                    case "Andorra": item.innerHTML = "🇦🇩 " + text; break;
+                    case "Soviet Union": item.innerHTML = "🇷🇺 " + text; break; // No USSR flag, using Russia
+                    case "Yugoslavia": item.innerHTML = "🇷🇸 " + text; break; // No Yugoslavia flag, using Serbia
+                    case "Serbia and Montenegro": item.innerHTML = "🇷🇸 " + text; break;
+                    case "Morocco": item.innerHTML = "🇲🇦 " + text; break;
+
+                    // Special cases
+                    case "Vatican City": item.innerHTML = "🇻🇦 " + text; break; // Special invitation
+                    case "Kazakhstan": item.innerHTML = "🇰🇿 " + text; break; // Junior Eurovision
+                    case "Wales": item.innerHTML = "🏴󠁧󠁢󠁷󠁬󠁳󠁿 " + text; break; // In case of solo entry
+                    case "Scotland": item.innerHTML = "🏴󠁧󠁢󠁳󠁣󠁴󠁿 " + text; break; // In case of solo entry
+                    case "England": item.innerHTML = "🏴󠁧󠁢󠁥󠁮󠁧󠁿 " + text; break; // In case of solo entry
+                }
+            });
+
+            // Apply Twemoji with GitHub CDN
+            twemoji.parse(document.body, {
+                folder: 'svg',
+                ext: '.svg',
+                base: 'https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/'
+            });
+        });
+
+        // Add title animation
+        setTimeout(() => {
+            const title = document.getElementById('app-title');
+            if (title) {
+                title.style.opacity = '1';
+                title.style.transform = 'translateY(0)';
+                title.style.transition = 'all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+            }
+        }, 500);
+
+        // Create a subtle spotlight following mouse movement
+        document.addEventListener('mousemove', function (e) {
+            const spotlight = document.querySelector('.spotlight');
+            if (spotlight) {
+                const x = e.clientX / window.innerWidth * 100;
+                const y = e.clientY / window.innerHeight * 100;
+
+                spotlight.style.background = `radial-gradient(
+                    circle at ${x}% ${y}%,
+                    rgba(100, 40, 200, 0.1) 0%,
+                    rgba(20, 20, 20, 0) 50%
+                )`;
+            }
+        });
+    </script>
+</body>
+
+</html>

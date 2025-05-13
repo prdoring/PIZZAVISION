@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('voting.static', filename='pizza.png') }}">
+    <title>PIZZAVISION RESULTS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #4CAF50;
+            --primary-dark: #3e8e41;
+            --bg-dark: #121212;
+            --card-bg: #1e1e1e;
+            --card-hover: #2a2a2a;
+            --text: #ffffff;
+            --text-secondary: #b3b3b3;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
+            transition: all 0.3s ease;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 50px;
+            position: relative;
+        }
+
+        h1 {
+            color: var(--text);
+            font-size: 3rem;
+            margin-bottom: 10px;
+            position: relative;
+            display: inline-block;
+        }
+
+        h1:after {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--primary), transparent);
+            bottom: -10px;
+            left: 20%;
+            border-radius: 2px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            margin-top: 0;
+        }
+
+        .results-list {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .result-item {
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            margin: 20px 0;
+            padding: 0;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            transform: translateY(20px);
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+            position: relative;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .result-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+            background-color: var(--card-hover);
+        }
+
+        .points-container {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 20px;
+            width: 100%;
+            cursor: pointer;
+            position: relative;
+            box-sizing: border-box;
+        }
+
+        .badge {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+            margin-left: auto;
+        }
+
+        .badge:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+        }
+
+        .badge i {
+            font-size: 0.9em;
+        }
+
+        .candidate {
+            font-weight: bold;
+            font-size: 1.6rem;
+            text-transform: uppercase;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            color: var(--text);
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .candidate.visible {
+            opacity: 1;
+            max-height: 100px;
+            padding: 20px;
+            margin-top: 5px;
+        }
+        
+        .flag-icon {
+            width: 32px;
+            height: 24px;
+            margin-left: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            border-radius: 2px;
+            vertical-align: middle;
+        }
+
+        .result-rank {
+            background-color: rgba(255, 255, 255, 0.1);
+            width: 50px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--text-secondary);
+        }
+        
+        .points-label {
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            opacity: 0.7;
+            margin-right: 6px;
+        }
+
+        .progress-bg {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 4px;
+            background-color: rgba(255, 255, 255, 0.1);
+            width: 100%;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            width: 0;
+            transition: width 1s ease-out;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @media screen and (max-width: 600px) {
+            .container {
+                padding: 20px 15px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .candidate {
+                font-size: 1.2rem;
+            }
+            
+            .result-rank {
+                width: 40px;
+                font-size: 1.2rem;
+            }
+        }
+
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            background-color: #f2d74e;
+            opacity: 0;
+            top: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+        
+        .flag-confetti {
+            background-color: transparent;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.4);
+            border-radius: 3px;
+            z-index: 20; /* Ensure flags appear on top of regular confetti */
+        }
+        
+        .song-info {
+            font-size: 1.2rem;
+            font-weight: normal;
+            font-style: italic;
+            margin-top: 8px;
+            opacity: 0.9;
+            color: var(--text-secondary);
+            text-transform: none;
+        }
+        
+        .country-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+        }
+
+        /* Theme toggle */
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: var(--text);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        /* Light theme variables */
+        body.light-theme {
+            --bg-dark: #f5f5f5;
+            --card-bg: #ffffff;
+            --card-hover: #f9f9f9;
+            --text: #333333;
+            --text-secondary: #666666;
+        }
+
+        body.light-theme .result-item {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        }
+
+        body.light-theme .badge {
+            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
+        }
+        
+        /* Test button */
+        .test-confetti {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 100;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Results</h1>
+            <p class="subtitle">Click on a result to reveal the candidate</p>
+            <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+        
+        <ul class="results-list" id="resultsList">
+            {% for candidate, points in ranked_results %}
+                {% if points > 0%}
+                    <li style="display: none;" class="original-template-item">
+                        <span class="candidate" style="display: none;"> {{ candidate }}:</span>
+                        <span class="badge" onclick="toggleCandidate(this.previousElementSibling)">{{ points }} Points</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <button class="test-confetti" onclick="createConfetti('se')">Test Confetti</button>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script>
+        // Country flags mapping to ISO codes
+        const countryFlags = {
+            "Sweden": "se",
+            "Ukraine": "ua",
+            "Germany": "de",
+            "Luxembourg": "lu",
+            "Netherlands": "nl",
+            "Israel": "il",
+            "Lithuania": "lt",
+            "Spain": "es",
+            "Estonia": "ee",
+            "Ireland": "ie",
+            "Latvia": "lv",
+            "Greece": "gr",
+            "United Kingdom": "gb",
+            "Norway": "no",
+            "Italy": "it",
+            "Serbia": "rs",
+            "Finland": "fi",
+            "Portugal": "pt",
+            "Armenia": "am",
+            "Cyprus": "cy",
+            "Switzerland": "ch",
+            "Slovenia": "si",
+            "Croatia": "hr",
+            "Georgia": "ge",
+            "France": "fr",
+            "Austria": "at",
+            "Denmark": "dk",
+            "Poland": "pl",
+            "San Marino": "sm",
+            "Belgium": "be",
+            "Romania": "ro",
+            "Iceland": "is",
+            "Malta": "mt",
+            "Albania": "al",
+            "Azerbaijan": "az",
+            "Moldova": "md",
+            "Czech Republic": "cz",
+            "Czechia": "cz",
+            "Australia": "au",
+            "Bulgaria": "bg",
+            "Hungary": "hu",
+            "Montenegro": "me",
+            "North Macedonia": "mk",
+            "Macedonia": "mk",
+            "Bosnia and Herzegovina": "ba",
+            "Slovakia": "sk",
+            "Turkey": "tr",
+            "Monaco": "mc",
+            "Belarus": "by",
+            "Russia": "ru",
+            "Andorra": "ad",
+            "Soviet Union": "ru",
+            "Yugoslavia": "rs",
+            "Serbia and Montenegro": "rs",
+            "Morocco": "ma",
+            "Vatican City": "va",
+            "Kazakhstan": "kz",
+            "Wales": "gb-wls",
+            "Scotland": "gb-sct",
+            "England": "gb-eng"
+        };
+
+        // Create confetti animation with flag images
+        function createConfetti(countryCode) {
+            console.log("Creating confetti for country:", countryCode);
+            const colors = ['#f94144', '#f3722c', '#f8961e', '#f9c74f', '#90be6d', '#43aa8b', '#577590'];
+            
+            // Create regular confetti pieces
+            for (let i = 0; i < 20; i++) {
+                const confetti = document.createElement('div');
+                confetti.className = 'confetti';
+                confetti.style.left = Math.random() * 100 + 'vw';
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.opacity = Math.random() * 0.7 + 0.3; // More visible
+                confetti.style.width = Math.random() * 10 + 5 + 'px';
+                confetti.style.height = Math.random() * 10 + 5 + 'px';
+                document.body.appendChild(confetti);
+                
+                const animation = confetti.animate([
+                    { transform: 'translate3d(0, 0, 0) rotate(0deg)', opacity: 1 },
+                    { transform: `translate3d(${Math.random() * 300 - 150}px, ${Math.random() * 600 + 200}px, 0) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+                ], {
+                    duration: Math.random() * 2000 + 1500,
+                    easing: 'cubic-bezier(.09,.87,.5,.95)'
+                });
+                
+                animation.onfinish = () => confetti.remove();
+            }
+            
+            // Create flag confetti pieces if a country code is provided
+            if (countryCode) {
+                for (let i = 0; i < 15; i++) { // More flag confetti
+                    const flagConfetti = document.createElement('div');
+                    flagConfetti.className = 'confetti flag-confetti';
+                    flagConfetti.style.left = Math.random() * 100 + 'vw';
+                    
+                    // Size randomization
+                    const size = Math.random() * 30 + 40; // 40-70px width - even larger!
+                    const ratio = 3/4; // Standard flag ratio
+                    flagConfetti.style.width = `${size}px`;
+                    flagConfetti.style.height = `${size * ratio}px`;
+                    
+                    // Higher quality flag images
+                    flagConfetti.style.backgroundImage = `url(https://flagcdn.com/w160/${countryCode}.png)`;
+                    flagConfetti.style.backgroundSize = 'cover';
+                    flagConfetti.style.opacity = Math.random() * 0.3 + 0.7; // Very visible
+                    document.body.appendChild(flagConfetti);
+                    
+                    // More dynamic animation
+                    const animation = flagConfetti.animate([
+                        { transform: 'translate3d(0, 0, 0) rotate(0deg) scale(1)', opacity: 1 },
+                        { transform: `translate3d(${Math.random() * 400 - 200}px, ${Math.random() * 700 + 100}px, 0) rotate(${Math.random() * 720 - 360}deg) scale(${Math.random() * 0.5 + 0.5})`, opacity: 0 }
+                    ], {
+                        duration: Math.random() * 4000 + 2000, // Even longer duration
+                        easing: 'cubic-bezier(.09,.87,.5,.95)'
+                    });
+                    
+                    animation.onfinish = () => flagConfetti.remove();
+                }
+            }
+        }
+
+        // Theme toggle function
+        function toggleTheme() {
+            const body = document.body;
+            const themeIcon = document.querySelector('.theme-toggle i');
+            
+            if (body.classList.contains('light-theme')) {
+                body.classList.remove('light-theme');
+                themeIcon.className = 'fas fa-moon';
+            } else {
+                body.classList.add('light-theme');
+                themeIcon.className = 'fas fa-sun';
+            }
+        }
+        
+       function toggleCandidate(candidateElement, infiniteConfetti = false) {
+            if (!candidateElement) {
+                console.error("No candidate element found");
+                return;
+            }
+            
+            const isVisible = candidateElement.classList.contains('visible');
+            
+            // Find the badge icon
+            let badgeIcon = null;
+            const badgeElement = candidateElement.nextElementSibling;
+            if (badgeElement) {
+                badgeIcon = badgeElement.querySelector('i');
+            }
+            
+            if (isVisible) {
+                candidateElement.classList.remove('visible');
+                if (badgeIcon) {
+                    badgeIcon.className = 'fas fa-chevron-down';
+                }
+                
+                // Stop infinite confetti loop if it exists
+                if (candidateElement.confettiInterval) {
+                    clearInterval(candidateElement.confettiInterval);
+                    candidateElement.confettiInterval = null;
+                }
+            } else {
+                candidateElement.classList.add('visible');
+                if (badgeIcon) {
+                    badgeIcon.className = 'fas fa-chevron-up';
+                }
+                
+                // Get the country code and pass it to createConfetti
+                let countryCode = null;
+                
+                // Extract the country name from the country container element
+                const countryContainer = candidateElement.querySelector('.country-container');
+                if (countryContainer) {
+                    const countrySpan = countryContainer.querySelector('span');
+                    if (countrySpan) {
+                        const countryName = countrySpan.textContent.trim();
+                        console.log("Extracted country name:", countryName);
+                        
+                        if (countryFlags[countryName]) {
+                            countryCode = countryFlags[countryName];
+                            console.log(`Found country code ${countryCode} for ${countryName}`);
+                            
+                            // Call createConfetti once immediately
+                            createConfetti(countryCode);
+                            
+                            // If infiniteConfetti is true, set up interval for repeated confetti
+                            if (infiniteConfetti && countryCode) {
+                                // Store the interval ID on the element to clear it later
+                                candidateElement.confettiInterval = setInterval(() => {
+                                    // Random delay between 1-5 seconds
+                                    const randomDelay = Math.floor(Math.random() * 4000) + 1000;
+                                    setTimeout(() => {
+                                        createConfetti(countryCode);
+                                    }, randomDelay);
+                                }, 5000); // Base interval of 5 seconds
+                            }
+                        } else {
+                            console.log(`No country code found for "${countryName}"`);
+                        }
+                    }
+                } else {
+                    // Fallback for older structure
+                    console.log("Fallback: No country container found, using full text parsing");
+                    const fullText = candidateElement.textContent.trim();
+                    const colonIndex = fullText.indexOf(':');
+                    let countryName;
+                    
+                    if (colonIndex > -1) {
+                        countryName = fullText.substring(0, colonIndex).trim();
+                    } else {
+                        countryName = fullText;
+                    }
+                    
+                    console.log("Fallback extracted country name:", countryName);
+                    if (countryFlags[countryName]) {
+                        countryCode = countryFlags[countryName];
+                        console.log(`Found country code ${countryCode} for ${countryName}`);
+                        
+                        createConfetti(countryCode);
+                        
+                        // Set up infinite confetti if requested
+                        if (infiniteConfetti && countryCode) {
+                            candidateElement.confettiInterval = setInterval(() => {
+                                const randomDelay = Math.floor(Math.random() * 4000) + 1000;
+                                setTimeout(() => {
+                                    createConfetti(countryCode);
+                                }, randomDelay);
+                            }, 5000);
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Initialize the enhanced UI when the page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get all list items from the original template
+            const listItems = Array.from(document.querySelectorAll('.original-template-item'));
+            const resultsList = document.getElementById('resultsList');
+            
+            // Remove the display:none style from original items to make them visible in template processing
+            listItems.forEach(item => {
+                item.style.display = '';
+            });
+            
+            // Get the maximum points for scaling progress bars
+            const maxPoints = Math.max(...listItems.map(item => {
+                const pointsText = item.querySelector('.badge').textContent;
+                return parseInt(pointsText);
+            }));
+            
+            // Generate enhanced UI items
+            listItems.forEach((item, index) => {
+                const pointsElement = item.querySelector('.badge');
+                const candidateElement = item.querySelector('.candidate');
+                
+                if (!pointsElement || !candidateElement) return;
+                
+                const points = parseInt(pointsElement.textContent);
+                
+                // Extract country name more carefully to preserve song info
+                // Only split on the first colon to keep any song name intact
+                const fullText = candidateElement.textContent.trim();
+                const colonIndex = fullText.indexOf(':');
+                let countryName, songInfo = '';
+                
+                if (colonIndex > -1) {
+                    countryName = fullText.substring(0, colonIndex).trim();
+                    // Get any text after the colon as song info - don't keep the colon
+                    if (colonIndex < fullText.length - 1) {
+                        songInfo = fullText.substring(colonIndex + 1).trim();
+                    }
+                } else {
+                    countryName = fullText;
+                }
+                
+                // Create new enhanced item
+                const listItem = document.createElement('li');
+                listItem.className = 'result-item';
+                listItem.style.animationDelay = `${index * 0.1}s`;
+                
+                // Create a flex container for the rank and points
+                const contentContainer = document.createElement('div');
+                contentContainer.style.display = 'flex';
+                contentContainer.style.width = '100%';
+                contentContainer.style.alignItems = 'center';
+                
+                const rankDiv = document.createElement('div');
+                rankDiv.className = 'result-rank';
+                rankDiv.textContent = index + 1;
+                contentContainer.appendChild(rankDiv);
+                
+                const pointsContainer = document.createElement('div');
+                pointsContainer.className = 'points-container';
+                
+                const badge = document.createElement('span');
+                badge.className = 'badge';
+                badge.innerHTML = `<span class="points-label">Points</span>${points} <i class="fas fa-chevron-down"></i>`;
+                pointsContainer.appendChild(badge);
+                
+                const progressBg = document.createElement('div');
+                progressBg.className = 'progress-bg';
+                const progressBar = document.createElement('div');
+                progressBar.className = 'progress-bar';
+                progressBg.appendChild(progressBar);
+                pointsContainer.appendChild(progressBg);
+                
+                contentContainer.appendChild(pointsContainer);
+                listItem.appendChild(contentContainer);
+                
+                const candidateDiv = document.createElement('div');
+                candidateDiv.className = 'candidate';
+                
+                // Create a container for country name and flag
+                const countryContainer = document.createElement('div');
+                countryContainer.className = 'country-container';
+                
+                const countrySpan = document.createElement('span');
+                countrySpan.textContent = countryName;
+                countryContainer.appendChild(countrySpan);
+                
+                // Add flag as an image
+                const countryCode = countryFlags[countryName];
+                if (countryCode) {
+                    const flagImg = document.createElement('img');
+                    flagImg.src = `https://flagcdn.com/32x24/${countryCode}.png`;
+                    flagImg.alt = `${countryName} flag`;
+                    flagImg.className = 'flag-icon';
+                    flagImg.width = 32;
+                    flagImg.height = 24;
+                    countryContainer.appendChild(flagImg);
+                }
+                
+                candidateDiv.appendChild(countryContainer);
+                
+                // Add song info if present
+                if (songInfo) {
+                    const songSpan = document.createElement('div');
+                    songSpan.className = 'song-info';
+                    songSpan.textContent = songInfo.replace(":","");
+                    candidateDiv.appendChild(songSpan);
+                }
+                
+                listItem.appendChild(candidateDiv);
+                
+                // Add a click handler directly to the points container
+                pointsContainer.onclick = function() {
+                    // Find the candidate element in this list item
+                    const candidateEl = this.parentElement.parentElement.querySelector('.candidate');
+                    if (candidateEl) {
+                        toggleCandidate(candidateEl);
+                    }
+                };
+                
+                resultsList.appendChild(listItem);
+                
+                // Set the progress bar width after a short delay
+                setTimeout(() => {
+                    progressBar.style.width = `${(points / maxPoints) * 100}%`;
+                }, 500 + index * 100);
+            });
+            
+            // Hide the original template items
+            listItems.forEach(item => {
+                item.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>

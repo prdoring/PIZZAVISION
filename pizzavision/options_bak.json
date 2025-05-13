@@ -1,0 +1,416 @@
+{
+    "options": [
+        {
+            "label": "Albania: Zjerm",
+            "genre": "folk",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "red wine",
+            "big5": false
+        },
+        {
+            "label": "Armenia: Survivor",
+            "genre": "rock",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": true,
+            "drink": "none",
+            "big5": false
+        },
+        {
+            "label": "Australia: Milkshake Man",
+            "genre": "pop",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Austria: Wasted Love",
+            "genre": "ballad",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "white wine",
+            "big5": false
+        },
+        {
+            "label": "Azerbaijan: Run with U",
+            "genre": "rock",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": true,
+            "drink": "none",
+            "big5": false
+        },
+        {
+            "label": "Belgium: Strobe Lights",
+            "genre": "electronic",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Croatia: Poison Cake",
+            "genre": "electronic",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "white wine",
+            "big5": false
+        },
+        {
+            "label": "Cyprus: Shh",
+            "genre": "electronic",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "red wine",
+            "big5": false
+        },
+        {
+            "label": "Czechia: Kiss Kiss Goodbye",
+            "genre": "ballad",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Denmark: Hallucination",
+            "genre": "ballad",
+            "lead": "F",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Estonia: Espresso Macchiato",
+            "genre": "electronic",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": true,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Finland: Ich komme",
+            "genre": "electronic",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "France: Maman",
+            "genre": "ballad",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "red wine",
+            "big5": true
+        },
+        {
+            "label": "Georgia: Freedom",
+            "genre": "ballad",
+            "lead": "F",
+            "language": "english",
+            "former_soviet": true,
+            "drink": "white wine",
+            "big5": false
+        },
+        {
+            "label": "Germany: Baller",
+            "genre": "pop",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": true
+        },
+        {
+            "label": "Greece: Asteromata",
+            "genre": "ballad",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "white wine",
+            "big5": false
+        },
+        {
+            "label": "Iceland: Roa",
+            "genre": "folk",
+            "lead": "M",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Ireland: Laika Party",
+            "genre": "pop",
+            "lead": "F",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Israel: New Day Will Rise",
+            "genre": "ballad",
+            "lead": "F",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "red wine",
+            "big5": false
+        },
+        {
+            "label": "Italy: Volevo essere un duro",
+            "genre": "rock",
+            "lead": "M",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "red wine",
+            "big5": true
+        },
+        {
+            "label": "Latvia: Bur man laimi",
+            "genre": "folk",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": true,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Lithuania: Tavo akys",
+            "genre": "ballad",
+            "lead": "M",
+            "language": "native",
+            "former_soviet": true,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Luxembourg: La poupee monte le son",
+            "genre": "pop",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "white wine",
+            "big5": false
+        },
+        {
+            "label": "Malta: Serving",
+            "genre": "pop",
+            "lead": "F",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "white wine",
+            "big5": false
+        },
+        {
+            "label": "Montenegro: Dobrodosli",
+            "genre": "pop",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "red wine",
+            "big5": false
+        },
+        {
+            "label": "Netherlands: C'est la vie",
+            "genre": "pop",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Norway: Lighter",
+            "genre": "electronic",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Poland: Gaja",
+            "genre": "folk",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Portugal: Deslocado",
+            "genre": "pop",
+            "lead": "M",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "red wine",
+            "big5": false
+        },
+        {
+            "label": "San Marino: Tutta l'Italia",
+            "genre": "electronic",
+            "lead": "M",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "white wine",
+            "big5": false
+        },
+        {
+            "label": "Serbia: Mila",
+            "genre": "ballad",
+            "lead": "M",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "red wine",
+            "big5": false
+        },
+        {
+            "label": "Slovenia: How Much Time Do We Have Left",
+            "genre": "ballad",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "white wine",
+            "big5": false
+        },
+        {
+            "label": "Spain: Esa diva",
+            "genre": "pop",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "red wine",
+            "big5": true
+        },
+        {
+            "label": "Sweden: Bara bada bastu",
+            "genre": "pop",
+            "lead": "M",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": false
+        },
+        {
+            "label": "Switzerland: Voyage",
+            "genre": "ballad",
+            "lead": "F",
+            "language": "native",
+            "former_soviet": false,
+            "drink": "white wine",
+            "big5": false
+        },
+        {
+            "label": "Ukraine: Bird of Pray",
+            "genre": "rock",
+            "lead": "M",
+            "language": "english",
+            "former_soviet": true,
+            "drink": "white wine",
+            "big5": false
+        },
+        {
+            "label": "United Kingdom: What the Hell Just Happened?",
+            "genre": "rock",
+            "lead": "F",
+            "language": "english",
+            "former_soviet": false,
+            "drink": "beer",
+            "big5": true
+        }
+    ],
+    "votes": [
+        12,
+        10,
+        9,
+        8,
+        7,
+        6,
+        5,
+        4,
+        3,
+        2,
+        1
+    ],
+    "award_details": {
+        "Pop Diva": {
+            "subtext": "The band that poured the most points into shiny pop bangers.",
+            "image_url": "/static/images/pop_diva.jpg"
+        },
+        "Rockstar": {
+            "subtext": "The band that cranked the most points toward riff‑heavy rock anthems.",
+            "image_url": "/static/images/rock_star.webp"
+        },
+        "Folk Hero": {
+            "subtext": "The band that strummed the most points toward acoustic and folk‑flavored songs.",
+            "image_url": "/static/images/folk.jpeg"
+        },
+        "Mr. Roboto": {
+            "subtext": "The band that wired the most points into electronic, synth‑driven entries.",
+            "image_url": "/static/images/techno.webp"
+        },
+        "Crooner": {
+            "subtext": "The band that belted the most points in heartfelt ballads.",
+            "image_url": "/static/images/crooner.png"
+        },
+        "Tastemaker": {
+            "subtext": "The band whose points allocation lined up closest with the rest of our merry group of eurofriends.",
+            "image_url": "/static/images/tastemaker.jpg"
+        },
+        "Contrarian": {
+            "subtext": "The band whose points allocation was most different from everyone else.",
+            "image_url": "/static/images/contrarian.jpg"
+        },
+        "Big 5": {
+            "subtext": "The band that sent the most points to Eurovision powerhouses (or those that get to skip the semifinals) France, Germany, Italy, Spain, and the United Kingdom.",
+            "image_url": "/static/images/big5.jpg"
+        },
+        "For the Girls": {
+            "subtext": "The band that gave the most points to female-led performances.  #ally #girlboss #goodguy",
+            "image_url": "/static/images/girls.jpg"
+        },
+        "Polyglot": {
+            "subtext": "For the band that awarded the most points to songs not sung in English.",
+            "image_url": "/static/images/language.avif"
+        },
+        "Call me Dadoi": {
+            "subtext": "The band that a-fjorded the most points to Iceland, channeling peak Daði Freyr spirit.",
+            "image_url": "/static/images/dadoi.webp"
+        },
+        "Red George": {
+            "subtext": "The band that broke down the wall and subsidized the most former Soviet republics.",
+            "image_url": "/static/images/russia.webp"
+        },
+        "A Bottle Of Red": {
+            "subtext": "For the band that handed the most points to entries from classic red‑wine nations such as Italy, France, and Spain.",
+            "image_url": "/static/images/red.jpg"
+        },
+        "A Bottle Of White": {
+            "subtext": "The band that favored songs from crisp white‑wine regions like Austria, Germany, or Portugal.",
+            "image_url": "/static/images/white.webp"
+        },
+        "A Bottle Of Beer": {
+            "subtext": "The band that sent the most points to beer‑loving countries such as Germany, Belgium, or the Czech Republic.",
+            "image_url": "/static/images/beer.webp"
+        },
+        "Twinzies": {
+            "subtext": "For the two bands whose scorecards were practically musical twins.",
+            "image_url": "/static/images/twins.jpg"
+        }
+    }
+}
