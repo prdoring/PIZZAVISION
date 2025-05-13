@@ -1,5 +1,5 @@
 # Pizzavision
-
+![Banner](pizzavision/static/pv25.png)
 Your drop‑in party companion for scoring Eurovision with friends. Guests choose a fun **band name**, rank each song live, then watch real‑time leaderboards and quirky awards unfold on a shared screen.
 
 ---
