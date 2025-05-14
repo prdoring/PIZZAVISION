@@ -362,7 +362,7 @@
         },
         "Mr. Roboto": {
             "subtext": "The band that wired the most points into electronic, synth‑driven entries.",
-            "image_url": "/static/images/techno.webp"
+            "image_url": "/static/images/techno.jpg"
         },
         "Crooner": {
             "subtext": "The band that belted the most points in heartfelt ballads.",
@@ -410,7 +410,7 @@
         },
         "Twinzies": {
             "subtext": "For the two bands whose scorecards were practically musical twins.",
-            "image_url": "/static/images/twins.jpg"
+            "image_url": "/static/images/twins.webp"
         }
     },
     "locked": false
