@@ -75,6 +75,8 @@ h1{
 .linkback a:hover{color:#fff}
 .lock   {background:#FF9800;color:#fff}
 .lock:hover {background:#F57C00}
+.unlock   {background:#337a19;color:#fff}
+.unlock:hover  {background:#2e3f28;color:#fff}
 </style>
 </head>
 <body>
@@ -97,6 +99,7 @@ h1{
         <button class="clear">Clear vote DB</button>
         <button class="restore">Restore from backup</button>
         <button class="lock">Lock Votes</button>
+        <button class="unlock">Unlock Votes</button>
     </div>
 
     <div class="linkback">
@@ -135,6 +138,11 @@ function adminAction(action, extra={}){
 $(".lock").on("click",()=>{
   if(confirm("This will finalize votes and prevent further changes. Continue?")) 
     adminAction("lock_votes");
+});
+
+$(".unlock").on("click",()=>{
+  if(confirm("This will unlock the votes and allow user changes. Continue?")) 
+    adminAction("unlock_votes");
 });
 
 /* save */

@@ -137,7 +137,15 @@ def admin_panel():
         # 2) Clear TinyDB
         if action == "clear_db":
             db.truncate()
+            current_app.extensions["socketio"].emit("options_updated")
             return jsonify(status="cleared")
+        
+        if action == "unlock_votes":
+            data   = _load_options()
+            data["locked"] = False
+            _save_options(data)
+            current_app.extensions["socketio"].emit("refresh")
+            return jsonify(status="unlocked")
 
         # 3) Restore from backup
         if action == "restore_options":
@@ -163,7 +171,6 @@ def admin_panel():
             # Broadcast the votes_finalized message to all clients
             current_app.extensions["socketio"].emit("votes_finalized", {"timestamp": timestamp})
             data   = _load_options()
-            by_lbl = {opt["label"]: opt for opt in data["options"]}
             data["locked"] = True
             _save_options(data)
             

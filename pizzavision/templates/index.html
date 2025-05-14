@@ -1348,6 +1348,12 @@
                     location.reload(true);
                 });
 
+                socket.on('refresh', function () {
+                    // Remove any local storage the page uses
+                    // Hard reload
+                    location.reload(true);
+                });
+
                 // Add this to your socket event listeners
                 socket.on('votes_finalized', function(data) {
                     // Add locked class to container
