@@ -73,6 +73,8 @@ h1{
 .linkback{text-align:center}
 .linkback a{color:#ddd;text-decoration:none}
 .linkback a:hover{color:#fff}
+.lock   {background:#FF9800;color:#fff}
+.lock:hover {background:#F57C00}
 </style>
 </head>
 <body>
@@ -94,6 +96,7 @@ h1{
         <button class="save">Save order / deletions</button>
         <button class="clear">Clear vote DB</button>
         <button class="restore">Restore from backup</button>
+        <button class="lock">Lock Votes</button>
     </div>
 
     <div class="linkback">
@@ -127,6 +130,12 @@ function adminAction(action, extra={}){
     error:x=>alert("Error: "+x.responseText)
   });
 }
+
+
+$(".lock").on("click",()=>{
+  if(confirm("This will finalize votes and prevent further changes. Continue?")) 
+    adminAction("lock_votes");
+});
 
 /* save */
 $(".save").on("click",()=>{

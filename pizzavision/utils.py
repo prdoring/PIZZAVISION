@@ -61,6 +61,11 @@ def load_vote_options():
         data = json.load(json_file)
     return data['votes']
 
+def load_lock_state():
+    with open('pizzavision/options.json', 'r') as json_file:
+        data = json.load(json_file)
+    return data['locked']
+
 # All other helper functions
 ESC_POINTS = [12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]   # top‑11 gets points
 

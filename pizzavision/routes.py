@@ -2,24 +2,27 @@ from flask import render_template, request, redirect, url_for, jsonify, abort, f
 from tinydb import TinyDB, Query
 import json
 import os
+from datetime import datetime
+import shutil
 
 
 from . import voting_bp, socketio
 from .utils import (
     load_options, load_vote_options, calculate_ranked_choice, 
-    calculate_awards, get_file_path
+    calculate_awards, get_file_path, load_lock_state
 )
 
 # Initialize the database - use an absolute path to ensure it's found
 db_path = get_file_path('db.json')
 db = TinyDB(db_path)
 User = Query()
+votes_locked = False
 
 @voting_bp.route('/')
 def index():
     options = load_options()
     vo = load_vote_options()
-    return render_template('index.html', options=options, votes=vo)
+    return render_template('index.html', options=options, votes=vo, votes_locked=load_lock_state())
 
 @voting_bp.route('/results')
 def results():
@@ -93,6 +96,7 @@ OPTIONS_FILE = os.path.join("pizzavision", "options.json")
 BACKUP_FILE  = os.path.join("pizzavision", "options_bak.json")
 DB_FILE      = os.path.join("pizzavision", "db.json")       # adjust if different
 
+
 # -------- helpers --------------------------------------------------
 def _load_options():
     with open(OPTIONS_FILE, "r", encoding="utf‑8") as fh:
@@ -101,6 +105,7 @@ def _load_options():
 def _save_options(data):
     with open(OPTIONS_FILE, "w", encoding="utf‑8") as fh:
         json.dump(data, fh, indent=4, ensure_ascii=False)
+
 
 # ------------------------------------------------------------------
 @voting_bp.route("/admin", methods=["GET", "POST"])
@@ -144,6 +149,25 @@ def admin_panel():
             db.truncate()
             current_app.extensions["socketio"].emit("options_updated")
             return jsonify(status="restored")
+        
+        # 4) Lock votes
+        if action == "lock_votes":
+            # Create a timestamp-named backup of the current vote DB
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            backup_filename = f"votes_finalized_{timestamp}.json"
+            backup_path = os.path.join("pizzavision", backup_filename)
+            
+            # Copy the current DB to the backup file
+            shutil.copy2(DB_FILE, backup_path)
+            
+            # Broadcast the votes_finalized message to all clients
+            current_app.extensions["socketio"].emit("votes_finalized", {"timestamp": timestamp})
+            data   = _load_options()
+            by_lbl = {opt["label"]: opt for opt in data["options"]}
+            data["locked"] = True
+            _save_options(data)
+            
+            return jsonify(status="votes_locked", timestamp=timestamp)
 
         abort(400, "unknown action")
 

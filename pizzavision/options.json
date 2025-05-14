@@ -412,5 +412,6 @@
             "subtext": "For the two bands whose scorecards were practically musical twins.",
             "image_url": "/static/images/twins.jpg"
         }
-    }
+    },
+    "locked": false
 }
