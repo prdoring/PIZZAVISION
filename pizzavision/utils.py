@@ -100,27 +100,44 @@ def find_all_tied_winners(scores, highest=True):
     return [u for u, s in scores.items() if s == best]
 
 def calculate_ranked_choice(votes, vo):
-    # Initialize an empty dictionary to hold points for each candidate.
+    # Initialize dictionaries to hold total points and point distributions
     candidate_points = {}
+    point_distributions = {}
     
-    # Assuming each vote list contains candidate labels as strings and can vary in labels
+    # Process each vote
     for vote in votes:
         for idx, candidate in enumerate(vote):
             if idx < len(vo):  
-                points = vo[idx]  
+                points = vo[idx]
+                
+                # Update total points
                 if candidate in candidate_points:
                     candidate_points[candidate] += points
                 else:
                     candidate_points[candidate] = points
+                
+                # Track individual point values for the distribution
+                if candidate not in point_distributions:
+                    point_distributions[candidate] = []
+                point_distributions[candidate].append(points)
 
     # Ensure all possible candidates are included even if they have 0 points
     all_candidates = set([cand for sublist in votes for cand in sublist])
     for candidate in all_candidates:
         if candidate not in candidate_points:
             candidate_points[candidate] = 0
+        if candidate not in point_distributions:
+            point_distributions[candidate] = [0]
 
-    # Return a sorted list of tuples by points in descending order
-    return sorted(candidate_points.items(), key=lambda item: item[1], reverse=True)
+    # Get the sorted results
+    sorted_results = sorted(candidate_points.items(), key=lambda item: item[1], reverse=True)
+    
+    # Sort each candidate's point distribution from highest to lowest
+    for candidate in point_distributions:
+        point_distributions[candidate].sort(reverse=True)
+    
+    # Return a tuple: (sorted results, point distributions)
+    return (sorted_results, point_distributions)
 
 def calculate_awards(db, options_data):
     users_raw = db.all()
@@ -187,7 +204,7 @@ def calculate_awards(db, options_data):
                 user2_data = next((u for u in users_raw if u['user'] == user2), None)
                 
                 if not user1_data or not user2_data:
-                    return f"{user1} and {user2} had remarkably similar voting patterns."
+                    return f"These two bands had remarkably similar voting patterns."
                     
                 # Focus only on point-scoring entries (top 11)
                 rank1 = user1_data['rank'][:len(ESC_POINTS)]
@@ -218,15 +235,15 @@ def calculate_awards(db, options_data):
                         common_point_diff += abs(points1 - points2)
                     avg_point_diff = common_point_diff / len(common_songs)
                     
-                    return f"{user1} and {user2} gave points to {len(common_songs)} of the same songs. They gave identical points to {same_points_count} songs, and their average point difference was only {avg_point_diff:.1f} points!"
+                    return f"These two bands gave points to {len(common_songs)} of the same songs. They gave identical points to {same_points_count} songs, and their average point difference was only {avg_point_diff:.1f} points!"
                 
-                return f"{user1} and {user2} had {perfect_matches} identical rankings in their point-scoring entries."
+                return f"These two bands had {perfect_matches} identical rankings in their point-scoring entries."
             
             return f"This pair agreed on their point-scoring entries more than any other voters with a score of {scores[winner]}."
         # Handle multiple winners for ties
         if len(winner_names) > 1:
             # Create a combined insight for ties
-            winners_str = ", ".join(winner_names[:-1]) + " and " + winner_names[-1]
+            winners_str = "Multiple people"
             
             if award_code == "Pop Diva":
                 pop_songs = [s['label'] for s in songs_raw if s['genre'] == "pop"]
@@ -244,7 +261,7 @@ def calculate_awards(db, options_data):
                 return f"{winners_str} shared a love for electronic beats with {scores[winner_names[0]]} points each."
                 
             elif award_code == "Crooner":
-                return f"{winners_str} all fell for the emotional ballads, with identical point totals."
+                return f"{winners_str} fell for the emotional ballads, with identical point totals."
                 
             elif award_code == "Big 5":
                 total_points = sum(ESC_POINTS[:11])
@@ -278,7 +295,7 @@ def calculate_awards(db, options_data):
                 # This one is naturally a pair already
                 pair = winner_names[0].split(" & ")
                 if len(pair) == 2:
-                    return f"{pair[0]} and {pair[1]} had identical scores on {scores[winner_names[0]]} matching picks."
+                    return f"These two had identical scores on {scores[winner_names[0]]} matching picks."
                 return f"These pairs had identical match scores of {scores[winner_names[0]]}."
                 
             elif award_code in ["A Bottle Of Red", "A Bottle Of White", "A Bottle Of Beer"]:
@@ -308,7 +325,7 @@ def calculate_awards(db, options_data):
             pop_songs = get_genre_songs("pop")
             pop_count = sum(1 for song in pop_songs if song in winner_ranks[:10])
             avg_pop_count = sum(sum(1 for song in pop_songs if song in u['rank'][:10]) for u in users_raw) / len(users_raw)
-            return f"{winner} placed {pop_count} pop songs in their top 10, compared to the group average of {avg_pop_count:.1f}."
+            return f"The winner of this award placed {pop_count} pop songs in their top 10, compared to the group average of {avg_pop_count:.1f}."
             
         elif award_code == "Rockstar":
             # Find their highest ranked rock song
@@ -317,65 +334,65 @@ def calculate_awards(db, options_data):
             if winner_top_rock:
                 winner_pos = winner_ranks.index(winner_top_rock)
                 avg_pos = sum(u['rank'].index(winner_top_rock) if winner_top_rock in u['rank'] else len(u['rank']) for u in users_raw) / len(users_raw)
-                return f"{winner} ranked '{winner_top_rock.split(':', 1)[1].strip()}' at position {winner_pos+1}, while the average was {avg_pos:.1f}."
-            return f"{winner} has a special appreciation for rock music."
+                return f"The winner of this award ranked '{winner_top_rock.split(':', 1)[1].strip()}' at position {winner_pos+1}, while the average was {avg_pos:.1f}."
+            return f""
                 
         elif award_code == "Folk Hero":
             folk_points = scores[winner]
             total_possible = sum(ESC_POINTS[:len(get_genre_songs("folk"))])
-            return f"{winner} gave {round((folk_points/total_possible)*100) }% of their points to folk songs."
+            return f"The winner of this award gave {round((folk_points/total_possible)*100) }% of their points to folk songs."
             
         elif award_code == "Mr. Roboto":
             electronic_songs = get_genre_songs("electronic")
             top_electronic = [s for s in winner_ranks[:5] if s in electronic_songs]
-            return f"{winner} placed {len(top_electronic)} electronic songs in their top 5."
+            return f"The winner of this award placed {len(top_electronic)} electronic songs in their top 5."
             
         elif award_code == "Crooner":
             ballad_songs = get_genre_songs("ballad")
             total_ballads = len(ballad_songs)
             winner_ballads = sum(1 for s in winner_ranks if s in ballad_songs)
-            return f"{winner} gave points to {winner_ballads} ballads!"
+            return f"The winner of this award gave points to {winner_ballads} ballads!"
             
         elif award_code == "Big 5":
             big5_points = scores[winner]
             total_points = sum(ESC_POINTS[:11])
-            return f"{winner} gave {big5_points} points to Big 5 countries, which is {(big5_points/total_points*100):.1f}% of their available points."
+            return f"The winner of this award gave {big5_points} points to Big 5 countries, which is {(big5_points/total_points*100):.1f}% of their available points."
 
         # For single winner case
         elif award_code == "Call me Dadoi":
             winner_iceland_points = scores[winner]
             avg_iceland = sum(user_points[u]['iceland'] for u in users) / len(users)
             diff = winner_iceland_points - avg_iceland
-            return f"{winner} gave {diff:.1f} more than points the group average to Iceland."
+            return f"The winner of this award gave {diff:.1f} more than points the group average to Iceland."
             
         elif award_code == "Red George":
             soviet_songs = [s['label'] for s in songs_raw if s.get('former_soviet')]
             favorite = next((s for s in winner_ranks if s in soviet_songs), None)
             if favorite:
-                return f"{winner}'s favorite former Soviet entry was '{favorite.split(':', 1)[1].strip()}'."
-            return f"{winner} gave former Soviet countries {scores[winner]} points in total."
+                return f"The winner of this award's favorite former Soviet entry was '{favorite.split(':', 1)[1].strip()}'."
+            return f""
             
         elif award_code == "For the Girls":
             female_percent = (scores[winner] / sum(ESC_POINTS[:11])) * 100
-            return f"{winner} gave {female_percent:.1f}% of their points to songs with female leads."
+            return f"The winner of this award gave {female_percent:.1f}% of their points to songs with female leads."
             
         elif award_code == "Polyglot":
             native_songs = [s['label'] for s in songs_raw if s.get('language') == 'native']
             native_in_top = sum(1 for s in winner_ranks[:7] if s in native_songs)
-            return f"{winner} placed {native_in_top} native language songs in their top 7."
+            return f"The winner of this award placed {native_in_top} native language songs in their top 7."
             
         elif award_code == "Tastemaker":
             # Find a song that appeared most commonly in other users' top ranks
             winner_top_song = winner_ranks[0]
             others_with_same = sum(1 for u in users_raw if u['user'] != winner and winner_top_song in u['rank'][:5])
-            return f"{winner}'s #1 pick appeared in {others_with_same} other voters' top 5."
+            return f"The winner of this award's #1 pick appeared in {others_with_same} other voters' top 5."
             
         elif award_code == "Contrarian":
             unique_picks = 0
             for song in winner_ranks[:10]:
                 if not any(song in u['rank'][:10] for u in users_raw if u['user'] != winner):
                     unique_picks += 1
-            return f"{winner} had {unique_picks} songs in their top 10 that didn't appear in anyone else's top 10."
+            return f"The winner of this award had {unique_picks} songs in their top 10 that didn't appear in anyone else's top 10."
             
         elif award_code == "Twinzies":
             # For pairs
@@ -385,24 +402,22 @@ def calculate_awards(db, options_data):
                 rank1 = next((u['rank'] for u in users_raw if u['user'] == user1), [])
                 rank2 = next((u['rank'] for u in users_raw if u['user'] == user2), [])
                 identical_count = sum(1 for i in range(min(len(rank1), len(rank2))) if rank1[i] == rank2[i])
-                return f"{user1} and {user2} had {identical_count} identical rankings in the same positions."
-            return f"This pair agreed on their rankings more than any other voters."
+                return f"These two had {identical_count} identical rankings in the same positions."
             
         elif award_code == "A Bottle Of Red":
             red_wine_songs = [s['label'] for s in songs_raw if s.get('drink') == 'red wine']
             fav_red = next((s for s in winner_ranks if s in red_wine_songs), None)
             if fav_red:
-                return f"{winner}'s favorite red wine song was '{fav_red.split(':', 1)[1].strip()}'."
-            return f"{winner} gave the most points to songs that pair well with red wine."
+                return f"The winner of this award's favorite red wine song was '{fav_red.split(':', 1)[1].strip()}'."
             
         elif award_code == "A Bottle Of White":
             white_wine_songs = [s['label'] for s in songs_raw if s.get('drink') == 'white wine']
             white_count = len([s for s in winner_ranks[:10] if s in white_wine_songs])
-            return f"{winner} had {white_count} white wine songs in their top 10."
+            return f"The winner of this award had {white_count} white wine songs in their top 10."
             
         elif award_code == "A Bottle Of Beer":
             beer_pts = scores[winner]
-            return f"{winner} gave {beer_pts} points to songs paired with beer, making them the ultimate Eurovision drinking buddy."
+            return f"The winner of this award gave {beer_pts} points to songs paired with beer, making them the ultimate Eurovision drinking buddy."
         
         elif award_code == "Twinzies":
             # Handle the pair that's already in "User1 & User2" format
@@ -430,11 +445,11 @@ def calculate_awards(db, options_data):
                 # Calculate average position difference for common songs
                 if common_songs:
                     avg_diff = sum(abs(rank1.index(song) - rank2.index(song)) for song in common_songs) / len(common_songs)
-                    return f"{user1} and {user2} had {perfect_matches} identical rankings and {close_matches} songs ranked within 3 positions of each other. Their average ranking difference was only {avg_diff:.1f} positions!"
-                return f"{user1} and {user2} had {perfect_matches} identical rankings in the same positions."
+                    return f"These two bands had {perfect_matches} identical rankings and {close_matches} songs ranked within 3 positions of each other. Their average ranking difference was only {avg_diff:.1f} positions!"
+                return f"These tow bands had {perfect_matches} identical rankings in the same positions."
             return f"This pair agreed on their rankings more than any other voters with a matching score of {scores[winner]}."
             
-        return f"{winner} earned this award with {scores[winner]} points."
+        return f"The winner of this award earned this award with {scores[winner]} points."
 
     def push_award(code_name, pretty, scores_dict):
         winners = find_all_tied_winners(scores_dict)

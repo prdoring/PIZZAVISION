@@ -29,8 +29,9 @@ def results():
     # Retrieve all votes from the database
     votes = [vote['rank'] for vote in db.all()]
     vo = load_vote_options()
-    ranked_results = calculate_ranked_choice(votes, vo)
-    return render_template('results.html', ranked_results=ranked_results)
+    ranked_results, breakdown = calculate_ranked_choice(votes, vo)
+    print(breakdown)
+    return render_template('results.html', ranked_results=ranked_results, breakdown=breakdown)
 
 @voting_bp.route('/api/awards')
 def get_awards():

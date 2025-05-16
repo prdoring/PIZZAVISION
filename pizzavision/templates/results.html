@@ -42,8 +42,9 @@
 
         h1 {
             color: var(--text);
-            font-size: 3rem;
-            margin-bottom: 10px;
+            font-size: 2rem;
+            margin-bottom: -10px;
+            margin-top: 55px;
             position: relative;
             display: inline-block;
         }
@@ -142,7 +143,7 @@
 
         .candidate.visible {
             opacity: 1;
-            max-height: 100px;
+            max-height: 180px; /* Increased to accommodate breakdown badges */
             padding: 20px;
             margin-top: 5px;
         }
@@ -190,6 +191,63 @@
             background: linear-gradient(90deg, var(--primary), var(--primary-dark));
             width: 0;
             transition: width 1s ease-out;
+        }
+
+        /* Breakdown badges styling */
+        .breakdown-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 16px;
+            justify-content: center;
+            max-width: 100%;
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .point-badge {
+            color: var(--text);
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(76, 175, 80, 0.4);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .point-badge.high-value {
+            box-shadow: 0 2px 8px rgba(255, 215, 0, 0.5);
+            border-color: rgba(255, 215, 0, 0.6);
+            text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+        }
+
+        .point-badge:hover {
+            transform: scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            z-index: 10;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Light theme adjustments for badges */
+        body.light-theme .point-badge {
+            border: 1px solid rgba(76, 175, 80, 0.3);
+            text-shadow: none;
+        }
+        
+        body.light-theme .point-badge.high-value {
+            border-color: rgba(255, 215, 0, 0.5);
+            text-shadow: 0 1px 1px rgba(0,0,0,0.1);
         }
 
         @keyframes fadeIn {
@@ -307,13 +365,26 @@
             z-index: 100;
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
         }
+
+        .logo {
+            position: absolute;
+            top: -68px;
+            left: 50%;
+            margin-left: -148px;
+            max-width: 295px;
+            z-index: 100;
+            border-radius: 66px 66px 66px 66px;
+            opacity: 56%;
+            box-shadow: 3px 14px 15px 13px rgb(0 0 0 / 79%);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
+        
+            <img src="{{ url_for('voting.static', filename='pv25.png') }}" alt="PV25 Logo" class="logo">
             <h1>Results</h1>
-            <p class="subtitle">Click on a result to reveal the candidate</p>
             <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
                 <i class="fas fa-moon"></i>
             </button>
@@ -334,7 +405,50 @@
     <button class="test-confetti" onclick="createConfetti('se')">Test Confetti</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <!-- Add an audio element for the party horn sound from static folder -->
+    <audio id="partyHornSound" preload="auto" style="display:none;">
+        <source src="{{ url_for('voting.static', filename='party-horn.mp3') }}" type="audio/mpeg">
+    </audio>
     <script>
+        // Debug the raw breakdown data structure
+        const breakdownData = {
+            {% for candidate, points_array in breakdown.items() %}
+                "{{ candidate }}": {{ points_array|tojson }},
+            {% endfor %}
+        };
+        
+        console.log("Breakdown data:", breakdownData);
+        
+        // Find the global max and min point values across all candidates
+        let globalMaxPoints = 0;
+        let globalMinPoints = Infinity;
+        
+        for (const candidate in breakdownData) {
+            const pointArray = breakdownData[candidate];
+            pointArray.forEach(points => {
+                if (points > globalMaxPoints) globalMaxPoints = points;
+                if (points > 0 && points < globalMinPoints) globalMinPoints = points;
+            });
+        }
+        
+        console.log("Global max points:", globalMaxPoints);
+        console.log("Global min points:", globalMinPoints);
+        
+        // Function to map point values to colors (gradient based on value)
+        function getPointColor(points) {
+            if (points <= 0) return 'rgba(76, 175, 80, 0.2)'; // Default for zero points
+            
+            // Calculate where this point value sits in the range
+            const percentage = (points - globalMinPoints) / (globalMaxPoints - globalMinPoints);
+            
+            // Green to gold gradient
+            const r = Math.floor(76 * (1 - percentage) + 255 * percentage);
+            const g = Math.floor(175 * (1 - percentage) + 215 * percentage); 
+            const b = Math.floor(80 * (1 - percentage) + 0 * percentage);
+            
+            return `rgba(${r}, ${g}, ${b}, ${0.4 + percentage * 0.6})`;
+        }
+        
         // Country flags mapping to ISO codes
         const countryFlags = {
             "Sweden": "se",
@@ -399,6 +513,56 @@
             "England": "gb-eng"
         };
 
+        // Sound is enabled by default
+        let soundEnabled = true;
+        
+        // Define the time ranges for each toot in the party-horn.mp3 file
+        const tootRanges = [
+            { start: 1, end: 3 },    // First toot: 1-3 seconds
+            { start: 4.5, end: 5.5 },    // Second toot: 5-6 seconds
+            { start: 6.75, end: 8.8 },   // Third toot: 7-10 seconds
+            { start: 9, end: 11 },  // Fourth toot: 11-12 seconds
+            { start: 11.5, end: 13 },  // Fifth toot: 14-15 seconds
+            { start: 21.5, end: 21.4 },  // Sixth toot: 16-18 seconds
+            { start: 21.6, end: 23 }   // Seventh toot: 20 seconds to end (assuming end is around 23s)
+        ];
+        
+        // Function to get a random toot range
+        function getRandomTootRange() {
+            const randomIndex = Math.floor(Math.random() * tootRanges.length);
+            return tootRanges[randomIndex];
+        }
+        
+        // Function to play a random toot from the party horn sound
+        function playPartyHorn() {
+            if (!soundEnabled) return;
+            
+            const hornSound = document.getElementById('partyHornSound');
+            if (hornSound) {
+                // Get a random toot range
+                const tootRange = getRandomTootRange();
+                
+                // Set the start time to the beginning of the selected toot
+                hornSound.currentTime = tootRange.start;
+                
+                // Play the sound
+                const playPromise = hornSound.play();
+                
+                // Handle potential autoplay restrictions
+                if (playPromise !== undefined) {
+                    playPromise.catch(error => {
+                        console.error("Audio playback prevented by browser:", error);
+                    });
+                }
+                
+                // Set up a timer to pause the sound at the end of the toot
+                const duration = tootRange.end - tootRange.start;
+                setTimeout(() => {
+                    hornSound.pause();
+                }, duration * 1000); // Convert seconds to milliseconds
+            }
+        }
+        
         // Create confetti animation with flag images
         function createConfetti(countryCode) {
             console.log("Creating confetti for country:", countryCode);
@@ -473,7 +637,8 @@
             }
         }
         
-       function toggleCandidate(candidateElement, infiniteConfetti = false) {
+        // Updated toggleCandidate function with breakdown badges
+        function toggleCandidate(candidateElement, infiniteConfetti = false) {
             if (!candidateElement) {
                 console.error("No candidate element found");
                 return;
@@ -503,6 +668,109 @@
                 candidateElement.classList.add('visible');
                 if (badgeIcon) {
                     badgeIcon.className = 'fas fa-chevron-up';
+                }
+                
+                // Play the party horn sound when revealing
+                playPartyHorn();
+                
+                // Display breakdown data for this candidate if not already added
+                const breakdownContainer = candidateElement.querySelector('.breakdown-container');
+                if (!breakdownContainer) {
+                    // Extract full candidate text (country + song) to match with breakdown data
+                    let candidateFullText = '';
+                    let countryName = '';
+                    
+                    // First, try to get the country name from the country container
+                    const countryContainer = candidateElement.querySelector('.country-container');
+                    if (countryContainer) {
+                        const countrySpan = countryContainer.querySelector('span');
+                        if (countrySpan) {
+                            countryName = countrySpan.textContent.trim();
+                            candidateFullText = countryName;
+                        }
+                    } else {
+                        // Fallback: try to extract from entire text
+                        const fullText = candidateElement.textContent.trim();
+                        const colonIndex = fullText.indexOf(':');
+                        if (colonIndex > -1) {
+                            countryName = fullText.substring(0, colonIndex).trim();
+                            candidateFullText = countryName;
+                        } else {
+                            countryName = fullText;
+                            candidateFullText = fullText;
+                        }
+                    }
+                    
+                    // Add song name if available
+                    const songInfo = candidateElement.querySelector('.song-info');
+                    if (songInfo) {
+                        candidateFullText += ": " + songInfo.textContent.trim();
+                    }
+                    
+                    console.log("Looking for breakdown with key:", candidateFullText);
+                    
+                    // Find a matching key in the breakdown data
+                    let matchingKey = null;
+                    let candidateData = null;
+                    
+                    // First try exact match
+                    if (breakdownData[candidateFullText]) {
+                        matchingKey = candidateFullText;
+                        candidateData = breakdownData[matchingKey];
+                    } else {
+                        // Try matching just the country name
+                        if (breakdownData[countryName]) {
+                            matchingKey = countryName;
+                            candidateData = breakdownData[matchingKey];
+                        } else {
+                            // Try partial matches
+                            for (const key in breakdownData) {
+                                if (key.includes(countryName) || 
+                                    key.toLowerCase().includes(countryName.toLowerCase()) ||
+                                    countryName.includes(key)) {
+                                    matchingKey = key;
+                                    candidateData = breakdownData[key];
+                                    console.log("Found partial match:", key);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (candidateData) {
+                        console.log("Found breakdown data for", matchingKey, ":", candidateData);
+                        
+                        // Create the breakdown container
+                        const newBreakdownContainer = document.createElement('div');
+                        newBreakdownContainer.className = 'breakdown-container';
+                        
+                        // Add the point badges
+                        candidateData.forEach(pointValue => {
+                            if (pointValue > 0) {  // Only show non-zero points
+                                const pointBadge = document.createElement('span');
+                                pointBadge.className = 'point-badge';
+                                pointBadge.textContent = pointValue + 'pts';
+                                
+                                // Apply color based on point value
+                                const backgroundColor = getPointColor(pointValue);
+                                pointBadge.style.backgroundColor = backgroundColor;
+                                
+                                // For higher point values, adjust text color for better contrast
+                                if (pointValue > (globalMaxPoints * 0.7)) {
+                                    pointBadge.style.color = 'white';
+                                    pointBadge.classList.add('high-value');
+                                }
+                                
+                                newBreakdownContainer.appendChild(pointBadge);
+                            }
+                        });
+                        
+                        // Add the breakdown container to the candidate
+                        candidateElement.appendChild(newBreakdownContainer);
+                    } else {
+                        console.log("No breakdown data found for:", candidateFullText);
+                        console.log("Available keys:", Object.keys(breakdownData));
+                    }
                 }
                 
                 // Get the country code and pass it to createConfetti
@@ -677,9 +945,11 @@
                 if (songInfo) {
                     const songSpan = document.createElement('div');
                     songSpan.className = 'song-info';
-                    songSpan.textContent = songInfo.replace(":","");
+                    songSpan.textContent = songInfo;
                     candidateDiv.appendChild(songSpan);
                 }
+                
+                // We don't add breakdown badges here - they'll be added dynamically when revealed
                 
                 listItem.appendChild(candidateDiv);
                 

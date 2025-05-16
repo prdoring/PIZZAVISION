@@ -92,6 +92,13 @@
             text-align: center;
             max-width: 800px;
         }
+        .award-insight {
+            font-size: 1.8rem;
+            color: #e0e0e0;
+            margin-top: 1rem;
+            text-align: center;
+            max-width: 800px;
+        }
         .winner-title {
             font-size: 2.5rem;
             margin-bottom: 1rem;
@@ -328,6 +335,8 @@
                             <div class="award-title transition-effect">${award.award}</div>
                             <div class="award-description transition-effect">Award</div>
                             ${award.subtext ? `<div class="award-subtext transition-effect">${award.subtext}</div>` : ''}
+                            </br>
+                            <div class="award-insight transition-effect">${award.insight}</div>
                         </div>
                     `;
                     presentationContainer.appendChild(awardSlide);
@@ -352,7 +361,6 @@
                         <div class="slide-content">
                             <div class="winner-title transition-effect">And the winner is...</div>
                             <div class="winner-name transition-effect">${award.winner}</div>
-                            <div class="winner-subtext transition-effect">${award.insight}</div>
                         </div>
                     `;
                     presentationContainer.appendChild(winnerSlide);
