@@ -1,0 +1,8 @@
+Flask>=3.0
+Flask-SocketIO>=5.3
+tinydb>=4.8
+eventlet>=0.36
+gunicorn>=21.2
+google-cloud-firestore>=2.16
+openai>=1.0
+python-dotenv>=1.0

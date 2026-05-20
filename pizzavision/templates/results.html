@@ -6,10 +6,15 @@
     <link rel="icon" type="image/x-icon" href="{{ url_for('voting.static', filename='pizza.png') }}">
     <title>PIZZAVISION RESULTS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary: #4CAF50;
             --primary-dark: #3e8e41;
+            --gold: #ffd700;
+            --gold-deep: #b8860b;
             --bg-dark: #121212;
             --card-bg: #1e1e1e;
             --card-hover: #2a2a2a;
@@ -29,20 +34,25 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1180px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 40px 30px;
         }
 
         .header {
             text-align: center;
-            margin-bottom: 50px;
+            margin-bottom: 60px;
             position: relative;
         }
 
         h1 {
+            font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: var(--text);
-            font-size: 2rem;
+            font-size: clamp(2.4rem, 5vw, 5rem);
+            font-weight: 800;
+            letter-spacing: clamp(1px, 0.3vw, 4px);
+            text-transform: uppercase;
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.55);
             margin-bottom: -10px;
             margin-top: 55px;
             position: relative;
@@ -52,12 +62,13 @@
         h1:after {
             content: '';
             position: absolute;
-            width: 60%;
+            width: 70%;
             height: 4px;
-            background: linear-gradient(90deg, var(--primary), transparent);
-            bottom: -10px;
-            left: 20%;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            bottom: -14px;
+            left: 15%;
             border-radius: 2px;
+            box-shadow: 0 0 14px rgba(255, 215, 0, 0.35);
         }
 
         .subtitle {
@@ -74,29 +85,48 @@
 
         .result-item {
             background-color: var(--card-bg);
-            border-radius: 12px;
-            margin: 20px 0;
+            border-radius: 14px;
+            margin: 22px 0;
             padding: 0;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
             overflow: hidden;
             transform: translateY(20px);
             opacity: 0;
             animation: fadeIn 0.5s ease forwards;
             position: relative;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+                        box-shadow 0.45s ease,
+                        opacity 0.45s ease,
+                        filter 0.45s ease;
         }
 
         .result-item:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
             background-color: var(--card-hover);
+        }
+
+        /* Dim non-revealed siblings while one row is in the spotlight */
+        .result-item.dimmed {
+            opacity: 0.4;
+            filter: brightness(0.7) saturate(0.85);
+            transform: translateY(0) scale(0.98);
+        }
+
+        .result-item.spotlight {
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55),
+                        0 0 0 1px rgba(255, 215, 0, 0.5),
+                        0 0 60px rgba(255, 215, 0, 0.22);
+            background-color: var(--card-hover);
+            transform: translateY(-4px);
+            z-index: 2;
         }
 
         .points-container {
             display: flex;
             align-items: center;
             justify-content: flex-end;
-            padding: 20px;
+            padding: 22px 28px;
             width: 100%;
             cursor: pointer;
             position: relative;
@@ -104,77 +134,90 @@
         }
 
         .badge {
-            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-            color: white;
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-weight: bold;
+            background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+            color: #1a1a1a;
+            padding: 14px 28px;
+            border-radius: 40px;
+            font-weight: 800;
+            font-size: clamp(1.1rem, 2.2vw, 1.9rem);
+            letter-spacing: 0.5px;
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 10px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 8px rgba(76, 175, 80, 0.3);
+            box-shadow: 0 6px 14px rgba(255, 215, 0, 0.3),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.4);
             margin-left: auto;
+            text-shadow: none;
         }
 
         .badge:hover {
             transform: scale(1.05);
-            box-shadow: 0 6px 12px rgba(76, 175, 80, 0.4);
+            box-shadow: 0 10px 22px rgba(255, 215, 0, 0.45),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.5);
         }
 
         .badge i {
-            font-size: 0.9em;
+            font-size: 0.85em;
+            color: rgba(0, 0, 0, 0.6);
         }
 
         .candidate {
-            font-weight: bold;
-            font-size: 1.6rem;
+            font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 800;
+            font-size: clamp(1.8rem, 3.6vw, 3.4rem);
             text-transform: uppercase;
             max-height: 0;
             overflow: hidden;
-            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             opacity: 0;
-            color: var(--text);
-            padding: 0 20px;
+            color: var(--gold);
+            text-shadow: 0 4px 15px rgba(0, 0, 0, 0.55);
+            padding: 0 28px;
             display: flex;
             align-items: center;
             flex-direction: column;
+            transform: scale(0.88);
         }
 
         .candidate.visible {
             opacity: 1;
-            max-height: 180px; /* Increased to accommodate breakdown badges */
-            padding: 20px;
-            margin-top: 5px;
+            max-height: 260px;
+            padding: 26px 28px 30px;
+            margin-top: 6px;
+            transform: scale(1);
         }
-        
+
         .flag-icon {
-            width: 32px;
-            height: 24px;
-            margin-left: 15px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-            border-radius: 2px;
+            width: clamp(48px, 6vw, 80px);
+            height: clamp(36px, 4.5vw, 60px);
+            margin-left: 22px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+            border-radius: 3px;
             vertical-align: middle;
         }
 
         .result-rank {
-            background-color: rgba(255, 255, 255, 0.1);
-            width: 50px;
-            height: 60px;
+            background-color: rgba(255, 215, 0, 0.08);
+            width: clamp(64px, 8vw, 110px);
+            height: clamp(80px, 9vw, 120px);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.4rem;
-            font-weight: bold;
-            color: var(--text-secondary);
+            font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: clamp(1.6rem, 3vw, 2.6rem);
+            font-weight: 800;
+            color: var(--text);
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
         }
-        
+
         .points-label {
-            font-size: 0.85rem;
+            font-size: clamp(0.7rem, 1.1vw, 0.95rem);
             text-transform: uppercase;
-            letter-spacing: 1px;
-            opacity: 0.7;
-            margin-right: 6px;
+            letter-spacing: 1.5px;
+            opacity: 0.6;
+            margin-right: 8px;
+            color: rgba(0, 0, 0, 0.7);
         }
 
         .progress-bg {
@@ -206,14 +249,14 @@
 
         .point-badge {
             color: var(--text);
-            padding: 4px 10px;
-            border-radius: 16px;
-            font-size: 0.85rem;
-            font-weight: bold;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 7px 14px;
+            border-radius: 22px;
+            font-size: clamp(0.85rem, 1.2vw, 1.15rem);
+            font-weight: 800;
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25);
             transition: all 0.3s ease;
-            border: 1px solid rgba(76, 175, 80, 0.4);
-            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 215, 0, 0.45);
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
         }
 
         .point-badge.high-value {
@@ -259,20 +302,19 @@
 
         @media screen and (max-width: 600px) {
             .container {
-                padding: 20px 15px;
+                padding: 20px 12px;
             }
-            
-            h1 {
-                font-size: 2.2rem;
+
+            .header {
+                margin-bottom: 35px;
             }
-            
-            .candidate {
-                font-size: 1.2rem;
+
+            .points-container {
+                padding: 16px 18px;
             }
-            
-            .result-rank {
-                width: 40px;
-                font-size: 1.2rem;
+
+            .badge {
+                padding: 10px 18px;
             }
         }
 
@@ -295,13 +337,16 @@
         }
         
         .song-info {
-            font-size: 1.2rem;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: clamp(1.1rem, 1.8vw, 1.9rem);
             font-weight: normal;
             font-style: italic;
-            margin-top: 8px;
-            opacity: 0.9;
-            color: var(--text-secondary);
+            margin-top: 12px;
+            opacity: 0.92;
+            color: var(--text);
             text-transform: none;
+            letter-spacing: 0.3px;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
         }
         
         .country-container {
@@ -350,22 +395,6 @@
             box-shadow: 0 4px 8px rgba(76, 175, 80, 0.2);
         }
         
-        /* Test button */
-        .test-confetti {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 30px;
-            font-weight: bold;
-            cursor: pointer;
-            z-index: 100;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
-        }
-
         .logo {
             position: absolute;
             top: -68px;
@@ -382,14 +411,14 @@
 <body>
     <div class="container">
         <div class="header">
-        
-            <img src="{{ url_for('voting.static', filename='pv25.png') }}" alt="PV25 Logo" class="logo">
-            <h1>Results</h1>
+
+            <img src="{{ url_for('voting.static', filename='pv25.png') }}" alt="PIZZAVISION Logo" class="logo">
+            <h1>PIZZAVISION 2026 &mdash; RESULTS</h1>
             <button class="theme-toggle" onclick="toggleTheme()" aria-label="Toggle theme">
                 <i class="fas fa-moon"></i>
             </button>
         </div>
-        
+
         <ul class="results-list" id="resultsList">
             {% for candidate, points in ranked_results %}
                 {% if points > 0%}
@@ -401,8 +430,6 @@
             {% endfor %}
         </ul>
     </div>
-    
-    <button class="test-confetti" onclick="createConfetti('se')">Test Confetti</button>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
     <!-- Add an audio element for the party horn sound from static folder -->
@@ -410,19 +437,17 @@
         <source src="{{ url_for('voting.static', filename='party-horn.mp3') }}" type="audio/mpeg">
     </audio>
     <script>
-        // Debug the raw breakdown data structure
+        // Per-candidate breakdown: { "Country: Song": [12, 10, 8, ...], ... }
         const breakdownData = {
             {% for candidate, points_array in breakdown.items() %}
                 "{{ candidate }}": {{ points_array|tojson }},
             {% endfor %}
         };
-        
-        console.log("Breakdown data:", breakdownData);
-        
+
         // Find the global max and min point values across all candidates
         let globalMaxPoints = 0;
         let globalMinPoints = Infinity;
-        
+
         for (const candidate in breakdownData) {
             const pointArray = breakdownData[candidate];
             pointArray.forEach(points => {
@@ -430,9 +455,6 @@
                 if (points > 0 && points < globalMinPoints) globalMinPoints = points;
             });
         }
-        
-        console.log("Global max points:", globalMaxPoints);
-        console.log("Global min points:", globalMinPoints);
         
         // Function to map point values to colors (gradient based on value)
         function getPointColor(points) {
@@ -565,7 +587,6 @@
         
         // Create confetti animation with flag images
         function createConfetti(countryCode) {
-            console.log("Creating confetti for country:", countryCode);
             const colors = ['#f94144', '#f3722c', '#f8961e', '#f9c74f', '#90be6d', '#43aa8b', '#577590'];
             
             // Create regular confetti pieces
@@ -637,205 +658,146 @@
             }
         }
         
-        // Updated toggleCandidate function with breakdown badges
+        // Reveal/collapse a result row. On reveal we also put the parent
+        // .result-item in the spotlight and dim its siblings so the projected
+        // big screen has one clear focal point at a time.
         function toggleCandidate(candidateElement, infiniteConfetti = false) {
-            if (!candidateElement) {
-                console.error("No candidate element found");
-                return;
-            }
-            
+            if (!candidateElement) return;
+
             const isVisible = candidateElement.classList.contains('visible');
-            
-            // Find the badge icon
-            let badgeIcon = null;
+            const parentItem = candidateElement.closest('.result-item');
             const badgeElement = candidateElement.nextElementSibling;
-            if (badgeElement) {
-                badgeIcon = badgeElement.querySelector('i');
-            }
-            
+            const badgeIcon = badgeElement ? badgeElement.querySelector('i') : null;
+
             if (isVisible) {
                 candidateElement.classList.remove('visible');
-                if (badgeIcon) {
-                    badgeIcon.className = 'fas fa-chevron-down';
+                if (badgeIcon) badgeIcon.className = 'fas fa-chevron-down';
+
+                if (parentItem) parentItem.classList.remove('spotlight');
+                // If no rows remain in spotlight, lift the dimming on everything.
+                if (!document.querySelector('.result-item.spotlight')) {
+                    document.querySelectorAll('.result-item.dimmed').forEach(el => {
+                        el.classList.remove('dimmed');
+                    });
                 }
-                
-                // Stop infinite confetti loop if it exists
+
                 if (candidateElement.confettiInterval) {
                     clearInterval(candidateElement.confettiInterval);
                     candidateElement.confettiInterval = null;
                 }
-            } else {
-                candidateElement.classList.add('visible');
-                if (badgeIcon) {
-                    badgeIcon.className = 'fas fa-chevron-up';
-                }
-                
-                // Play the party horn sound when revealing
-                playPartyHorn();
-                
-                // Display breakdown data for this candidate if not already added
-                const breakdownContainer = candidateElement.querySelector('.breakdown-container');
-                if (!breakdownContainer) {
-                    // Extract full candidate text (country + song) to match with breakdown data
-                    let candidateFullText = '';
-                    let countryName = '';
-                    
-                    // First, try to get the country name from the country container
-                    const countryContainer = candidateElement.querySelector('.country-container');
-                    if (countryContainer) {
-                        const countrySpan = countryContainer.querySelector('span');
-                        if (countrySpan) {
-                            countryName = countrySpan.textContent.trim();
-                            candidateFullText = countryName;
-                        }
-                    } else {
-                        // Fallback: try to extract from entire text
-                        const fullText = candidateElement.textContent.trim();
-                        const colonIndex = fullText.indexOf(':');
-                        if (colonIndex > -1) {
-                            countryName = fullText.substring(0, colonIndex).trim();
-                            candidateFullText = countryName;
-                        } else {
-                            countryName = fullText;
-                            candidateFullText = fullText;
-                        }
-                    }
-                    
-                    // Add song name if available
-                    const songInfo = candidateElement.querySelector('.song-info');
-                    if (songInfo) {
-                        candidateFullText += ": " + songInfo.textContent.trim();
-                    }
-                    
-                    console.log("Looking for breakdown with key:", candidateFullText);
-                    
-                    // Find a matching key in the breakdown data
-                    let matchingKey = null;
-                    let candidateData = null;
-                    
-                    // First try exact match
-                    if (breakdownData[candidateFullText]) {
-                        matchingKey = candidateFullText;
-                        candidateData = breakdownData[matchingKey];
-                    } else {
-                        // Try matching just the country name
-                        if (breakdownData[countryName]) {
-                            matchingKey = countryName;
-                            candidateData = breakdownData[matchingKey];
-                        } else {
-                            // Try partial matches
-                            for (const key in breakdownData) {
-                                if (key.includes(countryName) || 
-                                    key.toLowerCase().includes(countryName.toLowerCase()) ||
-                                    countryName.includes(key)) {
-                                    matchingKey = key;
-                                    candidateData = breakdownData[key];
-                                    console.log("Found partial match:", key);
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (candidateData) {
-                        console.log("Found breakdown data for", matchingKey, ":", candidateData);
-                        
-                        // Create the breakdown container
-                        const newBreakdownContainer = document.createElement('div');
-                        newBreakdownContainer.className = 'breakdown-container';
-                        
-                        // Add the point badges
-                        candidateData.forEach(pointValue => {
-                            if (pointValue > 0) {  // Only show non-zero points
-                                const pointBadge = document.createElement('span');
-                                pointBadge.className = 'point-badge';
-                                pointBadge.textContent = pointValue + 'pts';
-                                
-                                // Apply color based on point value
-                                const backgroundColor = getPointColor(pointValue);
-                                pointBadge.style.backgroundColor = backgroundColor;
-                                
-                                // For higher point values, adjust text color for better contrast
-                                if (pointValue > (globalMaxPoints * 0.7)) {
-                                    pointBadge.style.color = 'white';
-                                    pointBadge.classList.add('high-value');
-                                }
-                                
-                                newBreakdownContainer.appendChild(pointBadge);
-                            }
-                        });
-                        
-                        // Add the breakdown container to the candidate
-                        candidateElement.appendChild(newBreakdownContainer);
-                    } else {
-                        console.log("No breakdown data found for:", candidateFullText);
-                        console.log("Available keys:", Object.keys(breakdownData));
-                    }
-                }
-                
-                // Get the country code and pass it to createConfetti
-                let countryCode = null;
-                
-                // Extract the country name from the country container element
+                return;
+            }
+
+            candidateElement.classList.add('visible');
+            if (badgeIcon) badgeIcon.className = 'fas fa-chevron-up';
+
+            // Spotlight: drop any previous spotlight, then mark this one and dim the rest.
+            if (parentItem) {
+                document.querySelectorAll('.result-item.spotlight').forEach(el => {
+                    if (el !== parentItem) el.classList.remove('spotlight');
+                });
+                parentItem.classList.add('spotlight');
+                document.querySelectorAll('.result-item').forEach(el => {
+                    if (el === parentItem) el.classList.remove('dimmed');
+                    else el.classList.add('dimmed');
+                });
+            }
+
+            playPartyHorn();
+
+            // Build the breakdown badges the first time this row is revealed.
+            const breakdownContainer = candidateElement.querySelector('.breakdown-container');
+            if (!breakdownContainer) {
+                let candidateFullText = '';
+                let countryName = '';
+
                 const countryContainer = candidateElement.querySelector('.country-container');
                 if (countryContainer) {
                     const countrySpan = countryContainer.querySelector('span');
                     if (countrySpan) {
-                        const countryName = countrySpan.textContent.trim();
-                        console.log("Extracted country name:", countryName);
-                        
-                        if (countryFlags[countryName]) {
-                            countryCode = countryFlags[countryName];
-                            console.log(`Found country code ${countryCode} for ${countryName}`);
-                            
-                            // Call createConfetti once immediately
-                            createConfetti(countryCode);
-                            
-                            // If infiniteConfetti is true, set up interval for repeated confetti
-                            if (infiniteConfetti && countryCode) {
-                                // Store the interval ID on the element to clear it later
-                                candidateElement.confettiInterval = setInterval(() => {
-                                    // Random delay between 1-5 seconds
-                                    const randomDelay = Math.floor(Math.random() * 4000) + 1000;
-                                    setTimeout(() => {
-                                        createConfetti(countryCode);
-                                    }, randomDelay);
-                                }, 5000); // Base interval of 5 seconds
-                            }
-                        } else {
-                            console.log(`No country code found for "${countryName}"`);
-                        }
+                        countryName = countrySpan.textContent.trim();
+                        candidateFullText = countryName;
                     }
                 } else {
-                    // Fallback for older structure
-                    console.log("Fallback: No country container found, using full text parsing");
                     const fullText = candidateElement.textContent.trim();
                     const colonIndex = fullText.indexOf(':');
-                    let countryName;
-                    
                     if (colonIndex > -1) {
                         countryName = fullText.substring(0, colonIndex).trim();
+                        candidateFullText = countryName;
                     } else {
                         countryName = fullText;
+                        candidateFullText = fullText;
                     }
-                    
-                    console.log("Fallback extracted country name:", countryName);
-                    if (countryFlags[countryName]) {
-                        countryCode = countryFlags[countryName];
-                        console.log(`Found country code ${countryCode} for ${countryName}`);
-                        
-                        createConfetti(countryCode);
-                        
-                        // Set up infinite confetti if requested
-                        if (infiniteConfetti && countryCode) {
-                            candidateElement.confettiInterval = setInterval(() => {
-                                const randomDelay = Math.floor(Math.random() * 4000) + 1000;
-                                setTimeout(() => {
-                                    createConfetti(countryCode);
-                                }, randomDelay);
-                            }, 5000);
+                }
+
+                const songInfo = candidateElement.querySelector('.song-info');
+                if (songInfo) {
+                    candidateFullText += ": " + songInfo.textContent.trim();
+                }
+
+                // Match against breakdown data — exact, then country-only, then partial.
+                // Defensive against country-name drift between the two data sources.
+                let candidateData = breakdownData[candidateFullText] || breakdownData[countryName];
+                if (!candidateData) {
+                    for (const key in breakdownData) {
+                        if (key.includes(countryName) ||
+                            key.toLowerCase().includes(countryName.toLowerCase()) ||
+                            countryName.includes(key)) {
+                            candidateData = breakdownData[key];
+                            break;
                         }
                     }
+                }
+
+                if (candidateData) {
+                    const newBreakdownContainer = document.createElement('div');
+                    newBreakdownContainer.className = 'breakdown-container';
+
+                    candidateData.forEach(pointValue => {
+                        if (pointValue > 0) {
+                            const pointBadge = document.createElement('span');
+                            pointBadge.className = 'point-badge';
+                            pointBadge.textContent = pointValue + 'pts';
+                            pointBadge.style.backgroundColor = getPointColor(pointValue);
+
+                            if (pointValue > (globalMaxPoints * 0.7)) {
+                                pointBadge.style.color = 'white';
+                                pointBadge.classList.add('high-value');
+                            }
+
+                            newBreakdownContainer.appendChild(pointBadge);
+                        }
+                    });
+
+                    candidateElement.appendChild(newBreakdownContainer);
+                }
+            }
+
+            // Fire confetti for the country that owns this row.
+            let countryCode = null;
+            const countryContainer = candidateElement.querySelector('.country-container');
+            let countryNameForFlag = null;
+
+            if (countryContainer) {
+                const countrySpan = countryContainer.querySelector('span');
+                if (countrySpan) countryNameForFlag = countrySpan.textContent.trim();
+            } else {
+                const fullText = candidateElement.textContent.trim();
+                const colonIndex = fullText.indexOf(':');
+                countryNameForFlag = colonIndex > -1
+                    ? fullText.substring(0, colonIndex).trim()
+                    : fullText;
+            }
+
+            if (countryNameForFlag && countryFlags[countryNameForFlag]) {
+                countryCode = countryFlags[countryNameForFlag];
+                createConfetti(countryCode);
+
+                if (infiniteConfetti) {
+                    candidateElement.confettiInterval = setInterval(() => {
+                        const randomDelay = Math.floor(Math.random() * 4000) + 1000;
+                        setTimeout(() => createConfetti(countryCode), randomDelay);
+                    }, 5000);
                 }
             }
         }
@@ -927,15 +889,13 @@
                 countrySpan.textContent = countryName;
                 countryContainer.appendChild(countrySpan);
                 
-                // Add flag as an image
+                // Add flag as an image — larger CDN size so it stays sharp on big screens.
                 const countryCode = countryFlags[countryName];
                 if (countryCode) {
                     const flagImg = document.createElement('img');
-                    flagImg.src = `https://flagcdn.com/32x24/${countryCode}.png`;
+                    flagImg.src = `https://flagcdn.com/96x72/${countryCode}.png`;
                     flagImg.alt = `${countryName} flag`;
                     flagImg.className = 'flag-icon';
-                    flagImg.width = 32;
-                    flagImg.height = 24;
                     countryContainer.appendChild(flagImg);
                 }
                 

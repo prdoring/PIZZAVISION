@@ -1,0 +1,3 @@
+defaultService: https://www.googleapis.com/compute/v1/projects/subgame-488302/global/backendServices/sub-game-backend
+fingerprint: C7bEjzk7hSg=
+name: sub-game-urlmap

@@ -120,6 +120,23 @@
             padding-left: 100px;
             padding-right: 100px;
         }
+        .winner-stats {
+            margin-top: 2rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+            align-items: center;
+        }
+        .stat-row {
+            font-size: 1.6rem;
+            color: #e0e0e0;
+            background: rgba(255, 215, 0, 0.08);
+            border-left: 4px solid #ffd700;
+            padding: 0.5rem 1.2rem;
+            border-radius: 6px;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+        }
         .controls {
             position: fixed;
             bottom: 20px;
@@ -356,11 +373,18 @@
                         winnerSlide.style.backgroundImage = `url('${imageUrl}')`;
                     }
                     
+                    const statsHtml = (award.stats && award.stats.length)
+                        ? `<div class="winner-stats transition-effect">${
+                            award.stats.map(s => `<div class="stat-row">${s}</div>`).join('')
+                          }</div>`
+                        : '';
+
                     winnerSlide.innerHTML = `
                         <div class="slide-overlay"></div>
                         <div class="slide-content">
                             <div class="winner-title transition-effect">And the winner is...</div>
                             <div class="winner-name transition-effect">${award.winner}</div>
+                            ${statsHtml}
                         </div>
                     `;
                     presentationContainer.appendChild(winnerSlide);

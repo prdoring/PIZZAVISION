@@ -1,0 +1,14 @@
+.git/
+.gitignore
+.claude/
+.vscode/
+.idea/
+__pycache__/
+*.pyc
+*.pyo
+*.md
+backup/
+pizzavision/db.json
+pizzavision/votes_finalized_*.json
+.env
+.env.*

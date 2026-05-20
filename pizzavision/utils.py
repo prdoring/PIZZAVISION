@@ -69,6 +69,24 @@ def load_lock_state():
 # All other helper functions
 ESC_POINTS = [12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]   # top‑11 gets points
 
+def fmt_gdp(amount):
+    amount = abs(amount)
+    if amount >= 1e12:
+        return f"${amount/1e12:.2f}T"
+    if amount >= 1e9:
+        return f"${amount/1e9:.1f}B"
+    if amount >= 1e6:
+        return f"${amount/1e6:.1f}M"
+    return f"${amount:,.0f}"
+
+def fmt_pop(amount):
+    amount = abs(amount)
+    if amount >= 1e9:
+        return f"{amount/1e9:.2f}B people"
+    if amount >= 1e6:
+        return f"{amount/1e6:.1f}M people"
+    return f"{amount:,.0f} people"
+
 def canonical(text: str) -> str:
     """Lowercase, strip accents, collapse spaces. Use for label matching."""
     # Unicode → decomposed form, drop combining marks
@@ -139,8 +157,8 @@ def calculate_ranked_choice(votes, vo):
     # Return a tuple: (sorted results, point distributions)
     return (sorted_results, point_distributions)
 
-def calculate_awards(db, options_data):
-    users_raw = db.all()
+def calculate_awards(vote_store, options_data):
+    users_raw = vote_store.all()
     songs_raw = options_data['options']
 
     # build a lookup that survives accented differences
@@ -159,7 +177,13 @@ def calculate_awards(db, options_data):
             'former_soviet': 0,
             'big5': 0,
             'iceland': 0,
-            'drinks': defaultdict(int)
+            'drinks': defaultdict(int),
+            'act_type': defaultdict(int),
+            'selection': defaultdict(int),
+            'returning': 0,
+            'regions': defaultdict(int),
+            'gdp_weighted': 0.0,
+            'population_weighted': 0.0,
         }
 
         # assign ESC points to the user's top entries
@@ -178,6 +202,15 @@ def calculate_awards(db, options_data):
             if country_key(lbl) == 'iceland':
                 up['iceland'] += pts
             up['drinks'][song['drink']] += pts
+            up['act_type'][song.get('act_type', 'solo')] += pts
+            up['selection'][song.get('selection_type', 'internal')] += pts
+            if song.get('returning_artist'):
+                up['returning'] += pts
+            region = song.get('region')
+            if region:
+                up['regions'][region] += pts
+            up['gdp_weighted'] += song.get('gdp', 0) * (pts / 12)
+            up['population_weighted'] += song.get('population', 0) * (pts / 12)
 
         user_points[uname] = up
 
@@ -301,7 +334,19 @@ def calculate_awards(db, options_data):
             elif award_code in ["A Bottle Of Red", "A Bottle Of White", "A Bottle Of Beer"]:
                 drink_type = award_code.replace("A Bottle Of ", "").lower()
                 return f"{winners_str} tied in their appreciation for songs that pair with {drink_type}, with {scores[winner_names[0]]} points each."
-                
+
+            elif award_code == "Moneybags":
+                return f"{winners_str} tied at {fmt_gdp(scores[winner_names[0]])} of GDP behind their picks."
+
+            elif award_code == "Slummin' It":
+                return f"{winners_str} tied for the most underdog-friendly picks, with only {fmt_gdp(scores[winner_names[0]])} of GDP behind them."
+
+            elif award_code == "Extrovert":
+                return f"{winners_str} tied at {fmt_pop(scores[winner_names[0]])} backing their picks."
+
+            elif award_code == "Introvert":
+                return f"{winners_str} tied for tiniest constituency — only {fmt_pop(scores[winner_names[0]])} behind their picks."
+
             return f"{winners_str} tied for this award with {scores[winner_names[0]]} points each."
         
         # Single winner case - use existing logic
@@ -448,17 +493,164 @@ def calculate_awards(db, options_data):
                     return f"These two bands had {perfect_matches} identical rankings and {close_matches} songs ranked within 3 positions of each other. Their average ranking difference was only {avg_diff:.1f} positions!"
                 return f"These tow bands had {perfect_matches} identical rankings in the same positions."
             return f"This pair agreed on their rankings more than any other voters with a matching score of {scores[winner]}."
-            
+
+        elif award_code == "Lone Wolf":
+            return f"The winner of this award gave {scores[winner]} points to solo acts."
+
+        elif award_code == "Squad Goals":
+            return f"The winner of this award gave {scores[winner]} points to duos and full bands."
+
+        elif award_code == "Voice of the People":
+            return f"The winner of this award gave {scores[winner]} points to entries chosen by national-final televote."
+
+        elif award_code == "Welcome Back":
+            return f"The winner of this award gave {scores[winner]} points to Eurovision returnees."
+
+        elif award_code == "Nordic Friend Zone":
+            return f"The winner of this award gave {scores[winner]} points to Nordic entries."
+
+        elif award_code == "Balkan Brotherhood":
+            return f"The winner of this award gave {scores[winner]} points to Balkan entries."
+
+        elif award_code == "Baltic Squad":
+            return f"The winner of this award gave {scores[winner]} points to Baltic entries."
+
+        elif award_code == "Mediterranean Mood":
+            return f"The winner of this award gave {scores[winner]} points to Mediterranean entries."
+
+        elif award_code == "Moneybags":
+            return f"The winner of this award funneled {fmt_gdp(scores[winner])} of national GDP behind their top 11 picks."
+
+        elif award_code == "Slummin' It":
+            return f"The winner of this award rooted for the underdogs — only {fmt_gdp(scores[winner])} of GDP backed their picks."
+
+        elif award_code == "Extrovert":
+            return f"The winner of this award gave their points to {fmt_pop(scores[winner])}."
+
+        elif award_code == "Introvert":
+            return f"The winner of this award championed the small nations — only {fmt_pop(scores[winner])} stood behind their picks."
+
         return f"The winner of this award earned this award with {scores[winner]} points."
+
+    def calculate_stats(award_code, winner_names):
+        """Return up to 3 short 'why they won' lines for the winner slide."""
+        if not winner_names:
+            return []
+        winner = winner_names[0]
+        winner_data = next((u for u in users_raw if u['user'] == winner), None)
+        if not winner_data:
+            return []
+        winner_ranks = winner_data['rank']
+
+        def top_picks(filter_fn, limit=3):
+            out = []
+            for idx, lbl in enumerate(winner_ranks[:len(ESC_POINTS)]):
+                song = songs_by_canon.get(canonical(lbl))
+                if song and filter_fn(song, lbl):
+                    out.append((ESC_POINTS[idx], lbl))
+                    if len(out) >= limit:
+                        break
+            return out
+
+        def fmt_picks(picks):
+            return [f"{pts}pts → {lbl}" for pts, lbl in picks]
+
+        # Genre awards
+        genre_for = {"Pop Diva": "pop", "Rockstar": "rock", "Folk Hero": "folk",
+                     "Mr. Roboto": "electronic", "Crooner": "ballad"}
+        if award_code in genre_for:
+            g = genre_for[award_code]
+            return fmt_picks(top_picks(lambda s, l: s.get('genre') == g))
+
+        if award_code == "Big 5":
+            return fmt_picks(top_picks(lambda s, l: s.get('big5')))
+        if award_code == "For the Girls":
+            return fmt_picks(top_picks(lambda s, l: s.get('lead') == 'F'))
+        if award_code == "Polyglot":
+            return fmt_picks(top_picks(lambda s, l: s.get('language') == 'native'))
+        if award_code == "Call me Dadoi":
+            return fmt_picks(top_picks(lambda s, l: country_key(l) == 'iceland', limit=1))
+        if award_code == "Red George":
+            return fmt_picks(top_picks(lambda s, l: s.get('former_soviet')))
+
+        drink_map = {"A Bottle Of Red": "red wine",
+                     "A Bottle Of White": "white wine",
+                     "A Bottle Of Beer": "beer"}
+        if award_code in drink_map:
+            return fmt_picks(top_picks(lambda s, l: s.get('drink') == drink_map[award_code]))
+
+        if award_code == "Lone Wolf":
+            return fmt_picks(top_picks(lambda s, l: s.get('act_type') == 'solo'))
+        if award_code == "Squad Goals":
+            return fmt_picks(top_picks(lambda s, l: s.get('act_type') in ('duo', 'group')))
+        if award_code == "Voice of the People":
+            return fmt_picks(top_picks(lambda s, l: s.get('selection_type') == 'national_final'))
+        if award_code == "Welcome Back":
+            return fmt_picks(top_picks(lambda s, l: s.get('returning_artist')))
+
+        region_for = {"Nordic Friend Zone": "Nordic",
+                      "Balkan Brotherhood": "Balkan",
+                      "Baltic Squad": "Baltic",
+                      "Mediterranean Mood": "Mediterranean"}
+        if award_code in region_for:
+            r = region_for[award_code]
+            return fmt_picks(top_picks(lambda s, l: s.get('region') == r))
+
+        # GDP / population awards: show top 3 contributors with their weighted contribution
+        if award_code in ("Moneybags", "Extrovert", "Slummin' It", "Introvert"):
+            key = 'gdp' if award_code in ("Moneybags", "Slummin' It") else 'population'
+            fmt = fmt_gdp if award_code in ("Moneybags", "Slummin' It") else fmt_pop
+            contribs = []
+            for idx, lbl in enumerate(winner_ranks[:len(ESC_POINTS)]):
+                song = songs_by_canon.get(canonical(lbl))
+                if song and song.get(key):
+                    contribs.append((song[key] * (ESC_POINTS[idx] / 12), ESC_POINTS[idx], lbl))
+            # Moneybags/Extrovert want largest contributors; Slummin'/Introvert want smallest
+            reverse = award_code in ("Moneybags", "Extrovert")
+            contribs.sort(reverse=reverse)
+            return [f"{pts}pts → {lbl} ({fmt(c)})" for c, pts, lbl in contribs[:3]]
+
+        if award_code == "Tastemaker":
+            others = [u['rank'] for u in users_raw if u['user'] != winner]
+            out = []
+            for idx, lbl in enumerate(winner_ranks[:3]):
+                also = sum(1 for r in others if lbl in r[:5])
+                out.append(f"{ESC_POINTS[idx]}pts → {lbl} (also top-5 for {also}/{len(others)} others)")
+            return out
+
+        if award_code == "Contrarian":
+            others_top10 = set()
+            for u in users_raw:
+                if u['user'] != winner:
+                    others_top10.update(u['rank'][:10])
+            unique = [(ESC_POINTS[idx], lbl) for idx, lbl in enumerate(winner_ranks[:len(ESC_POINTS)])
+                      if lbl not in others_top10]
+            return [f"{pts}pts → {lbl} (in no one else's top 10)" for pts, lbl in unique[:3]]
+
+        if award_code == "Twinzies":
+            pair = winner.split(" & ")
+            if len(pair) == 2:
+                r1 = next((u['rank'] for u in users_raw if u['user'] == pair[0]), [])
+                r2 = next((u['rank'] for u in users_raw if u['user'] == pair[1]), [])
+                same = []
+                for i in range(min(len(r1), len(r2), len(ESC_POINTS))):
+                    if r1[i] == r2[i]:
+                        same.append((ESC_POINTS[i], r1[i]))
+                return [f"Both ranked #{ESC_POINTS.index(pts)+1}: {lbl}" for pts, lbl in same[:3]]
+            return []
+
+        return []
 
     def push_award(code_name, pretty, scores_dict):
         winners = find_all_tied_winners(scores_dict)
         if winners:
             insight = calculate_insight(code_name, winners, scores_dict)
+            stats = calculate_stats(code_name, winners)
             awards.append({
                 "award": pretty,
                 "winner": " & ".join(uniq_sorted(winners)),
-                "insight": insight,  # Add the insight string
+                "insight": insight,
+                "stats": stats,
                 **options_data.get('award_details', {}).get(code_name, {})
             })
 
@@ -531,5 +723,46 @@ def calculate_awards(db, options_data):
 
     # twinzies (best pair)
     push_award("Twinzies", "👯 Twinzies 👯", pair_sim)
+
+    # --- 2026 additions ---
+
+    # solo vs group
+    push_award("Lone Wolf", "🐺 Lone Wolf 🐺",
+               {u: p['act_type']['solo'] for u, p in user_points.items()})
+    push_award("Squad Goals", "👯‍♂️ Squad Goals 👯‍♂️",
+               {u: p['act_type']['duo'] + p['act_type']['group']
+                for u, p in user_points.items()})
+
+    # selection method
+    push_award("Voice of the People", "🗳️ Voice of the People 🗳️",
+               {u: p['selection']['national_final'] for u, p in user_points.items()})
+
+    # returning artist
+    push_award("Welcome Back", "👋 Welcome Back 👋",
+               {u: p['returning'] for u, p in user_points.items()})
+
+    # bloc awards
+    for region, code, pretty in [
+        ("Nordic",        "Nordic Friend Zone", "❄️ Nordic Friend Zone ❄️"),
+        ("Balkan",        "Balkan Brotherhood", "🌶️ Balkan Brotherhood 🌶️"),
+        ("Baltic",        "Baltic Squad",       "🪵 Baltic Squad 🪵"),
+        ("Mediterranean", "Mediterranean Mood", "🌊 Mediterranean Mood 🌊"),
+    ]:
+        push_award(code, pretty,
+                   {u: p['regions'][region] for u, p in user_points.items()})
+
+    # GDP-weighted
+    gdp_scores = {u: p['gdp_weighted'] for u, p in user_points.items()}
+    push_award("Moneybags", "💰 Moneybags 💰", gdp_scores)
+    push_award("Slummin' It", "🪙 Slummin' It 🪙",
+               gdp_scores if not gdp_scores else
+               {u: -s for u, s in gdp_scores.items()})
+
+    # population-weighted
+    pop_scores = {u: p['population_weighted'] for u, p in user_points.items()}
+    push_award("Extrovert", "🗣️ Extrovert 🗣️", pop_scores)
+    push_award("Introvert", "🤫 Introvert 🤫",
+               pop_scores if not pop_scores else
+               {u: -s for u, s in pop_scores.items()})
 
     return awards

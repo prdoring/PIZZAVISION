@@ -19,8 +19,8 @@
             font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #121212;
             background-image: url(/pizzavision/voting/static/pv25-3.png);
-            background-position: center 0px;
-            background-size: 455px;
+            background-position: center 12px;
+            background-size: 320px;
             background-repeat: no-repeat;
             color: #fff;
             margin: 0;
@@ -49,7 +49,7 @@
             padding: 20px;
             display: flex;
             justify-content: center;
-            padding-top: 145px;
+            padding-top: 118px;
             position: relative;
             z-index: 1;
         }
@@ -75,16 +75,16 @@
             box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            margin: 12px 0;
-            padding: 16px;
+            margin: 14px 0;
+            padding: 14px;
             transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
             font-weight: 600;
             letter-spacing: 0.7px;
             display: flex;
             align-items: center;
             justify-content: center;
-            max-height: 20px;
-            min-height: 20px;
+            max-height: 22px;
+            min-height: 22px;
             transform-origin: center center;
         }
 
@@ -120,6 +120,35 @@
             font-size: 13px;
             display: flex;
             align-items: center;
+            position: relative;
+        }
+
+        /* Drag handle on each song row */
+        .sortable-list li::before {
+            content: '\22EE\22EE';
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(255, 255, 255, 0.28);
+            font-size: 16px;
+            letter-spacing: -3px;
+            line-height: 1;
+            transition: color 0.3s ease;
+            pointer-events: none;
+        }
+
+        .sortable-list li:hover::before,
+        .sortable-list li.dragging::before {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* Paired-row highlight: when hovering a song, the matching points pill brightens */
+        .static-list li.paired-active {
+            background-color: rgba(70, 70, 70, 0.85) !important;
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3),
+                inset 0 1px 0 rgba(255, 215, 0, 0.25),
+                0 0 0 1px rgba(255, 215, 0, 0.3) !important;
         }
 
         .sortable-list li:hover {
@@ -158,21 +187,26 @@
         @media screen and (max-width: 600px) {
             .container {
                 padding: 10px;
-                padding-top: 142px;
+                padding-top: 102px;
             }
 
             .sortable-list li {
-                padding: 12px;
-                margin-bottom: 10px;
+                padding: 12px 12px 12px 44px;
+                margin: 12px 0 12px -10px;
+                min-height: 20px;
+                max-height: 20px;
+            }
+
+            .sortable-list li::before {
+                left: 14px;
+                font-size: 14px;
             }
 
             .static-list li {
                 padding: 12px;
-                margin-bottom: 15.6px;
-            }
-
-            .static-list {
-                margin-top: 17px;
+                margin: 12px 0;
+                min-height: 20px;
+                max-height: 20px;
             }
         }
 
@@ -399,66 +433,6 @@
             transform: scale(1.2) rotate(5deg);
         }
 
-        /* Flash animation class */
-        .name-change-flash {
-            animation: nameChangeFlash 0.7s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        /* Change Name button styling */
-        #change_name {
-            background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #264d26, #0000ff, #4b0082, #9400d3);
-            background-size: 400% 400%;
-            animation: gradientBackground 40s ease infinite;
-            border-radius: 50%;
-            cursor: pointer;
-            width: clamp(20px, 5vw, 28px);
-            /* Responsive width */
-            height: clamp(20px, 5vw, 28px);
-            /* Responsive height */
-            min-width: 20px;
-            min-height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: bold;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4), inset 0 0 0 1px rgba(255, 255, 255, 0.2);
-            transition: all 0.3s ease;
-            border: none;
-            font-size: clamp(8px, 2.5vw, 12px);
-            /* Responsive font size */
-            margin-left: clamp(5px, 2vw, 10px);
-            /* Responsive margin */
-            position: relative;
-            overflow: hidden;
-        }
-
-        #change_name::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(transparent,
-                    transparent,
-                    transparent,
-                    rgba(255, 255, 255, 0.1),
-                    rgba(255, 255, 255, 0.3));
-            transform: rotate(45deg);
-            pointer-events: none;
-        }
-
-        #change_name:hover {
-            transform: scale(1.1) rotate(10deg);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5), 0 0 15px rgba(255, 255, 255, 0.3), inset 0 0 0 1px rgba(255, 255, 255, 0.3);
-            animation: gradientBackground 3s ease infinite;
-        }
-
-        #change_name:active {
-            transform: scale(0.95);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-        }
-
         /* Updated centered band name container */
         #bandnamecontainer {
             text-align: center;
@@ -571,11 +545,6 @@
             #bandnamelabel {
                 padding-top: 6px;
             }
-
-            #change_name {
-                margin-top: 2px !important;
-                margin-bottom: 2px !important;
-            }
         }
 
         /* For extremely small screens */
@@ -589,10 +558,6 @@
                 font-size: 12px;
                 margin: 0 2px;
             }
-
-            #change_name {
-                margin-left: 4px;
-            }
         }
 
         .votes-locked-overlay {
@@ -601,18 +566,19 @@
             left: 0;
             right: 0;
             bottom: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            -webkit-backdrop-filter: blur(5px);
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
             display: flex;
             flex-direction: column;
-            justify-content: flex-start; /* Changed from center to flex-start */
+            justify-content: flex-start;
             align-items: center;
             z-index: 10;
             border-radius: 12px;
             opacity: 0;
             transition: opacity 0.5s ease;
-            padding-top: 30px; /* Add padding to the top */
+            padding: 24px 12px 24px;
+            overflow-y: auto;
         }
 
         .votes-locked-overlay.visible {
@@ -620,20 +586,32 @@
         }
 
         .lock-icon {
-            font-size: 48px;
-            margin-bottom: 15px;
-            color: #FF9800;
-            filter: drop-shadow(0 0 10px rgba(255, 152, 0, 0.5));
+            font-size: 42px;
+            margin-bottom: 10px;
+            color: #ffd700;
+            filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.55));
         }
 
         .lock-message {
-            font-weight: 700;
+            font-weight: 800;
             text-align: center;
-            font-size: 18px;
-            color: white;
-            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-            max-width: 80%;
-            line-height: 1.5;
+            font-size: 22px;
+            color: #ffd700;
+            text-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+            max-width: 88%;
+            line-height: 1.25;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .lock-subtext {
+            display: block;
+            margin-top: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.78);
+            text-transform: none;
+            letter-spacing: 0.4px;
         }
 
         .locked-container {
@@ -650,25 +628,25 @@
         }
 
 
-        /* Votes review section */
+        /* Votes review section — used for picks 4-N below the podium */
         .votes-review {
-            margin-top: 25px;
+            margin-top: 18px;
             width: 90%;
-            max-width: 400px;
-            background: rgba(30, 30, 30, 0.7);
-            border-radius: 10px;
-            padding: 15px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 440px;
+            background: rgba(20, 20, 20, 0.6);
+            border-radius: 12px;
+            padding: 12px 14px 10px;
+            box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.08);
         }
 
         .votes-review-title {
             text-align: center;
             font-weight: 700;
-            font-size: 16px;
-            margin-bottom: 12px;
-            color: #4CAF50;
-            letter-spacing: 0.5px;
+            font-size: 11px;
+            margin-bottom: 10px;
+            color: rgba(255, 215, 0, 0.78);
+            letter-spacing: 1.5px;
             text-transform: uppercase;
         }
 
@@ -733,10 +711,669 @@
         .votes-review-item:nth-child(8) { animation-delay: 0.8s; }
         .votes-review-item:nth-child(9) { animation-delay: 0.9s; }
         .votes-review-item:nth-child(10) { animation-delay: 1.0s; }
+
+        /* First-visit dismissible instruction tip */
+        #firstVisitTip {
+            position: fixed;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%) translateY(8px);
+            background: rgba(15, 15, 15, 0.94);
+            color: rgba(255, 255, 255, 0.92);
+            border: 1px solid rgba(255, 215, 0, 0.4);
+            box-shadow: 0 14px 32px rgba(0, 0, 0, 0.55);
+            border-radius: 14px;
+            padding: 11px 38px 11px 16px;
+            font-size: 12.5px;
+            font-weight: 500;
+            line-height: 1.45;
+            letter-spacing: 0.3px;
+            max-width: 88vw;
+            width: 320px;
+            text-align: center;
+            z-index: 999;
+            opacity: 0;
+            transition: opacity 0.4s ease, transform 0.4s ease;
+        }
+
+        #firstVisitTip.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        #firstVisitTip strong {
+            color: #ffd700;
+            font-weight: 800;
+        }
+
+        #firstVisitTip .tip-dismiss {
+            position: absolute;
+            top: 4px;
+            right: 6px;
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.55);
+            font-size: 18px;
+            line-height: 1;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 6px;
+            transition: color 0.2s ease, background-color 0.2s ease;
+            margin: 0;
+            box-shadow: none;
+            display: inline-flex;
+        }
+
+        #firstVisitTip .tip-dismiss:hover {
+            color: #fff;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        /* Save toast — confirms each successful drag */
+        #saveToast {
+            position: fixed;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%) translateY(16px);
+            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            color: #fff;
+            padding: 9px 20px;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 13px;
+            letter-spacing: 0.6px;
+            opacity: 0;
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 0 22px rgba(76, 175, 80, 0.35);
+            pointer-events: none;
+            transition: opacity 0.25s ease, transform 0.25s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+
+        #saveToast.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        #saveToast .check {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.28);
+            font-size: 10px;
+            line-height: 1;
+        }
+
+        /* Podium for locked state — top 3 picks gold/silver/bronze */
+        .podium {
+            width: 90%;
+            max-width: 440px;
+            margin: 16px auto 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .podium-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 13px 16px;
+            border-radius: 14px;
+            background: rgba(0, 0, 0, 0.6);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            opacity: 0;
+            transform: translateY(12px);
+            animation: fadeInUp 0.55s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            border: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        .podium-medal {
+            font-size: 24px;
+            line-height: 1;
+            filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.65));
+            flex-shrink: 0;
+        }
+
+        .podium-pick {
+            flex: 1;
+            text-align: left;
+            font-weight: 700;
+            font-size: 14px;
+            color: #fff;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .podium-pts {
+            font-weight: 800;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 13px;
+            white-space: nowrap;
+            color: #1a1a1a;
+            text-shadow: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+        }
+
+        .podium-item.gold {
+            border-color: rgba(255, 215, 0, 0.55);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.5),
+                0 0 0 1px rgba(255, 215, 0, 0.45),
+                0 0 30px rgba(255, 215, 0, 0.2);
+            animation-delay: 0.05s;
+        }
+        .podium-item.gold .podium-pts {
+            background: linear-gradient(135deg, #ffe57a, #ffd700, #b8860b);
+        }
+
+        .podium-item.silver {
+            border-color: rgba(220, 220, 230, 0.4);
+            box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45),
+                0 0 0 1px rgba(220, 220, 230, 0.32);
+            animation-delay: 0.2s;
+        }
+        .podium-item.silver .podium-pts {
+            background: linear-gradient(135deg, #f0f0f5, #c0c0c8, #888892);
+        }
+
+        .podium-item.bronze {
+            border-color: rgba(205, 127, 50, 0.45);
+            box-shadow: 0 9px 20px rgba(0, 0, 0, 0.45),
+                0 0 0 1px rgba(205, 127, 50, 0.4);
+            animation-delay: 0.35s;
+        }
+        .podium-item.bronze .podium-pts {
+            background: linear-gradient(135deg, #e5a87a, #cd7f32, #8b5a2b);
+        }
+
+        /* ============================================================
+           Onboarding modal — mobile-first, fun, full-screen on phones.
+           ============================================================ */
+        #onboarding-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: none;
+            background: radial-gradient(circle at 20% 10%, rgba(255, 0, 128, 0.18), transparent 60%),
+                        radial-gradient(circle at 80% 90%, rgba(0, 200, 255, 0.18), transparent 60%),
+                        rgba(8, 4, 20, 0.92);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        #onboarding-overlay.visible {
+            display: block;
+            animation: onboardingFadeIn 0.35s ease-out;
+        }
+
+        @keyframes onboardingFadeIn {
+            from { opacity: 0; transform: scale(1.02); }
+            to   { opacity: 1; transform: scale(1); }
+        }
+
+        .onboarding-card {
+            box-sizing: border-box;
+            width: 100%;
+            min-height: 100dvh;
+            min-height: 100vh;
+            padding: 28px 22px calc(28px + env(safe-area-inset-bottom));
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            color: #fff;
+        }
+
+        @media (min-width: 600px) {
+            .onboarding-card {
+                max-width: 480px;
+                min-height: auto;
+                margin: 5vh auto;
+                border-radius: 28px;
+                box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55),
+                            0 0 0 1px rgba(255, 255, 255, 0.07);
+                background: rgba(20, 8, 35, 0.7);
+                padding: 36px 32px;
+            }
+        }
+
+        /* Sparkle decoration */
+        .onboarding-card::before {
+            content: "✦  ✧  ★  ✦  ✧";
+            position: absolute;
+            top: 14px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: rgba(255, 215, 0, 0.4);
+            font-size: 12px;
+            letter-spacing: 8px;
+            pointer-events: none;
+        }
+
+        .onboarding-progress {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 28px 0 22px;
+        }
+
+        .onboarding-progress .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.18);
+            transition: all 0.3s ease;
+        }
+
+        .onboarding-progress .dot.active {
+            background: linear-gradient(135deg, #ffd700, #ff4faf);
+            box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
+            transform: scale(1.2);
+        }
+
+        .onboarding-progress .dot.done {
+            background: rgba(255, 215, 0, 0.65);
+        }
+
+        .onboarding-step {
+            display: none;
+            flex: 1;
+            flex-direction: column;
+        }
+
+        .onboarding-step.active {
+            display: flex;
+            animation: stepSlideIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+        }
+
+        @keyframes stepSlideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .onboarding-heading {
+            font-size: clamp(22px, 6vw, 28px);
+            font-weight: 800;
+            line-height: 1.2;
+            text-align: center;
+            margin: 0 0 10px;
+            background: linear-gradient(135deg, #ffd700, #ff4faf 50%, #00e0ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 24px rgba(255, 79, 175, 0.25);
+        }
+
+        .onboarding-sub {
+            font-size: 14px;
+            text-align: center;
+            color: rgba(255, 255, 255, 0.65);
+            margin: 0 auto 22px;
+            max-width: 320px;
+            line-height: 1.4;
+        }
+
+        #onboarding-overlay .onboarding-input,
+        #onboarding-overlay .onboarding-textarea {
+            width: 100%;
+            box-sizing: border-box;
+            font-size: 16px; /* prevents iOS zoom */
+            font-family: inherit;
+            padding: 16px 18px;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            background: rgba(0, 0, 0, 0.4);
+            color: #fff;
+            text-align: left;
+            margin: 0;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            -webkit-appearance: none;
+            display: block;
+        }
+
+        #onboarding-overlay .onboarding-textarea {
+            min-height: 110px;
+            resize: none;
+            line-height: 1.4;
+        }
+
+        #onboarding-overlay .onboarding-input:focus,
+        #onboarding-overlay .onboarding-textarea:focus {
+            border-color: rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        #onboarding-overlay .onboarding-input::placeholder,
+        #onboarding-overlay .onboarding-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.32);
+        }
+
+        #onboarding-overlay .onboarding-input:hover,
+        #onboarding-overlay .onboarding-textarea:hover {
+            background: rgba(0, 0, 0, 0.45);
+        }
+
+        /* Dice "Surprise me" button — overlays the right edge of the field. */
+        #onboarding-overlay .onboarding-field {
+            position: relative;
+        }
+        #onboarding-overlay .onboarding-input.has-dice {
+            padding-right: 60px;
+        }
+        #onboarding-overlay .onboarding-textarea.has-dice {
+            padding-right: 60px;
+        }
+        #onboarding-overlay .onboarding-dice {
+            position: absolute;
+            right: 8px;
+            top: 8px;
+            width: 40px;
+            height: 40px;
+            padding: 0;
+            border-radius: 12px;
+            border: 1px solid rgba(255, 215, 0, 0.35);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.18), rgba(255, 79, 175, 0.18));
+            color: #fff;
+            font-size: 20px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.25s ease, border-color 0.25s ease,
+                        box-shadow 0.25s ease, transform 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* Single-line inputs: vertically center the dice using `top` (not
+           transform), keeping transform free for :active scale + loading spin. */
+        #onboarding-overlay .onboarding-input.has-dice + .onboarding-dice {
+            top: calc(50% - 20px);
+        }
+        #onboarding-overlay .onboarding-dice:hover {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.32), rgba(255, 79, 175, 0.32));
+            box-shadow: 0 4px 14px rgba(255, 79, 175, 0.35);
+        }
+        #onboarding-overlay .onboarding-dice:active {
+            transform: scale(0.92);
+        }
+        #onboarding-overlay .onboarding-dice:disabled {
+            cursor: wait;
+        }
+        /* Spinning state — fade out the chrome so only the rolling emoji is
+           visible. No spinning rectangle. */
+        #onboarding-overlay .onboarding-dice.loading {
+            background: transparent;
+            border-color: transparent;
+            box-shadow: none;
+            animation: diceRoll 0.7s linear infinite;
+            transform-origin: center;
+        }
+        @keyframes diceRoll {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+
+        .onboarding-actions {
+            margin-top: auto;
+            padding-top: 24px;
+            position: sticky;
+            bottom: 0;
+            background: linear-gradient(to top, rgba(8, 4, 20, 0.95) 60%, transparent);
+        }
+
+        @media (min-width: 600px) {
+            .onboarding-actions {
+                position: static;
+                background: none;
+            }
+        }
+
+        .onboarding-btn {
+            display: block;
+            width: 100%;
+            min-height: 52px;
+            padding: 14px 18px;
+            border-radius: 16px;
+            border: none;
+            font-family: inherit;
+            font-size: 16px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            background: linear-gradient(135deg, #ffd700, #ff4faf 50%, #9b4dff);
+            color: #1a0a2b;
+            box-shadow: 0 8px 24px rgba(255, 79, 175, 0.4),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.35);
+            transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+
+        .onboarding-btn:active {
+            transform: scale(0.97);
+            box-shadow: 0 4px 12px rgba(255, 79, 175, 0.35);
+        }
+
+        .onboarding-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            background: rgba(255, 255, 255, 0.12);
+            color: rgba(255, 255, 255, 0.5);
+            box-shadow: none;
+        }
+
+        .onboarding-btn.ghost {
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+            font-weight: 600;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+        }
+
+        .onboarding-btn.ghost:active {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Generating step */
+        .onboarding-spinner {
+            margin: 28px auto 18px;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 4px solid rgba(255, 255, 255, 0.12);
+            border-top-color: #ffd700;
+            border-right-color: #ff4faf;
+            animation: onboardingSpin 0.9s linear infinite;
+        }
+
+        @keyframes onboardingSpin {
+            to { transform: rotate(360deg); }
+        }
+
+        .onboarding-spinner-copy {
+            text-align: center;
+            font-size: 16px;
+            font-weight: 600;
+            color: rgba(255, 255, 255, 0.78);
+            min-height: 24px;
+            transition: opacity 0.3s ease;
+        }
+
+        /* Pick step — name cards */
+        .name-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 8px 0 20px;
+        }
+
+        .name-option {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 20px 18px;
+            border-radius: 18px;
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 79, 175, 0.08), rgba(0, 224, 255, 0.08));
+            color: #fff;
+            font-family: inherit;
+            font-size: clamp(18px, 5.2vw, 22px);
+            font-weight: 800;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
+            line-height: 1.25;
+            word-break: break-word;
+        }
+
+        .name-option:hover {
+            border-color: rgba(255, 215, 0, 0.5);
+            box-shadow: 0 12px 28px rgba(255, 79, 175, 0.25);
+        }
+
+        .name-option:active {
+            transform: scale(0.98);
+        }
+
+        .reroll-hint {
+            text-align: center;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 10px;
+        }
+
+        #onboarding-overlay .names-source-banner {
+            display: block;
+            margin: 0 0 12px;
+            padding: 10px 14px;
+            border-radius: 12px;
+            font-size: 13px;
+            line-height: 1.4;
+            text-align: center;
+            background: rgba(255, 90, 90, 0.12);
+            border: 1px solid rgba(255, 130, 130, 0.4);
+            color: #ffd0d0;
+        }
+        #onboarding-overlay .names-source-banner[hidden] {
+            display: none;
+        }
+        #onboarding-overlay .names-source-banner .banner-title {
+            font-weight: 700;
+            display: block;
+        }
+        #onboarding-overlay .names-source-banner .banner-detail {
+            display: block;
+            margin-top: 4px;
+            font-size: 11px;
+            opacity: 0.75;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        }
     </style>
 </head>
 
 <body>
+    <!-- First-time onboarding modal -->
+    <div id="onboarding-overlay" aria-hidden="true">
+        <div class="onboarding-card">
+            <div class="onboarding-progress" id="onboarding-progress" aria-hidden="true">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+            </div>
+
+            <section class="onboarding-step" data-step="song">
+                <h1 class="onboarding-heading">What's your band's Eurovision song called?</h1>
+                <p class="onboarding-sub">Every act needs an anthem. Name yours — we'll name the band to match.</p>
+                <div class="onboarding-field">
+                    <input type="text" class="onboarding-input has-dice" data-field="song_title"
+                           autocapitalize="words" enterkeyhint="next" maxlength="80"
+                           placeholder="e.g. Tears in My Tracksuit, Glitter Goblin">
+                    <button type="button" class="onboarding-dice" data-dice-field="song_title"
+                            aria-label="Surprise me" title="Surprise me">🎲</button>
+                </div>
+                <div class="onboarding-actions">
+                    <button type="button" class="onboarding-btn" data-next disabled>Next →</button>
+                </div>
+            </section>
+
+            <section class="onboarding-step" data-step="song_vibe">
+                <h1 class="onboarding-heading">What's the song's vibe?</h1>
+                <p class="onboarding-sub">Power ballad? Disco apocalypse? Mournful key change at minute three?</p>
+                <div class="onboarding-field">
+                    <textarea class="onboarding-textarea has-dice" data-field="song_vibe"
+                              enterkeyhint="next" maxlength="240"
+                              placeholder="Describe the energy, genre, the feeling on stage…"></textarea>
+                    <button type="button" class="onboarding-dice" data-dice-field="song_vibe"
+                            aria-label="Surprise me" title="Surprise me">🎲</button>
+                </div>
+                <div class="onboarding-actions">
+                    <button type="button" class="onboarding-btn" data-next disabled>Next →</button>
+                </div>
+            </section>
+
+            <section class="onboarding-step" data-step="personal_vibe">
+                <h1 class="onboarding-heading">What's YOUR vibe?</h1>
+                <p class="onboarding-sub">How does the lead enter the stage? Costume, energy, attitude — go.</p>
+                <div class="onboarding-field">
+                    <input type="text" class="onboarding-input has-dice" data-field="personal_vibe"
+                           autocapitalize="words" enterkeyhint="next" maxlength="120"
+                           placeholder="e.g. on a horse, weeping; sequined goblin; quiet drama">
+                    <button type="button" class="onboarding-dice" data-dice-field="personal_vibe"
+                            aria-label="Surprise me" title="Surprise me">🎲</button>
+                </div>
+                <div class="onboarding-actions">
+                    <button type="button" class="onboarding-btn" data-next disabled>Next →</button>
+                </div>
+            </section>
+
+            <section class="onboarding-step" data-step="extra" data-optional="true">
+                <h1 class="onboarding-heading">Anything else?</h1>
+                <p class="onboarding-sub">Backup dancers? Hidden message? Country of origin? Optional — leave blank to roll without.</p>
+                <div class="onboarding-field">
+                    <textarea class="onboarding-textarea has-dice" data-field="extra"
+                              enterkeyhint="go" maxlength="240"
+                              placeholder="Optional flavor… or skip"></textarea>
+                    <button type="button" class="onboarding-dice" data-dice-field="extra"
+                            aria-label="Surprise me" title="Surprise me">🎲</button>
+                </div>
+                <div class="onboarding-actions">
+                    <button type="button" class="onboarding-btn" data-generate>Name my band ✨</button>
+                </div>
+            </section>
+
+            <section class="onboarding-step" data-step="generating">
+                <h1 class="onboarding-heading">Cooking up your stage…</h1>
+                <div class="onboarding-spinner" aria-hidden="true"></div>
+                <p class="onboarding-spinner-copy" id="generating-copy">Tuning your harmonies…</p>
+            </section>
+
+            <section class="onboarding-step" data-step="pick">
+                <h1 class="onboarding-heading">Pick your stage name</h1>
+                <p class="onboarding-sub">Three Eurovision-worthy options, fresh out of the dressing room.</p>
+                <div id="names-source-banner" class="names-source-banner" hidden></div>
+                <div class="name-options" id="name-options"></div>
+                <div class="onboarding-actions">
+                    <button type="button" class="onboarding-btn ghost" id="reroll-btn">↻ Reroll all three</button>
+                    <p class="reroll-hint">None of these? Roll again.</p>
+                </div>
+            </section>
+        </div>
+    </div>
+
     <!-- Spotlight effect background -->
     <div class="spotlight"></div>
 
@@ -745,14 +1382,6 @@
         <div id="bandnamecontainer">
             <div id="bandnamelabel">Band Name</div>
             <div id="bandname"></div>
-            <div id="change_name" title="Generate new band name">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 2v6h-6"></path>
-                    <path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path>
-                    <path d="M3 12a9 9 0 0 0 15 6.7l3-2.7"></path>
-                </svg>
-            </div>
         </div>
 
 
@@ -775,12 +1404,15 @@
             
             {% if votes_locked %}
             <div class="votes-locked-overlay">
-                <div class="lock-icon">🔒</div>
-                <div class="lock-message">Voting has been finalized!. Thank you for participating in the PIZZAVISION Song Contest 2025!</div>
-                
-                <!-- Votes review section -->
-                <div class="votes-review">
-                    <div class="votes-review-title">Your Final Votes</div>
+                <div class="lock-icon">🏁</div>
+                <div class="lock-message">Your votes are in!<span class="lock-subtext">Thanks for playing PIZZAVISION 2026</span></div>
+
+                <!-- Top 3 podium -->
+                <div class="podium" id="podium"></div>
+
+                <!-- Picks 4-N -->
+                <div class="votes-review" id="votesReviewWrap">
+                    <div class="votes-review-title">Your other picks</div>
                     <ul class="votes-review-list" id="votesReviewList">
                         <!-- This will be populated by JavaScript -->
                     </ul>
@@ -788,6 +1420,12 @@
             </div>
             {% endif %}
         </div>
+    </div>
+
+    <!-- First-visit instruction tip (shown until dismissed) -->
+    <div id="firstVisitTip" role="status">
+        <button class="tip-dismiss" type="button" aria-label="Dismiss tip">&times;</button>
+        Drag songs to rank them — your <strong>top pick</strong> gets <strong>12 points</strong>.
     </div>
 
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
@@ -803,39 +1441,50 @@
             var list = $(".sortable-list");
 
 
-            // Add subtle hover animation to the sortable list items
+            // Hovering a song row brightens the matching points pill on the left,
+            // making row-by-row pairing legible without forcing a single-row layout
+            // that would complicate drag-and-drop.
             $('.sortable-list').on('mouseenter', 'li', function () {
                 $(this).css('z-index', '10');
+                var idx = $(this).index();
+                $('.static-list li').eq(idx).addClass('paired-active');
             }).on('mouseleave', 'li', function () {
                 $(this).css('z-index', '1');
+                var idx = $(this).index();
+                $('.static-list li').eq(idx).removeClass('paired-active');
             });
 
             // Enhance the dragging experience
             list.sortable({
                 update: function (event, ui) {
-                    // Your existing update code here
                     var itemsOrder = $(this).children().map(function () {
                         return $(this).text().trim();
                     }).get();
 
                     var jsonOutput = JSON.stringify(itemsOrder);
-                    console.log(jsonOutput);
-                    socket.emit('rankchanged', { 'user': savedName, 'rank': itemsOrder });
+                    socket.emit('rankchanged', { clientId: clientId, user: savedName, rank: itemsOrder });
 
                     // Store order in localStorage
                     localStorage.setItem('itemsOrder', jsonOutput);
+
+                    // Confirm save + auto-dismiss the first-visit tip on first interaction
+                    showSavedToast();
+                    dismissFirstVisitTip();
                 },
-                // Add these new options for better UX
                 placeholder: "ui-sortable-placeholder",
                 start: function (e, ui) {
-                    // Add a class to the item being dragged
                     ui.item.addClass('dragging');
 
-                    // Create a fancy placeholder
-                    ui.placeholder.html('<div style="height: 100%; border: 2px dashed rgba(255,255,255,0.3); border-radius: 8px;"></div>');
+                    // Highlight the matching points pill while dragging
+                    var startIdx = ui.item.index();
+                    $('.static-list li').removeClass('paired-active');
+                    $('.static-list li').eq(startIdx).addClass('paired-active');
+
+                    // Fancy placeholder
+                    ui.placeholder.html('<div style="height: 100%; border: 2px dashed rgba(255,215,0,0.45); border-radius: 8px;"></div>');
                     ui.placeholder.css({
                         'visibility': 'visible',
-                        'background': 'rgba(80, 80, 80, 0.2)',
+                        'background': 'rgba(255, 215, 0, 0.08)',
                         'backdrop-filter': 'blur(5px)',
                         'border-radius': '8px',
                         'margin': '14px 0 14px -10px',
@@ -843,14 +1492,22 @@
                     });
                 },
                 stop: function (e, ui) {
-                    // Remove the class when dragging stops
                     ui.item.removeClass('dragging');
 
-                    // Add a subtle highlight effect when dropped
-                    ui.item.css('background-color', 'rgba(100, 100, 100, 0.9)');
+                    // Re-highlight the points pill at the new position so the user
+                    // sees what their pick is now worth.
+                    var newIdx = ui.item.index();
+                    $('.static-list li').removeClass('paired-active');
+                    $('.static-list li').eq(newIdx).addClass('paired-active');
+                    setTimeout(function () {
+                        $('.static-list li').eq(newIdx).removeClass('paired-active');
+                    }, 1400);
+
+                    // Drop highlight
+                    ui.item.css('background-color', 'rgba(255, 215, 0, 0.22)');
                     setTimeout(function () {
                         ui.item.css('background-color', '');
-                    }, 300);
+                    }, 400);
                 },
                 // Make the animation smoother
                 revert: 200,
@@ -864,6 +1521,42 @@
                 scrollSensitivity: 40,
                 scrollSpeed: 10
             });
+
+            // ----- Save toast: brief confirmation after each successful drag -----
+            var _saveToastEl = null;
+            var _saveToastTimer = null;
+            function showSavedToast() {
+                if (!_saveToastEl) {
+                    _saveToastEl = document.createElement('div');
+                    _saveToastEl.id = 'saveToast';
+                    _saveToastEl.innerHTML = '<span class="check">&#10003;</span> Saved';
+                    document.body.appendChild(_saveToastEl);
+                }
+                _saveToastEl.classList.add('visible');
+                if (_saveToastTimer) clearTimeout(_saveToastTimer);
+                _saveToastTimer = setTimeout(function () {
+                    _saveToastEl.classList.remove('visible');
+                }, 1200);
+            }
+
+            // ----- First-visit instruction tip -----
+            function dismissFirstVisitTip() {
+                var tip = document.getElementById('firstVisitTip');
+                if (!tip || !tip.classList.contains('visible')) return;
+                tip.classList.remove('visible');
+                try { localStorage.setItem('instructionsDismissed', '1'); } catch (e) {}
+                setTimeout(function () { if (tip && tip.parentNode) tip.parentNode.removeChild(tip); }, 500);
+            }
+            (function initFirstVisitTip() {
+                var tip = document.getElementById('firstVisitTip');
+                if (!tip) return;
+                var locked = {% if votes_locked %}true{% else %}false{% endif %};
+                if (locked) { tip.remove(); return; }
+                if (localStorage.getItem('instructionsDismissed') === '1') { tip.remove(); return; }
+                setTimeout(function () { tip.classList.add('visible'); }, 700);
+                var btn = tip.querySelector('.tip-dismiss');
+                if (btn) btn.addEventListener('click', dismissFirstVisitTip);
+            })();
 
             {% if votes_locked %}
                 // Disable sortable when votes are locked
@@ -895,20 +1588,60 @@
                 savedName = $(this).val();
             });
 
+            // Stable per-client identifier — survives band-name re-rolls and
+            // userName clears. Without this, the same person ends up with
+            // multiple rows whenever localStorage.userName is wiped.
+            var clientId = localStorage.getItem('clientId');
+            if (!clientId) {
+                clientId = (window.crypto && crypto.randomUUID)
+                    ? crypto.randomUUID()
+                    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                        var r = Math.random() * 16 | 0;
+                        var v = c === 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                localStorage.setItem('clientId', clientId);
+            }
+
             // Load order and name from localStorage on page load
             var savedOrder = localStorage.getItem('itemsOrder');
             var savedName = localStorage.getItem('userName');
-            if (!savedName) {
-                savedName = randomEurovisionName();
-                localStorage.setItem('userName', savedName);
-            }
-            document.getElementById("bandname").innerHTML = savedName
-            if (savedOrder) {
-                updateList(JSON.parse(savedOrder));
-                list.sortable('refresh');
-            }
-            if (savedName) {
+
+            // joinRoom: emit 'joined' to the server and sync persisted state.
+            // The server's reply is the source of truth; localStorage.itemsOrder
+            // is only a fallback in case the ack is lost.
+            function joinRoom(name) {
+                savedName = name;
+                document.getElementById("bandname").innerHTML = savedName;
                 $('#nameField').val(savedName);
+                socket.emit('joined', { clientId: clientId, userName: savedName }, function (state) {
+                    if (state && state.user && state.user !== savedName) {
+                        savedName = state.user;
+                        localStorage.setItem('userName', savedName);
+                        document.getElementById('bandname').innerHTML = savedName;
+                        $('#nameField').val(savedName);
+                    }
+                    if (state && Array.isArray(state.rank) && state.rank.length > 0) {
+                        updateList(state.rank);
+                        list.sortable('refresh');
+                        localStorage.setItem('itemsOrder', JSON.stringify(state.rank));
+                    } else if (savedOrder) {
+                        updateList(JSON.parse(savedOrder));
+                        list.sortable('refresh');
+                    }
+                });
+            }
+
+            // Onboarding state machine constants — declared here so they're
+            // initialized before startOnboarding() may be called below.
+            var ONBOARDING_STEPS = ['song', 'song_vibe', 'personal_vibe', 'extra', 'generating', 'pick'];
+            var ONBOARDING_FIELDS = ['song_title', 'song_vibe', 'personal_vibe', 'extra'];
+            var generatingCopyTimer = null;
+
+            if (!savedName || localStorage.getItem('pv_onboarding_state')) {
+                startOnboarding();
+            } else {
+                joinRoom(savedName);
             }
 
             function getRandomInt(max) {
@@ -1120,34 +1853,346 @@
                 }
 
                 document.getElementById("bandname").innerHTML = tokens.join(' ');
-                console.log(tokens.join(" "));
                 return tokens.join(' ');
             }
 
-            // Enhance the band name generator with a more dramatic effect
-            $('#change_name').on('click', function () {
-                var oldName = savedName;
-                savedName = randomEurovisionName();
-                localStorage.setItem('userName', savedName);
+            // ============================================================
+            // First-time onboarding state machine
+            // (ONBOARDING_STEPS / ONBOARDING_FIELDS are declared earlier in
+            // this scope so they're initialized before startOnboarding() runs.)
+            // ============================================================
+            function loadAnswers() {
+                try {
+                    return JSON.parse(localStorage.getItem('pv_onboarding_answers')) || {};
+                } catch (e) { return {}; }
+            }
 
-                // Enhanced animation effect
-                $('#bandname').addClass('name-change-flash');
+            function saveAnswers(answers) {
+                localStorage.setItem('pv_onboarding_answers', JSON.stringify(answers));
+            }
 
-                // Add a pulse effect to the button
-                $(this).css('animation', 'pulseGlow 0.8s ease-out');
+            function loadOptions() {
+                try {
+                    var arr = JSON.parse(localStorage.getItem('pv_onboarding_options'));
+                    return Array.isArray(arr) ? arr : null;
+                } catch (e) { return null; }
+            }
 
-                setTimeout(function () {
-                    document.getElementById("bandname").innerHTML = savedName;
+            function saveOptions(opts) {
+                localStorage.setItem('pv_onboarding_options', JSON.stringify(opts));
+            }
+
+            function clearOnboardingLS() {
+                localStorage.removeItem('pv_onboarding_state');
+                localStorage.removeItem('pv_onboarding_answers');
+                localStorage.removeItem('pv_onboarding_options');
+            }
+
+            function renderProgress(step) {
+                // 4 dots; for name=0, eurovision=1, animal=2, food=3.
+                // For generating/pick, all 4 dots = done.
+                var stepIndex = ONBOARDING_FIELDS.indexOf(getFieldForStep(step));
+                var $dots = $('#onboarding-progress .dot');
+                $dots.removeClass('active done');
+                if (stepIndex >= 0) {
+                    for (var i = 0; i < 4; i++) {
+                        if (i < stepIndex) $dots.eq(i).addClass('done');
+                        else if (i === stepIndex) $dots.eq(i).addClass('active');
+                    }
+                } else {
+                    $dots.addClass('done');
+                }
+            }
+
+            function getFieldForStep(step) {
+                if (step === 'song') return 'song_title';
+                if (step === 'song_vibe') return 'song_vibe';
+                if (step === 'personal_vibe') return 'personal_vibe';
+                if (step === 'extra') return 'extra';
+                return null;
+            }
+
+            function setStep(step) {
+                localStorage.setItem('pv_onboarding_state', step);
+                $('.onboarding-step').removeClass('active');
+                var $step = $('.onboarding-step[data-step="' + step + '"]').addClass('active');
+                renderProgress(step);
+
+                if (step === 'generating') {
+                    startGeneratingCopyCycle();
+                } else {
+                    stopGeneratingCopyCycle();
+                }
+
+                if (step === 'pick') {
+                    renderNameOptions();
+                }
+
+                // Restore prior input value (resume support) and focus.
+                var field = getFieldForStep(step);
+                if (field) {
+                    var $input = $step.find('[data-field]');
+                    var prior = loadAnswers()[field] || '';
+                    $input.val(prior);
+                    updateStepButtonState($step);
+                    setTimeout(function () { $input.trigger('focus'); }, 50);
+                }
+            }
+
+            function updateStepButtonState($step) {
+                if ($step.attr('data-optional') === 'true') {
+                    $step.find('.onboarding-btn[data-next], .onboarding-btn[data-generate]').prop('disabled', false);
+                    return;
+                }
+                var val = ($step.find('[data-field]').val() || '').trim();
+                $step.find('.onboarding-btn[data-next], .onboarding-btn[data-generate]').prop('disabled', val.length === 0);
+            }
+
+            function startGeneratingCopyCycle() {
+                var lines = [
+                    'Tuning your harmonies…',
+                    'Adjusting the wind machine…',
+                    'Picking out sequins…',
+                    'Negotiating with the pyro team…',
+                    'Translating to schlager…',
+                    'Adding one more key change…'
+                ];
+                var i = 0;
+                var $copy = $('#generating-copy');
+                $copy.text(lines[0]);
+                generatingCopyTimer = setInterval(function () {
+                    i = (i + 1) % lines.length;
+                    $copy.css('opacity', 0);
                     setTimeout(function () {
-                        $('#bandname').removeClass('name-change-flash');
-                        $('#change_name').css('animation', 'gradientBackground 3s ease infinite');
-                    }, 600);
-                }, 300);
+                        $copy.text(lines[i]).css('opacity', 1);
+                    }, 250);
+                }, 1600);
+            }
 
-                // Emit socket event
-                socket.emit('nameChanged', {
-                    'old_name': oldName,
-                    'new_name': savedName
+            function stopGeneratingCopyCycle() {
+                if (generatingCopyTimer) {
+                    clearInterval(generatingCopyTimer);
+                    generatingCopyTimer = null;
+                }
+            }
+
+            var lastNamesSource = null;     // 'openai' | 'fallback'
+            var lastNamesError = null;      // populated when fallback
+
+            function renderNameOptions() {
+                var opts = loadOptions() || [];
+                var $wrap = $('#name-options').empty();
+                opts.forEach(function (name) {
+                    var $btn = $('<button>')
+                        .attr('type', 'button')
+                        .addClass('name-option')
+                        .text(name)
+                        .on('click', function () { pickName(name); });
+                    $wrap.append($btn);
+                });
+                renderNamesSourceBanner();
+            }
+
+            function renderNamesSourceBanner() {
+                var $banner = $('#names-source-banner');
+                if (lastNamesSource === 'fallback') {
+                    var msg = '🎲 Using local random names — couldn\'t reach OpenAI.';
+                    var detail = lastNamesError ? '[' + lastNamesError + ']' : '';
+                    $banner.html(
+                        '<span class="banner-title">' + msg + '</span>' +
+                        (detail ? '<span class="banner-detail">' + detail + '</span>' : '')
+                    ).removeAttr('hidden');
+                } else {
+                    $banner.attr('hidden', 'hidden').empty();
+                }
+            }
+
+            function fallbackThreeRandom() {
+                var seen = {};
+                var out = [];
+                var safety = 0;
+                while (out.length < 3 && safety < 30) {
+                    var n = randomEurovisionName();
+                    if (n && !seen[n]) { seen[n] = true; out.push(n); }
+                    safety++;
+                }
+                while (out.length < 3) out.push(randomEurovisionName());
+                return out;
+            }
+
+            function requestNames() {
+                setStep('generating');
+                lastNamesSource = null;
+                lastNamesError = null;
+                var answers = loadAnswers();
+                var controller = new AbortController();
+                var timeoutId = setTimeout(function () { controller.abort(); }, 10000);
+                var capturedStatus = null;
+                var capturedBody = null;
+
+                fetch('api/generate-names', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(answers),
+                    signal: controller.signal
+                }).then(function (r) {
+                    clearTimeout(timeoutId);
+                    capturedStatus = r.status;
+                    return r.json().catch(function () { return null; }).then(function (body) {
+                        capturedBody = body;
+                        if (!r.ok) {
+                            var code = (body && body.error_code) || ('http_' + r.status);
+                            throw new Error(code);
+                        }
+                        return body;
+                    });
+                }).then(function (data) {
+                    if (!data || !Array.isArray(data.names) || data.names.length !== 3) {
+                        throw new Error('bad_shape');
+                    }
+                    saveOptions(data.names);
+                    lastNamesSource = data.source || 'openai';
+                    setStep('pick');
+                }).catch(function (err) {
+                    clearTimeout(timeoutId);
+                    var label = err && err.message ? err.message : 'unknown';
+                    if (err && err.name === 'AbortError') label = 'timeout';
+                    console.warn('[onboarding] /api/generate-names failed, falling back:', {
+                        status: capturedStatus,
+                        body: capturedBody,
+                        error: err
+                    });
+                    saveOptions(fallbackThreeRandom());
+                    lastNamesSource = 'fallback';
+                    lastNamesError = label;
+                    setStep('pick');
+                });
+            }
+
+            function pickName(name) {
+                var answers = loadAnswers();
+                localStorage.setItem('userName', name);
+                clearOnboardingLS();
+                socket.emit('onboarding_complete', {
+                    clientId: clientId,
+                    userName: name,
+                    answers: answers
+                });
+                $('#onboarding-overlay').removeClass('visible').attr('aria-hidden', 'true');
+                setTimeout(function () { $('#onboarding-overlay').css('display', 'none'); }, 300);
+                joinRoom(name);
+            }
+
+            function startOnboarding() {
+                $('#onboarding-overlay').css('display', '').addClass('visible').attr('aria-hidden', 'false');
+                var step = localStorage.getItem('pv_onboarding_state');
+                if (!step || ONBOARDING_STEPS.indexOf(step) === -1) step = 'song';
+                // If we somehow land on 'generating' from a resume, send them
+                // back to the last input step so they can re-submit.
+                if (step === 'generating') step = 'extra';
+                // If we land on 'pick' but have no options stored, regenerate.
+                if (step === 'pick' && !loadOptions()) {
+                    requestNames();
+                    return;
+                }
+                setStep(step);
+            }
+
+            // Wire up onboarding interactions.
+            $(document).on('input', '#onboarding-overlay [data-field]', function () {
+                var $step = $(this).closest('.onboarding-step');
+                updateStepButtonState($step);
+                // Persist as the user types so refresh-mid-flow resumes their text.
+                var field = $step.data('step');
+                field = getFieldForStep(field);
+                if (field) {
+                    var a = loadAnswers();
+                    a[field] = $(this).val();
+                    saveAnswers(a);
+                }
+            });
+
+            $(document).on('keydown', '#onboarding-overlay .onboarding-input', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    var $step = $(this).closest('.onboarding-step');
+                    var $btn = $step.find('.onboarding-btn[data-next], .onboarding-btn[data-generate]');
+                    if (!$btn.prop('disabled')) $btn.trigger('click');
+                }
+            });
+
+            $(document).on('click', '#onboarding-overlay .onboarding-btn[data-next]', function () {
+                var $step = $(this).closest('.onboarding-step');
+                var currentStep = $step.data('step');
+                var idx = ONBOARDING_STEPS.indexOf(currentStep);
+                if (idx >= 0 && idx < ONBOARDING_STEPS.length - 1) {
+                    setStep(ONBOARDING_STEPS[idx + 1]);
+                }
+            });
+
+            $(document).on('click', '#onboarding-overlay .onboarding-btn[data-generate]', function () {
+                requestNames();
+            });
+
+            $(document).on('click', '#reroll-btn', function () {
+                requestNames();
+            });
+
+            // "Surprise me" dice button — generates one AI suggestion for the
+            // current field. Each click is fresh; no rate-limiting beyond the
+            // visual loading state.
+            $(document).on('click', '#onboarding-overlay .onboarding-dice', function () {
+                var $dice = $(this);
+                if ($dice.prop('disabled')) return;
+                var field = $dice.attr('data-dice-field');
+                if (!field) return;
+
+                var $step = $dice.closest('.onboarding-step');
+                var $input = $step.find('[data-field]');
+                var originalText = $dice.text();
+
+                $dice.prop('disabled', true).addClass('loading');
+
+                var controller = new AbortController();
+                var timeoutId = setTimeout(function () { controller.abort(); }, 10000);
+
+                fetch('api/suggest-answer', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ field: field, context: loadAnswers() }),
+                    signal: controller.signal
+                }).then(function (r) {
+                    return r.json().catch(function () { return null; }).then(function (body) {
+                        if (!r.ok) {
+                            var code = (body && body.error_code) || ('http_' + r.status);
+                            var err = new Error(code);
+                            err.body = body;
+                            throw err;
+                        }
+                        return body;
+                    });
+                }).then(function (data) {
+                    clearTimeout(timeoutId);
+                    if (!data || typeof data.answer !== 'string' || !data.answer.trim()) {
+                        throw new Error('bad_shape');
+                    }
+                    $input.val(data.answer).trigger('input');
+                    $input.trigger('focus');
+                }).catch(function (err) {
+                    clearTimeout(timeoutId);
+                    var label = (err && err.message) || 'unknown';
+                    if (err && err.name === 'AbortError') label = 'timeout';
+                    console.warn('[onboarding] /api/suggest-answer failed:', { field: field, error: err });
+                    // Brief shake to indicate failure, then restore.
+                    $dice.css('animation', 'none');
+                    setTimeout(function () {
+                        $dice.text('⚠️').attr('title', 'Suggestion failed — ' + label);
+                        setTimeout(function () {
+                            $dice.text(originalText).attr('title', 'Surprise me');
+                        }, 1400);
+                    }, 0);
+                }).then(function () {
+                    $dice.prop('disabled', false).removeClass('loading');
                 });
             });
 
@@ -1238,39 +2283,61 @@
 
 
 
-            // Function to populate the votes review list
+            // Build the locked-state review: top 3 picks in a gold/silver/bronze
+            // podium, remaining picks in a faded list below.
             function populateVotesReview() {
-                const reviewList = $('#votesReviewList');
-                if (reviewList.length === 0) return;
-                
-                // Clear the list first
+                var reviewList = $('#votesReviewList');
+                var podium = $('#podium');
+                var wrap = $('#votesReviewWrap');
+
+                if (reviewList.length === 0 && podium.length === 0) return;
+
                 reviewList.empty();
-                
-                // Get the user's votes from localStorage
-                const savedOrder = localStorage.getItem('itemsOrder');
+                podium.empty();
+
+                var savedOrder = localStorage.getItem('itemsOrder');
                 if (!savedOrder) {
-                    reviewList.html('<div style="text-align:center;padding:10px;">No votes found</div>');
+                    if (wrap.length) wrap.hide();
                     return;
                 }
-                
-                const userVotes = JSON.parse(savedOrder);
-                const pointValues = $('.static-list li').map(function() {
+
+                var userVotes = JSON.parse(savedOrder);
+                var pointValues = $('.static-list li').map(function () {
                     return parseInt($(this).text());
                 }).get();
-                
-                // Create the review list items
-                userVotes.forEach((vote, index) => {
-                    if (index < pointValues.length) {
-                        const points = pointValues[index];
-                        const listItem = $(`
-                            <li class="votes-review-item">
-                                <span>${vote}</span>
-                                <span class="votes-review-points">${points}</span>
-                            </li>
-                        `);
-                        reviewList.append(listItem);
+
+                var medals = ['🥇', '🥈', '🥉'];
+                var tiers = ['gold', 'silver', 'bronze'];
+
+                userVotes.forEach(function (vote, index) {
+                    if (index >= pointValues.length) return;
+                    var points = pointValues[index];
+                    if (index < 3) {
+                        var item = $(
+                            '<div class="podium-item ' + tiers[index] + '">' +
+                                '<span class="podium-medal">' + medals[index] + '</span>' +
+                                '<span class="podium-pick"></span>' +
+                                '<span class="podium-pts">' + points + ' pts</span>' +
+                            '</div>'
+                        );
+                        item.find('.podium-pick').text(vote);
+                        podium.append(item);
+                    } else {
+                        var li = $(
+                            '<li class="votes-review-item">' +
+                                '<span></span>' +
+                                '<span class="votes-review-points">' + points + '</span>' +
+                            '</li>'
+                        );
+                        li.find('span').first().text(vote);
+                        reviewList.append(li);
                     }
                 });
+
+                if (wrap.length) {
+                    if (reviewList.children().length === 0) wrap.hide();
+                    else wrap.show();
+                }
             }
 
             // When votes are locked on page load, populate the review list
@@ -1284,28 +2351,28 @@
             });
             {% endif %}
 
-            // For real-time locking (add this to the socket.on('votes_finalized') handler)
-            socket.on('votes_finalized', function(data) {
-                // Add locked class to container
+            // Real-time locking: when the admin closes voting, swap the live
+            // voting UI for the celebratory locked-state overlay.
+            socket.on('votes_finalized', function (data) {
                 $('#vote_container').addClass('locked-container');
-                
-                // Disable sortable
                 list.sortable("disable");
-                
-                // Create and append the overlay if it doesn't exist
+                dismissFirstVisitTip();
+
                 if ($('.votes-locked-overlay').length === 0) {
-                    const overlay = $('<div class="votes-locked-overlay">' + 
-                        '<div class="lock-icon">🔒</div>' + 
-                        '<div class="lock-message">Voting has been locked by the administrator. Thank you for participating!</div>' + 
-                        '<div class="votes-review">' +
-                            '<div class="votes-review-title">Your Final Votes</div>' +
-                            '<ul class="votes-review-list" id="votesReviewList"></ul>' +
-                        '</div>' + 
-                        '</div>');
+                    var overlay = $(
+                        '<div class="votes-locked-overlay">' +
+                            '<div class="lock-icon">🏁</div>' +
+                            '<div class="lock-message">Your votes are in!<span class="lock-subtext">Thanks for playing PIZZAVISION 2026</span></div>' +
+                            '<div class="podium" id="podium"></div>' +
+                            '<div class="votes-review" id="votesReviewWrap">' +
+                                '<div class="votes-review-title">Your other picks</div>' +
+                                '<ul class="votes-review-list" id="votesReviewList"></ul>' +
+                            '</div>' +
+                        '</div>'
+                    );
                     $('#vote_container').append(overlay);
-                    
-                    // Show the overlay with a slight delay for transition effect
-                    setTimeout(function() {
+
+                    setTimeout(function () {
                         $('.votes-locked-overlay').addClass('visible');
                         populateVotesReview();
                     }, 100);
@@ -1352,31 +2419,6 @@
                     // Remove any local storage the page uses
                     // Hard reload
                     location.reload(true);
-                });
-
-                // Add this to your socket event listeners
-                socket.on('votes_finalized', function(data) {
-                    // Add locked class to container
-                    $('#vote_container').addClass('locked-container');
-                    
-                    // Disable sortable
-                    list.sortable("disable");
-                    
-                    // Create and append the overlay if it doesn't exist
-                    if ($('.votes-locked-overlay').length === 0) {
-                        const overlay = $('<div class="votes-locked-overlay">' + 
-                            '<div class="lock-icon">🔒</div>' + 
-                            '<div class="lock-message">Voting has been locked by the administrator. Thank you for participating!</div>' + 
-                            '</div>');
-                        $('#vote_container').append(overlay);
-                        
-                        // Show the overlay with a slight delay for transition effect
-                        setTimeout(function() {
-                            $('.votes-locked-overlay').addClass('visible');
-                        }, 100);
-                    } else {
-                        $('.votes-locked-overlay').addClass('visible');
-                    }
                 });
             }
 

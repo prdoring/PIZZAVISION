@@ -1,0 +1,10 @@
+﻿creationTimestamp: '2026-02-22T20:42:20.350-08:00'
+fingerprint: 1erzk6EmBwE=
+id: '2433002395328209987'
+kind: compute#targetHttpsProxy
+name: sub-game-https-proxy
+selfLink: https://www.googleapis.com/compute/v1/projects/subgame-488302/global/targetHttpsProxies/sub-game-https-proxy
+sslCertificates:
+- https://www.googleapis.com/compute/v1/projects/subgame-488302/global/sslCertificates/sub-game-cert
+tlsEarlyData: DISABLED
+urlMap: https://www.googleapis.com/compute/v1/projects/subgame-488302/global/urlMaps/sub-game-urlmap
