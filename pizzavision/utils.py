@@ -61,10 +61,28 @@ def load_vote_options():
         data = json.load(json_file)
     return data['votes']
 
-def load_lock_state():
+VOTING_STATES = ("pre", "open", "closed")
+
+
+def load_voting_state():
+    """Read the current voting lifecycle state from options.json.
+
+    Returns one of: "pre" | "open" | "closed". Tolerates a missing field
+    (treats as pre — fresh contest) and the legacy boolean `locked` key
+    (False -> "open", True -> "closed").
+    """
     with open('pizzavision/options.json', 'r') as json_file:
         data = json.load(json_file)
-    return data['locked']
+    state = data.get('voting_state')
+    if state in VOTING_STATES:
+        return state
+    if 'locked' in data:
+        return 'closed' if data['locked'] else 'open'
+    return 'pre'
+
+
+def load_lock_state():
+    return load_voting_state() == 'closed'
 
 # All other helper functions
 ESC_POINTS = [12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]   # top‑11 gets points

@@ -45,7 +45,8 @@ def _fmt_pacific(iso_str):
 from . import voting_bp
 from .utils import (
     load_options, load_vote_options, calculate_ranked_choice,
-    calculate_awards, get_file_path, load_lock_state
+    calculate_awards, get_file_path, load_lock_state, load_voting_state,
+    VOTING_STATES,
 )
 from .vote_store import get_vote_store
 from . import openai_client
@@ -59,7 +60,14 @@ vote_store = get_vote_store()
 def index():
     options = load_options()
     vo = load_vote_options()
-    return render_template('index.html', options=options, votes=vo, votes_locked=load_lock_state())
+    voting_state = load_voting_state()
+    return render_template(
+        'index.html',
+        options=options,
+        votes=vo,
+        voting_state=voting_state,
+        votes_locked=(voting_state == 'closed'),
+    )
 
 
 @voting_bp.route('/api/generate-names', methods=['POST'])
@@ -114,6 +122,106 @@ def suggest_answer():
         return jsonify(error=str(e), error_code='no_api_key'), 503
     except Exception as e:
         current_app.logger.exception("suggest_answer: unexpected failure")
+        return jsonify(error=str(e), error_code='api_error', error_type=type(e).__name__), 503
+
+
+@voting_bp.route('/api/roast-band', methods=['POST'])
+def roast_band():
+    """Lighthearted AI dig at a user's freshly-minted Eurovision act,
+    shown while they're sitting on the "voting hasn't started yet" screen.
+
+    Payload: {clientId: str}
+    Returns: {roast: str} on success, or a 4xx/503 with `error` on failure.
+    Frontend treats any non-200 as 'just hide the roast block'.
+    """
+    body = request.get_json(silent=True) or {}
+    client_id = (body.get('clientId') or '').strip()
+    if not client_id:
+        return jsonify(error='clientId required', error_code='bad_input'), 400
+
+    row = vote_store.get_by_client(client_id)
+    if not row:
+        return jsonify(error='no row for this client', error_code='no_row'), 404
+
+    band_name     = (row.get('user') or '').strip()
+    song_title    = (row.get('song_title') or '').strip()
+    song_vibe     = (row.get('song_vibe') or '').strip()
+    personal_vibe = (row.get('personal_vibe') or '').strip()
+    extra         = (row.get('extra') or '').strip()
+
+    # If we have nothing but a band name, the AI has no specifics to riff on —
+    # don't bother making the call.
+    if not (song_title or song_vibe or personal_vibe or extra):
+        return jsonify(error='no onboarding answers yet', error_code='no_answers'), 404
+
+    try:
+        roast = openai_client.roast_band(
+            band_name, song_title, song_vibe, personal_vibe, extra
+        )
+        return jsonify(roast=roast)
+    except ModuleNotFoundError as e:
+        current_app.logger.exception("roast_band: openai package not installed")
+        return jsonify(error=str(e), error_code='no_openai_package'), 503
+    except RuntimeError as e:
+        current_app.logger.warning(f"roast_band: {e}")
+        return jsonify(error=str(e), error_code='no_api_key'), 503
+    except Exception as e:
+        current_app.logger.exception("roast_band: unexpected failure")
+        return jsonify(error=str(e), error_code='api_error', error_type=type(e).__name__), 503
+
+
+@voting_bp.route('/api/roast-votes', methods=['POST'])
+def roast_votes():
+    """Snarky AI one-liner about a single voter's finalized ballot.
+
+    Payload: {clientId: str}
+    Returns: {roast: str} on success, or a 4xx/503 with `error` on failure.
+    The frontend treats any non-200 as 'just hide the roast block'.
+    """
+    body = request.get_json(silent=True) or {}
+    client_id = (body.get('clientId') or '').strip()
+    if not client_id:
+        return jsonify(error='clientId required', error_code='bad_input'), 400
+
+    row = vote_store.get_by_client(client_id)
+    if not row:
+        return jsonify(error='no votes for this client', error_code='no_row'), 404
+
+    rank = row.get('rank') or []
+    if not rank:
+        return jsonify(error='empty ballot', error_code='empty_ballot'), 404
+
+    with open(OPTIONS_FILE, 'r', encoding='utf-8') as fh:
+        options_data = json.load(fh)
+    by_label = {o['label']: o for o in options_data.get('options', [])}
+    picks_with_meta = []
+    for lbl in rank:
+        meta = by_label.get(lbl, {})
+        picks_with_meta.append({
+            'label':            lbl,
+            'genre':            meta.get('genre'),
+            'lead':             meta.get('lead'),
+            'language':         meta.get('language'),
+            'region':           meta.get('region'),
+            'act_type':         meta.get('act_type'),
+            'selection_type':   meta.get('selection_type'),
+            'drink':            meta.get('drink'),
+            'big5':             meta.get('big5'),
+            'former_soviet':    meta.get('former_soviet'),
+            'returning_artist': meta.get('returning_artist'),
+        })
+
+    try:
+        roast = openai_client.roast_user_votes(row.get('user', ''), picks_with_meta)
+        return jsonify(roast=roast)
+    except ModuleNotFoundError as e:
+        current_app.logger.exception("roast_votes: openai package not installed")
+        return jsonify(error=str(e), error_code='no_openai_package'), 503
+    except RuntimeError as e:
+        current_app.logger.warning(f"roast_votes: {e}")
+        return jsonify(error=str(e), error_code='no_api_key'), 503
+    except Exception as e:
+        current_app.logger.exception("roast_votes: unexpected failure")
         return jsonify(error=str(e), error_code='api_error', error_type=type(e).__name__), 503
 
 
@@ -183,11 +291,11 @@ def _save_options(data):
 def admin_panel():
     """
     Single admin page with these actions:
-      save_options    – reorder / delete items (also clears votes)
-      clear_db        – wipe the vote store
-      restore_options – copy options_bak.json -> options.json (also clears votes)
-      lock_votes      – snapshot current votes and lock the song list
-      unlock_votes    – unlock the song list
+      save_options      – reorder / delete items (also clears votes)
+      clear_db          – wipe the vote store
+      restore_options   – copy options_bak.json -> options.json (also clears votes)
+      set_voting_state  – move the contest to "pre" / "open" / "closed"
+                          (replaces the old lock_votes / unlock_votes)
     """
     if request.method == "POST":
         if request.form.get("password") != ADMIN_PASSWORD:
@@ -237,13 +345,6 @@ def admin_panel():
             )
             return jsonify(status="rank_cleared")
 
-        if action == "unlock_votes":
-            data = _load_options()
-            data["locked"] = False
-            _save_options(data)
-            current_app.extensions["socketio"].emit("refresh")
-            return jsonify(status="unlocked")
-
         if action == "restore_options":
             if not os.path.exists(BACKUP_FILE):
                 abort(500, "options_bak.json not found")
@@ -254,25 +355,40 @@ def admin_panel():
             current_app.extensions["socketio"].emit("options_updated")
             return jsonify(status="restored")
 
-        if action == "lock_votes":
-            # Snapshot current votes to a timestamped JSON file before locking.
-            # On Cloud Run this writes to the ephemeral container fs — only useful
-            # for local dev. Firestore retains the live data either way.
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            if os.path.exists(DB_FILE):
-                backup_filename = f"votes_finalized_{timestamp}.json"
-                backup_path = os.path.join("pizzavision", backup_filename)
-                try:
-                    shutil.copy2(DB_FILE, backup_path)
-                except OSError as exc:
-                    print(f"lock_votes: snapshot write skipped ({exc})")
+        if action == "set_voting_state":
+            new_state = request.form.get("state", "")
+            if new_state not in VOTING_STATES:
+                abort(400, f"state must be one of {VOTING_STATES}")
 
-            current_app.extensions["socketio"].emit("votes_finalized", {"timestamp": timestamp})
             data = _load_options()
-            data["locked"] = True
+            data["voting_state"] = new_state
+            data.pop("locked", None)  # one-time legacy cleanup
+
+            timestamp = None
+            if new_state == "closed":
+                # Snapshot current votes to a timestamped JSON file before locking.
+                # On Cloud Run this writes to the ephemeral container fs — only useful
+                # for local dev. Firestore retains the live data either way.
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                if os.path.exists(DB_FILE):
+                    backup_filename = f"votes_finalized_{timestamp}.json"
+                    backup_path = os.path.join("pizzavision", backup_filename)
+                    try:
+                        shutil.copy2(DB_FILE, backup_path)
+                    except OSError as exc:
+                        print(f"set_voting_state: snapshot write skipped ({exc})")
+
             _save_options(data)
 
-            return jsonify(status="votes_locked", timestamp=timestamp)
+            sio = current_app.extensions["socketio"]
+            sio.emit("voting_state_changed", {"state": new_state, "timestamp": timestamp})
+            # Keep emitting the legacy event on close so the existing podium
+            # reveal stays wired even if a client hasn't reloaded since the
+            # 3-state refactor.
+            if new_state == "closed":
+                sio.emit("votes_finalized", {"timestamp": timestamp})
+
+            return jsonify(status="state_set", state=new_state, timestamp=timestamp)
 
         abort(400, "unknown action")
 
@@ -290,7 +406,12 @@ def admin_panel():
             "online": cid in online_ids,
         })
     users.sort(key=lambda u: (u["user"] or "").lower())
-    return render_template("admin.html", options=data["options"], users=users)
+    return render_template(
+        "admin.html",
+        options=data["options"],
+        users=users,
+        voting_state=load_voting_state(),
+    )
 
 
 # ------------------------------------------------------------------
@@ -304,17 +425,22 @@ def register_socketio_handlers(socket_io):
         """Client just connected (or refreshed). Return its persisted state.
 
         Payload: {clientId: str, userName: str}
-        Reply  : {user: str, rank: list[str]}
+        Reply  : {user, rank}   if we have a row for this clientId
+                 {reset: True}  if we don't (admin-deleted while client was
+                                offline — the client should wipe local state
+                                and re-run onboarding rather than silently
+                                getting a fresh row)
 
         Side effects:
         - Tracks this sid as belonging to client_id (powers the admin online dot).
         - Joins the client_id-keyed SocketIO room so admin actions can target
           just this user.
 
-        - If we already have a doc for this clientId, return what we have (server
-          wins on the band name — the client should sync to it).
-        - Otherwise, create a fresh row with the client's userName and an empty
-          rank, so subsequent rankchanged events upsert by an existing client_id.
+        We deliberately do NOT auto-seed a row here. Seeding hid the
+        admin-deleted-while-offline case: the client would silently rejoin
+        with the same name and bypass onboarding. New rows are created when
+        they actually need to exist — via onboarding_complete (first-time
+        onboarders) or upsert_rank (first drag).
         """
         client_id = data.get('clientId')
         user_name = data.get('userName', '')
@@ -330,10 +456,7 @@ def register_socketio_handlers(socket_io):
                 'user': existing.get('user', user_name),
                 'rank': existing.get('rank', []),
             }
-
-        # First time we've seen this client — seed an empty doc.
-        vote_store.update_name(client_id, user_name)
-        return {'user': user_name, 'rank': []}
+        return {'reset': True}
 
     @socket_io.on('disconnect')
     def on_disconnect():

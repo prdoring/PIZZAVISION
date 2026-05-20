@@ -157,6 +157,137 @@ _FIELD_MAXLEN = {
 }
 
 
+# ---------------------------------------------------------------
+# Vote roast — snarky one-liner about a user's finalized ballot
+# ---------------------------------------------------------------
+
+_ROAST_SYSTEM = (
+    "You are a witty Eurovision watch-party host roasting one voter's final ballot. "
+    "Be snarky but affectionate — like a friend ribbing them, not actually mean. "
+    "Find ONE concrete pattern in their picks (e.g. heavy on one genre, all male "
+    "leads, slept on the Big 5, only voted Balkan, gave 12 points to a novelty "
+    "act, ignored every ballad, all native-language, etc.) and call it out with "
+    "specifics from their ballot. Tight: 1-2 sentences, under 240 characters. "
+    "Address them by their band name when it's natural. No emojis. No quotes. "
+    "Output ONLY the roast text."
+)
+
+_ROAST_POINTS = [12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+
+
+def roast_user_votes(user_name: str, picks_with_meta: list[dict]) -> str:
+    """Generate a one- or two-sentence snarky roast of a user's vote ballot.
+
+    `picks_with_meta` is the user's full ranked list (highest to lowest), each
+    item a dict with `label` plus any of {genre, lead, language, region, big5,
+    former_soviet, returning_artist, act_type, selection_type, drink}.
+    """
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY not set")
+
+    from openai import OpenAI
+
+    client = OpenAI(api_key=api_key, timeout=8.0)
+
+    lines = []
+    for i, pick in enumerate(picks_with_meta[:len(_ROAST_POINTS)]):
+        pts = _ROAST_POINTS[i]
+        bits = []
+        for key in ("genre", "lead", "language", "region", "act_type", "selection_type", "drink"):
+            v = pick.get(key)
+            if v:
+                bits.append(f"{key}:{v}")
+        for flag in ("big5", "former_soviet", "returning_artist"):
+            if pick.get(flag):
+                bits.append(flag)
+        meta = ", ".join(bits) if bits else "no-meta"
+        lines.append(f"{pts}pts -> {pick.get('label', '?')} [{meta}]")
+    ballot_block = "\n".join(lines) or "(empty ballot)"
+
+    user_msg = (
+        f"Voter band name: {user_name or '(unnamed)'}\n\n"
+        f"Their ballot (top to bottom, with metadata):\n{ballot_block}\n\n"
+        "Now roast their voting pattern."
+    )
+
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        temperature=1.1,
+        messages=[
+            {"role": "system", "content": _ROAST_SYSTEM},
+            {"role": "user", "content": user_msg},
+        ],
+    )
+
+    text = (resp.choices[0].message.content or "").strip()
+    text = text.strip('"').strip("'").strip()
+    text = " ".join(text.split())
+    if not text:
+        raise ValueError("empty roast")
+    # Hard cap so a runaway response can't blow up the modal.
+    return text[:300]
+
+
+# ---------------------------------------------------------------
+# Band roast — lighthearted dig at a freshly-onboarded act
+# ---------------------------------------------------------------
+
+_BAND_ROAST_SYSTEM = (
+    "You are a witty Eurovision watch-party host roasting a fictional act "
+    "someone just invented during onboarding. Be lighthearted and affectionate "
+    "— think Graham Norton commentary, not actually mean. Riff on 1-2 SPECIFIC "
+    "details from the song title, song vibe, performer's personal vibe, or "
+    "extra flavor they gave you. Find the absurd, pretentious, or over-the-top "
+    "thing and gently call it out. Address them by their band name when it's "
+    "natural. 1-2 sentences, under 240 characters. No emojis. No quotes. "
+    "Output ONLY the roast text."
+)
+
+
+def roast_band(
+    band_name: str,
+    song_title: str,
+    song_vibe: str,
+    personal_vibe: str,
+    extra: str,
+) -> str:
+    """Generate a one- or two-sentence affectionate roast of the user's
+    freshly-minted Eurovision act, riffing on the onboarding answers."""
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY not set")
+
+    from openai import OpenAI
+
+    client = OpenAI(api_key=api_key, timeout=8.0)
+
+    user_msg = (
+        f"Band name: {band_name or '(unnamed)'}\n"
+        f"Song title: {song_title or '(none)'}\n"
+        f"Song vibe: {song_vibe or '(none)'}\n"
+        f"Performer's personal vibe: {personal_vibe or '(none)'}\n"
+        f"Anything else: {extra or '(none)'}\n\n"
+        "Now roast the act."
+    )
+
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        temperature=1.1,
+        messages=[
+            {"role": "system", "content": _BAND_ROAST_SYSTEM},
+            {"role": "user", "content": user_msg},
+        ],
+    )
+
+    text = (resp.choices[0].message.content or "").strip()
+    text = text.strip('"').strip("'").strip()
+    text = " ".join(text.split())
+    if not text:
+        raise ValueError("empty roast")
+    return text[:300]
+
+
 def _truncate_clean(text: str, max_len: int) -> str:
     """Truncate to max_len, prefer breaking on a word boundary."""
     if len(text) <= max_len:

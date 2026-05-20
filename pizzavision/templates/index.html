@@ -1351,6 +1351,189 @@
             opacity: 0.75;
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         }
+
+        /* ---------- 3-state voting lifecycle overlays ---------- */
+        .pv-state-overlay {
+            position: fixed;
+            inset: 0;
+            display: none;
+            z-index: 10000;
+            background: radial-gradient(circle at 20% 10%, rgba(255, 0, 128, 0.18), transparent 60%),
+                        radial-gradient(circle at 80% 90%, rgba(0, 200, 255, 0.18), transparent 60%),
+                        rgba(8, 4, 20, 0.94);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+        .pv-state-overlay.visible {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+        .pv-state-card {
+            box-sizing: border-box;
+            max-width: 480px;
+            width: calc(100% - 32px);
+            margin: 24px;
+            padding: 36px 32px 32px;
+            border-radius: 28px;
+            background: rgba(20, 8, 35, 0.78);
+            box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55),
+                        0 0 0 1px rgba(255, 255, 255, 0.07);
+            color: #fff;
+            text-align: center;
+            transform: translateY(16px) scale(0.96);
+            transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .pv-state-overlay.visible .pv-state-card {
+            transform: translateY(0) scale(1);
+        }
+        .pv-state-card h1 {
+            margin: 0 0 12px;
+            font-size: clamp(24px, 5vw, 32px);
+            font-weight: 800;
+            letter-spacing: 0.3px;
+        }
+        .pv-state-card p {
+            margin: 0 0 22px;
+            font-size: 15px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        .pv-state-emoji {
+            font-size: 64px;
+            line-height: 1;
+            margin-bottom: 14px;
+            display: inline-block;
+            filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.5));
+        }
+        .pv-state-btn {
+            font-family: inherit;
+            font-weight: 700;
+            font-size: 15px;
+            border: none;
+            border-radius: 999px;
+            padding: 14px 30px;
+            cursor: pointer;
+            color: #fff;
+            background: linear-gradient(135deg, #ff3aa3, #7a2cff);
+            box-shadow: 0 14px 30px rgba(122, 44, 255, 0.45);
+            transition: transform 0.15s ease, box-shadow 0.2s ease;
+        }
+        .pv-state-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 18px 36px rgba(122, 44, 255, 0.55);
+        }
+
+        /* Pre-voting: gentle pulsing dot under the message */
+        #prevote-overlay .pv-state-emoji {
+            animation: prevotePulse 2.4s ease-in-out infinite;
+        }
+        @keyframes prevotePulse {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.08); }
+        }
+        /* Spinner kept ONLY for the brief AI roast loads — see .vote-roast-spinner */
+        @keyframes prevoteSpin {
+            to { transform: rotate(360deg); }
+        }
+        /* Pre-vote "we're waiting on the host" indicator — three dots that
+           pulse in sequence. Deliberately not a spinner: a spinner suggests
+           "loading", these dots suggest "standing by". */
+        .prevote-waiting {
+            display: inline-flex;
+            gap: 10px;
+            margin: 14px auto 0;
+            padding: 8px 16px;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .prevote-waiting-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff3aa3;
+            box-shadow: 0 0 8px rgba(255, 58, 163, 0.6);
+            animation: prevoteWaitPulse 1.4s ease-in-out infinite;
+        }
+        .prevote-waiting-dot:nth-child(2) { animation-delay: 0.2s; }
+        .prevote-waiting-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes prevoteWaitPulse {
+            0%, 80%, 100% { opacity: 0.3; transform: scale(0.85); }
+            40%           { opacity: 1;   transform: scale(1);    }
+        }
+        #prevoteBandName {
+            font-weight: 800;
+            background: linear-gradient(90deg, #ff3aa3, #00e0ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Open-vote: stacked with the title scaling in */
+        #open-vote-overlay .open-vote-title {
+            background: linear-gradient(90deg, #ffd93a, #ff3aa3, #00e0ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        /* Snarky AI roast block — appears inside the existing locked overlay,
+           between the "Your votes are in!" message and the podium. */
+        .vote-roast {
+            max-width: 540px;
+            width: calc(100% - 32px);
+            margin: 6px auto 18px;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 14px 16px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            transition: background 0.25s ease, border-color 0.25s ease;
+        }
+        .vote-roast.loaded {
+            background: rgba(255, 58, 163, 0.10);
+            border-color: rgba(255, 58, 163, 0.28);
+        }
+        .vote-roast-spinner {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid rgba(255, 255, 255, 0.18);
+            border-top-color: #ff3aa3;
+            animation: prevoteSpin 0.9s linear infinite;
+        }
+        .vote-roast-text {
+            display: none;
+            font-size: 14px;
+            line-height: 1.5;
+            color: rgba(255, 255, 255, 0.94);
+            font-style: italic;
+            text-align: center;
+        }
+        /* Markdown the AI sometimes returns. The block itself is already
+           italic, so <em> flips to upright + weight so emphasis actually
+           reads instead of vanishing into the surrounding italic. */
+        .vote-roast-text strong { font-weight: 700; color: #ffd6f0; }
+        .vote-roast-text em     { font-style: normal; font-weight: 600; }
+        .vote-roast-text code {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-style: normal;
+            font-size: 0.92em;
+            background: rgba(255, 255, 255, 0.10);
+            padding: 1px 6px;
+            border-radius: 4px;
+        }
+        .vote-roast.loaded .vote-roast-spinner { display: none; }
+        .vote-roast.loaded .vote-roast-text { display: block; }
     </style>
 </head>
 
@@ -1473,6 +1656,33 @@
         </div>
     </div>
 
+    <!-- 3-state voting lifecycle overlays -->
+    <div id="prevote-overlay" class="pv-state-overlay" aria-hidden="true">
+        <div class="pv-state-card">
+            <div class="pv-state-emoji">🍕</div>
+            <h1>Voting hasn't started yet</h1>
+            <p>Hang tight, <span id="prevoteBandName"></span> — once the host opens the vote, the song list will appear here.</p>
+            <div id="band-roast" class="vote-roast" hidden>
+                <div class="vote-roast-spinner" aria-hidden="true"></div>
+                <div class="vote-roast-text"></div>
+            </div>
+            <div class="prevote-waiting" aria-hidden="true">
+                <span class="prevote-waiting-dot"></span>
+                <span class="prevote-waiting-dot"></span>
+                <span class="prevote-waiting-dot"></span>
+            </div>
+        </div>
+    </div>
+
+    <div id="open-vote-overlay" class="pv-state-overlay" aria-hidden="true">
+        <div class="pv-state-card">
+            <div class="pv-state-emoji">🎤</div>
+            <h1 class="open-vote-title">Voting is OPEN!</h1>
+            <p>Drag your favorites into the points columns. Your top pick goes at the top.</p>
+            <button type="button" class="pv-state-btn" id="open-vote-dismiss">Let me vote →</button>
+        </div>
+    </div>
+
     <!-- Spotlight effect background -->
     <div class="spotlight"></div>
 
@@ -1504,7 +1714,13 @@
             {% if votes_locked %}
             <div class="votes-locked-overlay">
                 <div class="lock-icon">🏁</div>
-                <div class="lock-message">Your votes are in!<span class="lock-subtext">Thanks for playing PIZZAVISION 2026</span></div>
+                <div class="lock-message">Douze points, dispatched.<span class="lock-subtext">Ballot sealed. Prosecco poured. Let the spectacle commence.</span></div>
+
+                <!-- Snarky AI roast of this voter's ballot -->
+                <div id="vote-roast" class="vote-roast" hidden>
+                    <div class="vote-roast-spinner" aria-hidden="true"></div>
+                    <div class="vote-roast-text"></div>
+                </div>
 
                 <!-- Top 3 podium -->
                 <div class="podium" id="podium"></div>
@@ -1533,10 +1749,167 @@
     <!-- Include jQuery UI Touch Punch -->
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
     <script src="{{ url_for('voting.static', filename='plasma-shader.js') }}"></script>
 
     <script>
+        window.PV_VOTING_STATE = "{{ voting_state }}";
         var socket = io();
+
+        // ============================================================
+        // 3-state voting lifecycle: pre / open / closed
+        // applyVotingState() is the single entry point used by both
+        // the page-load init and the live socket event below.
+        // ============================================================
+        function fireOpenConfetti() {
+            if (typeof confetti !== 'function') return;
+            var defaults = { startVelocity: 35, spread: 70, ticks: 90, zIndex: 11000 };
+            function burst(particleRatio, opts) {
+                confetti(Object.assign({}, defaults, opts, {
+                    particleCount: Math.floor(220 * particleRatio)
+                }));
+            }
+            burst(0.25, { origin: { x: 0.1, y: 0.6 }, angle: 60 });
+            burst(0.25, { origin: { x: 0.9, y: 0.6 }, angle: 120 });
+            burst(0.35, { origin: { x: 0.5, y: 0.5 }, spread: 100, startVelocity: 45 });
+            setTimeout(function () { burst(0.2, { origin: { x: 0.5, y: 0.4 }, spread: 110 }); }, 350);
+            setTimeout(function () { burst(0.2, { origin: { x: 0.5, y: 0.5 }, spread: 130 }); }, 750);
+        }
+
+        function applyVotingState(state, opts) {
+            opts = opts || {};
+            var live = !!opts.live;
+            var $prevote = $('#prevote-overlay');
+            var $open    = $('#open-vote-overlay');
+            var $list    = $('.sortable-list');
+
+            // Hide overlays that don't belong in this state.
+            if (state !== 'pre')  { $prevote.removeClass('visible').attr('aria-hidden', 'true'); }
+            if (state !== 'open') { $open.removeClass('visible').attr('aria-hidden', 'true'); }
+
+            if (state === 'pre') {
+                // Live regression from open/closed: undo the lock affordances
+                // so the user isn't stuck looking at a podium.
+                $('.votes-locked-overlay').removeClass('visible');
+                $('#vote_container').removeClass('locked-container');
+                try { $list.sortable('enable'); } catch (e) {}
+
+                var bandName = localStorage.getItem('userName');
+                if (bandName) {
+                    $('#prevoteBandName').text(bandName);
+                    $prevote.css('display', '').addClass('visible').attr('aria-hidden', 'false');
+                    // Give the server a beat to persist onboarding_complete
+                    // before asking for the AI roast (fresh onboarders fire
+                    // both events back-to-back).
+                    if (window._pvBandRoastTimer) clearTimeout(window._pvBandRoastTimer);
+                    window._pvBandRoastTimer = setTimeout(fetchBandRoast, 700);
+                }
+            } else if (state === 'open') {
+                $('.votes-locked-overlay').removeClass('visible');
+                $('#vote_container').removeClass('locked-container');
+                try { $list.sortable('enable'); } catch (e) {}
+
+                if (live) {
+                    $open.css('display', '').addClass('visible').attr('aria-hidden', 'false');
+                    fireOpenConfetti();
+                    if (window._pvOpenAutoTimer) clearTimeout(window._pvOpenAutoTimer);
+                    window._pvOpenAutoTimer = setTimeout(function () {
+                        $open.removeClass('visible').attr('aria-hidden', 'true');
+                    }, 4500);
+                }
+            }
+            // state === 'closed' is intentionally a no-op here. The existing
+            // `votes_finalized` socket handler (still emitted by the server
+            // on close) builds + reveals the .votes-locked-overlay and kicks
+            // off fetchVoteRoast() — no second modal needed.
+            window.PV_VOTING_STATE = state;
+        }
+
+        // HTML-escape arbitrary text so we can safely build inline markup
+        // out of AI output without opening an XSS hole.
+        function escapeHtml(s) {
+            return String(s)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        // Minimal inline-markdown renderer for the AI roast text. Handles
+        // **bold**, __bold__, *italic*, _italic_, and `code`. Escapes first
+        // so the AI's output can never inject raw HTML.
+        function renderRoastMarkdown(text) {
+            var html = escapeHtml(text);
+            // Bold first (** or __) so its inner content isn't eaten by italic.
+            html = html.replace(/\*\*([^*\n]+?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/__([^_\n]+?)__/g, '<strong>$1</strong>');
+            // Italic — require a non-word boundary on each side so we don't
+            // turn "n_a_me" or "code_var" into half-broken emphasis.
+            html = html.replace(/(^|[^*\w])\*([^*\n]+?)\*(?!\w)/g, '$1<em>$2</em>');
+            html = html.replace(/(^|[^_\w])_([^_\n]+?)_(?!\w)/g, '$1<em>$2</em>');
+            // Inline code
+            html = html.replace(/`([^`\n]+?)`/g, '<code>$1</code>');
+            return html;
+        }
+
+        // Generic AI-roast fetcher: fires once per page lifetime per element,
+        // shows a spinner, fills in the text on success, hides the block on
+        // any failure (no API key, no row yet, network blip).
+        function fetchRoast(elementId, url) {
+            var $roast = $('#' + elementId);
+            if (!$roast.length) return;
+            if ($roast.data('fetched')) return;
+            $roast.data('fetched', true);
+
+            var cid = '';
+            try { cid = localStorage.getItem('clientId') || ''; } catch (e) {}
+            if (!cid) { $roast.attr('hidden', true); return; }
+
+            $roast.removeAttr('hidden').removeClass('loaded');
+            $roast.find('.vote-roast-text').text('');
+
+            $.ajax({
+                url: url,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ clientId: cid }),
+                timeout: 10000
+            }).done(function (resp) {
+                var text = resp && resp.roast ? String(resp.roast).trim() : '';
+                if (!text) { $roast.attr('hidden', true); return; }
+                $roast.addClass('loaded')
+                      .find('.vote-roast-text')
+                      .html(renderRoastMarkdown(text));
+            }).fail(function () {
+                $roast.attr('hidden', true);
+            });
+        }
+
+        // Roast of this voter's finalized ballot — shown inside the existing
+        // locked overlay after voting closes.
+        function fetchVoteRoast() {
+            fetchRoast('vote-roast', "{{ url_for('voting.roast_votes') }}");
+        }
+
+        // Lighthearted roast of the user's freshly-minted band concept —
+        // shown inside the "voting hasn't started yet" modal so they have
+        // something to chew on while they wait.
+        function fetchBandRoast() {
+            fetchRoast('band-roast', "{{ url_for('voting.roast_band') }}");
+        }
+
+        socket.on('voting_state_changed', function (payload) {
+            var state = payload && payload.state;
+            if (!state) return;
+            applyVotingState(state, { live: true });
+        });
+
+        // Dismiss button for the "voting is open" celebratory modal
+        $(document).on('click', '#open-vote-dismiss', function () {
+            if (window._pvOpenAutoTimer) clearTimeout(window._pvOpenAutoTimer);
+            $('#open-vote-overlay').removeClass('visible').attr('aria-hidden', 'true');
+        });
 
         // Plasma background reacts to live voting events.
         if (window.PlasmaShader && socket) {
@@ -1667,8 +2040,10 @@
             (function initFirstVisitTip() {
                 var tip = document.getElementById('firstVisitTip');
                 if (!tip) return;
-                var locked = {% if votes_locked %}true{% else %}false{% endif %};
-                if (locked) { tip.remove(); return; }
+                // Don't show the drag tip when voting isn't actively open
+                // (pre-voting: hidden behind the "voting hasn't started" modal;
+                // closed: hidden behind the podium reveal).
+                if (window.PV_VOTING_STATE !== 'open') { tip.remove(); return; }
                 if (localStorage.getItem('instructionsDismissed') === '1') { tip.remove(); return; }
                 setTimeout(function () { tip.classList.add('visible'); }, 700);
                 var btn = tip.querySelector('.tip-dismiss');
@@ -1735,6 +2110,18 @@
                 document.getElementById("bandname").innerHTML = savedName;
                 $('#nameField').val(savedName);
                 socket.emit('joined', { clientId: clientId, userName: savedName }, function (state) {
+                    // Server has no row for our clientId — we were deleted by
+                    // an admin while offline. Wipe ALL local state and reload
+                    // so we come back as a fresh first-time visitor (new
+                    // clientId, full onboarding modal).
+                    if (state && state.reset) {
+                        ['clientId','userName','itemsOrder',
+                         'pv_onboarding_state','pv_onboarding_answers','pv_onboarding_options',
+                         'instructionsDismissed']
+                            .forEach(function (k) { localStorage.removeItem(k); });
+                        location.reload(true);
+                        return;
+                    }
                     if (state && state.user && state.user !== savedName) {
                         savedName = state.user;
                         localStorage.setItem('userName', savedName);
@@ -1746,9 +2133,8 @@
                         list.sortable('refresh');
                         localStorage.setItem('itemsOrder', JSON.stringify(state.rank));
                     } else {
-                        // Server says rank is empty — fresh seed or admin clear.
-                        // Trust it: wipe local cache so the rendered default
-                        // order (from the template) is what we keep.
+                        // Server has our row but rank is empty — admin cleared
+                        // their picks. Trust the server, wipe local cache.
                         localStorage.removeItem('itemsOrder');
                     }
                 });
@@ -1764,6 +2150,11 @@
                 startOnboarding();
             } else {
                 joinRoom(savedName);
+                // Returning visitor with a band name — if voting hasn't
+                // started yet, sit them on the blocking modal.
+                if (window.PV_VOTING_STATE === 'pre') {
+                    applyVotingState('pre');
+                }
             }
 
             function getRandomInt(max) {
@@ -2205,6 +2596,11 @@
                 document.documentElement.classList.remove('onboarding-active');
                 document.body.classList.remove('onboarding-active');
                 joinRoom(name);
+                // If voting hasn't started yet, surface the blocking modal
+                // immediately after the user finishes onboarding.
+                if (window.PV_VOTING_STATE === 'pre') {
+                    applyVotingState('pre');
+                }
             }
 
             function startOnboarding() {
@@ -2501,6 +2897,7 @@
                 setTimeout(function() {
                     $('.votes-locked-overlay').addClass('visible');
                     populateVotesReview();
+                    fetchVoteRoast();
                 }, 500);
             });
             {% endif %}
@@ -2516,7 +2913,11 @@
                     var overlay = $(
                         '<div class="votes-locked-overlay">' +
                             '<div class="lock-icon">🏁</div>' +
-                            '<div class="lock-message">Your votes are in!<span class="lock-subtext">Thanks for playing PIZZAVISION 2026</span></div>' +
+                            '<div class="lock-message">Douze points, dispatched.<span class="lock-subtext">Ballot sealed. Prosecco poured. Let the spectacle commence.</span></div>' +
+                            '<div id="vote-roast" class="vote-roast" hidden>' +
+                                '<div class="vote-roast-spinner" aria-hidden="true"></div>' +
+                                '<div class="vote-roast-text"></div>' +
+                            '</div>' +
                             '<div class="podium" id="podium"></div>' +
                             '<div class="votes-review" id="votesReviewWrap">' +
                                 '<div class="votes-review-title">Your other picks</div>' +
@@ -2529,10 +2930,12 @@
                     setTimeout(function () {
                         $('.votes-locked-overlay').addClass('visible');
                         populateVotesReview();
+                        fetchVoteRoast();
                     }, 100);
                 } else {
                     $('.votes-locked-overlay').addClass('visible');
                     populateVotesReview();
+                    fetchVoteRoast();
                 }
             });
 

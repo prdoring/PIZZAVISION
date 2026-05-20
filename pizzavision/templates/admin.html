@@ -90,10 +90,43 @@ h1{
 .linkback{text-align:center}
 .linkback a{color:#ddd;text-decoration:none}
 .linkback a:hover{color:#fff}
-.lock   {background:#FF9800;color:#fff}
-.lock:hover {background:#F57C00}
-.unlock   {background:#337a19;color:#fff}
-.unlock:hover  {background:#2e3f28;color:#fff}
+/* ---- voting-state stage controls ---- */
+.stage-bar{
+    display:flex;flex-direction:column;align-items:center;gap:14px;
+    padding:18px 20px;border-radius:10px;
+    background:rgba(30,30,30,.55);border:1px solid rgba(255,255,255,.08);
+}
+.stage-badge{
+    display:inline-flex;align-items:center;gap:10px;
+    font-weight:700;font-size:13px;letter-spacing:.6px;text-transform:uppercase;
+    padding:6px 14px;border-radius:30px;
+    background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+    color:#ddd;
+}
+.stage-badge .dot{
+    width:10px;height:10px;border-radius:50%;
+    background:#888;box-shadow:0 0 0 2px rgba(0,0,0,.4);
+}
+.stage-badge[data-state="pre"]    .dot{background:#888;box-shadow:0 0 0 2px rgba(0,0,0,.4),0 0 6px rgba(255,255,255,.18)}
+.stage-badge[data-state="open"]   .dot{background:#4CAF50;box-shadow:0 0 0 2px rgba(0,0,0,.4),0 0 8px rgba(76,175,80,.7)}
+.stage-badge[data-state="closed"] .dot{background:#d04444;box-shadow:0 0 0 2px rgba(0,0,0,.4),0 0 8px rgba(208,68,68,.7)}
+.stage-badge[data-state="open"]   {color:#9be39b;border-color:rgba(76,175,80,.35)}
+.stage-badge[data-state="closed"] {color:#ffb1b1;border-color:rgba(208,68,68,.35)}
+
+.stage-buttons{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.stage-btn{
+    font-family:inherit;font-weight:700;font-size:13px;
+    border:none;border-radius:6px;padding:11px 18px;color:#fff;cursor:pointer;
+    transition:opacity .2s, background .2s;
+}
+.stage-btn.pre    {background:#5a5a5a}
+.stage-btn.open   {background:#4CAF50}
+.stage-btn.closed {background:#d04444}
+.stage-btn.pre:hover    {background:#6e6e6e}
+.stage-btn.open:hover   {background:#45a049}
+.stage-btn.closed:hover {background:#a83333}
+.stage-btn.current{outline:2px solid rgba(255,255,255,.7);outline-offset:2px;cursor:default}
+.stage-btn[disabled]{opacity:.35;cursor:not-allowed}
 
 /* ---- users table ---- */
 .users-hint{color:#aaa;font-size:13px;text-align:center;margin:-10px 0 0}
@@ -197,8 +230,31 @@ h1{
             <button class="save">Save order / deletions</button>
             <button class="clear">Clear vote DB</button>
             <button class="restore">Restore from backup</button>
-            <button class="lock">Lock Votes</button>
-            <button class="unlock">Unlock Votes</button>
+        </div>
+
+        {% set _state_labels = {'pre': 'Pre-voting', 'open': 'Voting OPEN', 'closed': 'Voting CLOSED'} %}
+        <div class="stage-bar">
+            <div class="stage-badge" data-state="{{ voting_state }}">
+                <span class="dot"></span>
+                <span>{{ _state_labels[voting_state] }}</span>
+            </div>
+            <div class="stage-buttons">
+                <button class="stage-btn pre {% if voting_state == 'pre' %}current{% endif %}"
+                        data-state="pre"
+                        {% if voting_state == 'pre' %}disabled{% endif %}>
+                    Pre-voting
+                </button>
+                <button class="stage-btn open {% if voting_state == 'open' %}current{% endif %}"
+                        data-state="open"
+                        {% if voting_state == 'open' %}disabled{% endif %}>
+                    Start Voting!
+                </button>
+                <button class="stage-btn closed {% if voting_state == 'closed' %}current{% endif %}"
+                        data-state="closed"
+                        {% if voting_state == 'closed' %}disabled{% endif %}>
+                    Close Voting
+                </button>
+            </div>
         </div>
     </div>
 
@@ -315,14 +371,19 @@ function refreshUserCount(){
   }
 }
 
-$(".lock").on("click",()=>{
-  if(confirm("This will finalize votes and prevent further changes. Continue?"))
-    adminAction("lock_votes");
-});
-
-$(".unlock").on("click",()=>{
-  if(confirm("This will unlock the votes and allow user changes. Continue?"))
-    adminAction("unlock_votes");
+/* voting-state transitions */
+const STAGE_CONFIRMS = {
+  pre:    "Reset to pre-voting? Users will see the \"voting hasn't started\" modal.",
+  open:   "Open voting? All clients will see the confetti reveal.",
+  closed: "Finalize votes? This snapshots the current rankings."
+};
+$(document).on("click", ".stage-btn", function(){
+  const $btn = $(this);
+  if($btn.is("[disabled]")) return;
+  const state = $btn.data("state");
+  if(!STAGE_CONFIRMS[state]) return;
+  if(!confirm(STAGE_CONFIRMS[state])) return;
+  adminAction("set_voting_state", {state});
 });
 
 /* save */

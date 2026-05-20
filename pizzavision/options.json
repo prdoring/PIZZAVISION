@@ -503,5 +503,5 @@
             "image_url": "/static/images/introvert.jpg"
         }
     },
-    "locked": false
+    "voting_state": "closed"
 }
