@@ -54,14 +54,16 @@ def suggest_answer():
     """Per-field 'Surprise me' suggestion for the onboarding dice button.
 
     Payload: {field: 'song_title'|'song_vibe'|'personal_vibe'|'extra',
-              context: {<other field answers>}}
+              context: {<other field answers>},
+              anchor: <user's current text iff they typed/modified it>}
     Returns: {answer: str}
     """
     body = request.get_json(silent=True) or {}
     field = body.get('field', '')
     context = body.get('context') or {}
+    anchor = body.get('anchor') or ''
     try:
-        answer = openai_client.suggest_answer(field, context)
+        answer = openai_client.suggest_answer(field, context, anchor)
         return jsonify(answer=answer)
     except ValueError as e:
         # Bad field name OR empty model output.

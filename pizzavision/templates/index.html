@@ -898,8 +898,25 @@
         }
 
         /* ============================================================
-           Onboarding modal — mobile-first, fun, full-screen on phones.
+           Onboarding modal — mobile-first, slick, single-screen per step.
+           Layout: card == flex column == [progress, step], where the active
+           step is itself a flex column [header, field, actions]. Actions sit
+           directly under the field so they follow the input into view when
+           the soft keyboard opens.
            ============================================================ */
+        /* Lock the underlying page scroll while the modal is open. */
+        html.onboarding-active,
+        body.onboarding-active {
+            overflow: hidden;
+            overscroll-behavior: contain;
+            touch-action: none;
+        }
+        /* Re-enable touch inside the modal itself (the body rule above
+           would otherwise block scrolling within the overlay too). */
+        body.onboarding-active #onboarding-overlay {
+            touch-action: auto;
+        }
+
         #onboarding-overlay {
             position: fixed;
             inset: 0;
@@ -907,35 +924,33 @@
             display: none;
             background: radial-gradient(circle at 20% 10%, rgba(255, 0, 128, 0.18), transparent 60%),
                         radial-gradient(circle at 80% 90%, rgba(0, 200, 255, 0.18), transparent 60%),
-                        rgba(8, 4, 20, 0.92);
+                        rgba(8, 4, 20, 0.94);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
-
         #onboarding-overlay.visible {
             display: block;
-            animation: onboardingFadeIn 0.35s ease-out;
+            animation: onboardingFadeIn 0.3s ease-out;
         }
-
         @keyframes onboardingFadeIn {
-            from { opacity: 0; transform: scale(1.02); }
-            to   { opacity: 1; transform: scale(1); }
+            from { opacity: 0; }
+            to   { opacity: 1; }
         }
 
         .onboarding-card {
             box-sizing: border-box;
             width: 100%;
-            min-height: 100dvh;
-            min-height: 100vh;
-            padding: 28px 22px calc(28px + env(safe-area-inset-bottom));
+            min-height: 100vh;            /* fallback for older browsers */
+            min-height: 100dvh;           /* dynamic viewport — shrinks with keyboard, grows when it's dismissed */
+            padding: 16px 18px;
+            padding-top: max(16px, env(safe-area-inset-top));
+            padding-bottom: max(16px, env(safe-area-inset-bottom));
             display: flex;
             flex-direction: column;
-            position: relative;
             color: #fff;
         }
-
         @media (min-width: 600px) {
             .onboarding-card {
                 max-width: 480px;
@@ -945,229 +960,167 @@
                 box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55),
                             0 0 0 1px rgba(255, 255, 255, 0.07);
                 background: rgba(20, 8, 35, 0.7);
-                padding: 36px 32px;
+                padding: 32px 32px;
             }
-        }
-
-        /* Sparkle decoration */
-        .onboarding-card::before {
-            content: "✦  ✧  ★  ✦  ✧";
-            position: absolute;
-            top: 14px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            color: rgba(255, 215, 0, 0.4);
-            font-size: 12px;
-            letter-spacing: 8px;
-            pointer-events: none;
         }
 
         .onboarding-progress {
             display: flex;
             gap: 10px;
             justify-content: center;
-            margin: 28px 0 22px;
+            margin: 4px 0 18px;
+            flex: 0 0 auto;
         }
-
         .onboarding-progress .dot {
-            width: 10px;
-            height: 10px;
+            width: 8px;
+            height: 8px;
             border-radius: 50%;
             background: rgba(255, 255, 255, 0.18);
             transition: all 0.3s ease;
         }
-
         .onboarding-progress .dot.active {
             background: linear-gradient(135deg, #ffd700, #ff4faf);
             box-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
-            transform: scale(1.2);
+            transform: scale(1.3);
         }
-
         .onboarding-progress .dot.done {
             background: rgba(255, 215, 0, 0.65);
         }
 
         .onboarding-step {
             display: none;
-            flex: 1;
+            flex: 1 1 auto;
+            min-height: 0;
             flex-direction: column;
         }
-
         .onboarding-step.active {
             display: flex;
-            animation: stepSlideIn 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+            animation: stepSlideIn 0.35s cubic-bezier(0.2, 0.9, 0.3, 1.1);
         }
-
         @keyframes stepSlideIn {
-            from { opacity: 0; transform: translateY(12px); }
+            from { opacity: 0; transform: translateY(10px); }
             to   { opacity: 1; transform: translateY(0); }
         }
 
+        .onboarding-header {
+            flex: 0 0 auto;
+            text-align: center;
+            margin-bottom: 16px;
+        }
         .onboarding-heading {
-            font-size: clamp(22px, 6vw, 28px);
+            font-size: clamp(20px, 5.5vw, 26px);
             font-weight: 800;
             line-height: 1.2;
-            text-align: center;
-            margin: 0 0 10px;
-            background: linear-gradient(135deg, #ffd700, #ff4faf 50%, #00e0ff);
+            margin: 0 0 8px;
+            background: linear-gradient(135deg, #ffd700, #ff4faf 55%, #00e0ff);
             -webkit-background-clip: text;
             background-clip: text;
             color: transparent;
-            text-shadow: 0 2px 24px rgba(255, 79, 175, 0.25);
+            text-shadow: 0 2px 24px rgba(255, 79, 175, 0.2);
         }
-
         .onboarding-sub {
-            font-size: 14px;
-            text-align: center;
-            color: rgba(255, 255, 255, 0.65);
-            margin: 0 auto 22px;
+            font-size: 13px;
+            color: rgba(255, 255, 255, 0.62);
+            margin: 0 auto;
             max-width: 320px;
             line-height: 1.4;
         }
 
+        /* Field area — flex 0 so it hugs the header; action row fills the
+           remaining space below via margin-top: auto. For generating/pick
+           we override to flex:1 so they take the middle. */
+        .onboarding-field {
+            flex: 0 0 auto;
+        }
+        .onboarding-field.generating-body,
+        .onboarding-field.pick-body {
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 12px;
+            min-height: 0;
+        }
+
+        /* Unified input + textarea styling. */
         #onboarding-overlay .onboarding-input,
         #onboarding-overlay .onboarding-textarea {
             width: 100%;
             box-sizing: border-box;
-            font-size: 16px; /* prevents iOS zoom */
+            font-size: 16px; /* prevents iOS zoom on focus */
             font-family: inherit;
-            padding: 16px 18px;
-            border-radius: 16px;
-            border: 1px solid rgba(255, 255, 255, 0.15);
-            background: rgba(0, 0, 0, 0.4);
+            padding: 14px 16px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(0, 0, 0, 0.42);
             color: #fff;
             text-align: left;
             margin: 0;
             outline: none;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
             -webkit-appearance: none;
             display: block;
-        }
-
-        #onboarding-overlay .onboarding-textarea {
-            min-height: 110px;
-            resize: none;
             line-height: 1.4;
         }
-
+        #onboarding-overlay .onboarding-textarea {
+            resize: none;
+            min-height: 76px;
+        }
         #onboarding-overlay .onboarding-input:focus,
         #onboarding-overlay .onboarding-textarea:focus {
-            border-color: rgba(255, 215, 0, 0.6);
-            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.18);
-            background: rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 215, 0, 0.65);
+            box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.16);
+            background: rgba(0, 0, 0, 0.55);
         }
-
         #onboarding-overlay .onboarding-input::placeholder,
         #onboarding-overlay .onboarding-textarea::placeholder {
             color: rgba(255, 255, 255, 0.32);
         }
 
-        #onboarding-overlay .onboarding-input:hover,
-        #onboarding-overlay .onboarding-textarea:hover {
-            background: rgba(0, 0, 0, 0.45);
-        }
-
-        /* Dice "Surprise me" button — overlays the right edge of the field. */
-        #onboarding-overlay .onboarding-field {
-            position: relative;
-        }
-        #onboarding-overlay .onboarding-input.has-dice {
-            padding-right: 60px;
-        }
-        #onboarding-overlay .onboarding-textarea.has-dice {
-            padding-right: 60px;
-        }
-        #onboarding-overlay .onboarding-dice {
-            position: absolute;
-            right: 8px;
-            top: 8px;
-            width: 40px;
-            height: 40px;
-            padding: 0;
-            border-radius: 12px;
-            border: 1px solid rgba(255, 215, 0, 0.35);
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.18), rgba(255, 79, 175, 0.18));
-            color: #fff;
-            font-size: 20px;
-            line-height: 1;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.25s ease, border-color 0.25s ease,
-                        box-shadow 0.25s ease, transform 0.15s ease;
-            -webkit-tap-highlight-color: transparent;
-        }
-        /* Single-line inputs: vertically center the dice using `top` (not
-           transform), keeping transform free for :active scale + loading spin. */
-        #onboarding-overlay .onboarding-input.has-dice + .onboarding-dice {
-            top: calc(50% - 20px);
-        }
-        #onboarding-overlay .onboarding-dice:hover {
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.32), rgba(255, 79, 175, 0.32));
-            box-shadow: 0 4px 14px rgba(255, 79, 175, 0.35);
-        }
-        #onboarding-overlay .onboarding-dice:active {
-            transform: scale(0.92);
-        }
-        #onboarding-overlay .onboarding-dice:disabled {
-            cursor: wait;
-        }
-        /* Spinning state — fade out the chrome so only the rolling emoji is
-           visible. No spinning rectangle. */
-        #onboarding-overlay .onboarding-dice.loading {
-            background: transparent;
-            border-color: transparent;
-            box-shadow: none;
-            animation: diceRoll 0.7s linear infinite;
-            transform-origin: center;
-        }
-        @keyframes diceRoll {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(360deg); }
-        }
-
+        /* Action row — dice + Next directly under the field. NOT anchored to
+           the bottom of the card. Sitting right next to the input means the
+           browser's "scroll focused field into view" behavior keeps the
+           buttons visible when the keyboard opens. */
         .onboarding-actions {
-            margin-top: auto;
-            padding-top: 24px;
-            position: sticky;
-            bottom: 0;
-            background: linear-gradient(to top, rgba(8, 4, 20, 0.95) 60%, transparent);
-        }
-
-        @media (min-width: 600px) {
-            .onboarding-actions {
-                position: static;
-                background: none;
-            }
+            flex: 0 0 auto;
+            margin-top: 0;
+            padding-top: 16px;
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
         }
 
         .onboarding-btn {
-            display: block;
-            width: 100%;
+            box-sizing: border-box;
             min-height: 52px;
             padding: 14px 18px;
-            border-radius: 16px;
+            border-radius: 14px;
             border: none;
             font-family: inherit;
             font-size: 16px;
-            font-weight: 800;
-            letter-spacing: 0.5px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
             cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease,
+                        background 0.2s ease, border-color 0.2s ease;
+        }
+
+        .onboarding-btn.primary {
+            flex: 1 1 auto;
             background: linear-gradient(135deg, #ffd700, #ff4faf 50%, #9b4dff);
             color: #1a0a2b;
-            box-shadow: 0 8px 24px rgba(255, 79, 175, 0.4),
+            box-shadow: 0 8px 22px rgba(255, 79, 175, 0.36),
                         inset 0 1px 0 rgba(255, 255, 255, 0.35);
-            transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
         }
-
-        .onboarding-btn:active {
+        .onboarding-btn.primary:active {
             transform: scale(0.97);
-            box-shadow: 0 4px 12px rgba(255, 79, 175, 0.35);
+            box-shadow: 0 4px 12px rgba(255, 79, 175, 0.3);
         }
-
-        .onboarding-btn:disabled {
+        .onboarding-btn.primary:disabled {
             opacity: 0.4;
             cursor: not-allowed;
             background: rgba(255, 255, 255, 0.12);
@@ -1175,61 +1128,103 @@
             box-shadow: none;
         }
 
+        .onboarding-btn.dice-btn {
+            flex: 0 0 auto;
+            gap: 8px;
+            padding: 12px 14px;
+            font-size: 14px;
+            font-weight: 600;
+            background: rgba(255, 215, 0, 0.10);
+            color: rgba(255, 255, 255, 0.94);
+            border: 1px solid rgba(255, 215, 0, 0.32);
+        }
+        .onboarding-btn.dice-btn:hover {
+            background: rgba(255, 215, 0, 0.18);
+            border-color: rgba(255, 215, 0, 0.5);
+        }
+        .onboarding-btn.dice-btn:active {
+            transform: scale(0.96);
+        }
+        .onboarding-btn.dice-btn:disabled {
+            cursor: wait;
+            opacity: 0.85;
+        }
+        .dice-emoji {
+            font-size: 18px;
+            line-height: 1;
+            display: inline-block;
+            transform-origin: center;
+        }
+        .dice-label {
+            line-height: 1;
+        }
+        .onboarding-btn.dice-btn.loading .dice-emoji {
+            animation: diceRoll 0.7s linear infinite;
+        }
+        @keyframes diceRoll {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+        }
+        /* On very narrow phones, drop the label so dice + Next fit side by side. */
+        @media (max-width: 380px) {
+            .onboarding-btn.dice-btn .dice-label { display: none; }
+            .onboarding-btn.dice-btn { padding: 12px 14px; }
+        }
+
+        /* Ghost variant — used by Reroll on the pick step. */
         .onboarding-btn.ghost {
+            flex: 1 1 auto;
             background: rgba(255, 255, 255, 0.06);
             color: #fff;
             font-weight: 600;
             box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.14);
         }
-
         .onboarding-btn.ghost:active {
+            transform: scale(0.97);
             background: rgba(255, 255, 255, 0.12);
         }
 
-        /* Generating step */
+        /* Generating step — spinner + cycling copy, centered. */
         .onboarding-spinner {
-            margin: 28px auto 18px;
-            width: 64px;
-            height: 64px;
+            width: 56px;
+            height: 56px;
+            margin: 0 auto;
             border-radius: 50%;
             border: 4px solid rgba(255, 255, 255, 0.12);
             border-top-color: #ffd700;
             border-right-color: #ff4faf;
             animation: onboardingSpin 0.9s linear infinite;
         }
-
         @keyframes onboardingSpin {
             to { transform: rotate(360deg); }
         }
-
         .onboarding-spinner-copy {
             text-align: center;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             color: rgba(255, 255, 255, 0.78);
-            min-height: 24px;
+            margin: 4px 0 0;
+            min-height: 22px;
             transition: opacity 0.3s ease;
         }
 
-        /* Pick step — name cards */
+        /* Pick step — name cards stack. */
         .name-options {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin: 8px 0 20px;
+            gap: 10px;
         }
-
         .name-option {
             display: block;
             width: 100%;
             box-sizing: border-box;
-            padding: 20px 18px;
-            border-radius: 18px;
+            padding: 18px 16px;
+            border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.12);
             background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 79, 175, 0.08), rgba(0, 224, 255, 0.08));
             color: #fff;
             font-family: inherit;
-            font-size: clamp(18px, 5.2vw, 22px);
+            font-size: clamp(17px, 5vw, 21px);
             font-weight: 800;
             text-align: center;
             cursor: pointer;
@@ -1238,26 +1233,16 @@
             line-height: 1.25;
             word-break: break-word;
         }
-
         .name-option:hover {
             border-color: rgba(255, 215, 0, 0.5);
             box-shadow: 0 12px 28px rgba(255, 79, 175, 0.25);
         }
-
         .name-option:active {
             transform: scale(0.98);
         }
 
-        .reroll-hint {
-            text-align: center;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.5);
-            margin-top: 10px;
-        }
-
         #onboarding-overlay .names-source-banner {
             display: block;
-            margin: 0 0 12px;
             padding: 10px 14px;
             border-radius: 12px;
             font-size: 13px;
@@ -1296,80 +1281,107 @@
             </div>
 
             <section class="onboarding-step" data-step="song">
-                <h1 class="onboarding-heading">What's your band's Eurovision song called?</h1>
-                <p class="onboarding-sub">Every act needs an anthem. Name yours — we'll name the band to match.</p>
+                <header class="onboarding-header">
+                    <h1 class="onboarding-heading">What's your song called?</h1>
+                    <p class="onboarding-sub">Every act needs an anthem. We'll name the band to match.</p>
+                </header>
                 <div class="onboarding-field">
-                    <input type="text" class="onboarding-input has-dice" data-field="song_title"
+                    <input type="text" class="onboarding-input" data-field="song_title"
                            autocapitalize="words" enterkeyhint="next" maxlength="80"
-                           placeholder="e.g. Tears in My Tracksuit, Glitter Goblin">
-                    <button type="button" class="onboarding-dice" data-dice-field="song_title"
-                            aria-label="Surprise me" title="Surprise me">🎲</button>
+                           placeholder="e.g. Cha Cha Cha, Voilà, Volcano">
                 </div>
-                <div class="onboarding-actions">
-                    <button type="button" class="onboarding-btn" data-next disabled>Next →</button>
-                </div>
+                <footer class="onboarding-actions">
+                    <button type="button" class="onboarding-btn dice-btn" data-dice-field="song_title"
+                            aria-label="Surprise me with an AI suggestion">
+                        <span class="dice-emoji">🎲</span>
+                        <span class="dice-label">Surprise me</span>
+                    </button>
+                    <button type="button" class="onboarding-btn primary" data-next disabled>Next →</button>
+                </footer>
             </section>
 
             <section class="onboarding-step" data-step="song_vibe">
-                <h1 class="onboarding-heading">What's the song's vibe?</h1>
-                <p class="onboarding-sub">Power ballad? Disco apocalypse? Mournful key change at minute three?</p>
+                <header class="onboarding-header">
+                    <h1 class="onboarding-heading">What's the song's vibe?</h1>
+                    <p class="onboarding-sub">Power ballad? Hyperpop? Mournful key change at minute three?</p>
+                </header>
                 <div class="onboarding-field">
-                    <textarea class="onboarding-textarea has-dice" data-field="song_vibe"
-                              enterkeyhint="next" maxlength="240"
-                              placeholder="Describe the energy, genre, the feeling on stage…"></textarea>
-                    <button type="button" class="onboarding-dice" data-dice-field="song_vibe"
-                            aria-label="Surprise me" title="Surprise me">🎲</button>
+                    <textarea class="onboarding-textarea" rows="2" data-field="song_vibe"
+                              maxlength="240"
+                              placeholder="One sentence — genre, energy, the feeling on stage."></textarea>
                 </div>
-                <div class="onboarding-actions">
-                    <button type="button" class="onboarding-btn" data-next disabled>Next →</button>
-                </div>
+                <footer class="onboarding-actions">
+                    <button type="button" class="onboarding-btn dice-btn" data-dice-field="song_vibe"
+                            aria-label="Surprise me with an AI suggestion">
+                        <span class="dice-emoji">🎲</span>
+                        <span class="dice-label">Surprise me</span>
+                    </button>
+                    <button type="button" class="onboarding-btn primary" data-next disabled>Next →</button>
+                </footer>
             </section>
 
             <section class="onboarding-step" data-step="personal_vibe">
-                <h1 class="onboarding-heading">What's YOUR vibe?</h1>
-                <p class="onboarding-sub">How does the lead enter the stage? Costume, energy, attitude — go.</p>
+                <header class="onboarding-header">
+                    <h1 class="onboarding-heading">What's YOUR vibe?</h1>
+                    <p class="onboarding-sub">How does the lead enter? Costume, energy, attitude.</p>
+                </header>
                 <div class="onboarding-field">
-                    <input type="text" class="onboarding-input has-dice" data-field="personal_vibe"
-                           autocapitalize="words" enterkeyhint="next" maxlength="120"
-                           placeholder="e.g. on a horse, weeping; sequined goblin; quiet drama">
-                    <button type="button" class="onboarding-dice" data-dice-field="personal_vibe"
-                            aria-label="Surprise me" title="Surprise me">🎲</button>
+                    <textarea class="onboarding-textarea" rows="2" data-field="personal_vibe"
+                              maxlength="240"
+                              placeholder="One sentence describing your stage presence."></textarea>
                 </div>
-                <div class="onboarding-actions">
-                    <button type="button" class="onboarding-btn" data-next disabled>Next →</button>
-                </div>
+                <footer class="onboarding-actions">
+                    <button type="button" class="onboarding-btn dice-btn" data-dice-field="personal_vibe"
+                            aria-label="Surprise me with an AI suggestion">
+                        <span class="dice-emoji">🎲</span>
+                        <span class="dice-label">Surprise me</span>
+                    </button>
+                    <button type="button" class="onboarding-btn primary" data-next disabled>Next →</button>
+                </footer>
             </section>
 
             <section class="onboarding-step" data-step="extra" data-optional="true">
-                <h1 class="onboarding-heading">Anything else?</h1>
-                <p class="onboarding-sub">Backup dancers? Hidden message? Country of origin? Optional — leave blank to roll without.</p>
+                <header class="onboarding-header">
+                    <h1 class="onboarding-heading">Anything else?</h1>
+                    <p class="onboarding-sub">Costume change, backup dancers, hidden meaning. Optional.</p>
+                </header>
                 <div class="onboarding-field">
-                    <textarea class="onboarding-textarea has-dice" data-field="extra"
-                              enterkeyhint="go" maxlength="240"
-                              placeholder="Optional flavor… or skip"></textarea>
-                    <button type="button" class="onboarding-dice" data-dice-field="extra"
-                            aria-label="Surprise me" title="Surprise me">🎲</button>
+                    <textarea class="onboarding-textarea" rows="2" data-field="extra"
+                              maxlength="240"
+                              placeholder="Optional flavor — or skip."></textarea>
                 </div>
-                <div class="onboarding-actions">
-                    <button type="button" class="onboarding-btn" data-generate>Name my band ✨</button>
-                </div>
+                <footer class="onboarding-actions">
+                    <button type="button" class="onboarding-btn dice-btn" data-dice-field="extra"
+                            aria-label="Surprise me with an AI suggestion">
+                        <span class="dice-emoji">🎲</span>
+                        <span class="dice-label">Surprise me</span>
+                    </button>
+                    <button type="button" class="onboarding-btn primary" data-generate>Name my band ✨</button>
+                </footer>
             </section>
 
             <section class="onboarding-step" data-step="generating">
-                <h1 class="onboarding-heading">Cooking up your stage…</h1>
-                <div class="onboarding-spinner" aria-hidden="true"></div>
-                <p class="onboarding-spinner-copy" id="generating-copy">Tuning your harmonies…</p>
+                <header class="onboarding-header">
+                    <h1 class="onboarding-heading">Cooking up your stage…</h1>
+                </header>
+                <div class="onboarding-field generating-body">
+                    <div class="onboarding-spinner" aria-hidden="true"></div>
+                    <p class="onboarding-spinner-copy" id="generating-copy">Tuning your harmonies…</p>
+                </div>
             </section>
 
             <section class="onboarding-step" data-step="pick">
-                <h1 class="onboarding-heading">Pick your stage name</h1>
-                <p class="onboarding-sub">Three Eurovision-worthy options, fresh out of the dressing room.</p>
-                <div id="names-source-banner" class="names-source-banner" hidden></div>
-                <div class="name-options" id="name-options"></div>
-                <div class="onboarding-actions">
-                    <button type="button" class="onboarding-btn ghost" id="reroll-btn">↻ Reroll all three</button>
-                    <p class="reroll-hint">None of these? Roll again.</p>
+                <header class="onboarding-header">
+                    <h1 class="onboarding-heading">Pick your stage name</h1>
+                    <p class="onboarding-sub">Three options. Pick one — or reroll.</p>
+                </header>
+                <div class="onboarding-field pick-body">
+                    <div id="names-source-banner" class="names-source-banner" hidden></div>
+                    <div class="name-options" id="name-options"></div>
                 </div>
+                <footer class="onboarding-actions">
+                    <button type="button" class="onboarding-btn ghost" id="reroll-btn">↻ Reroll all three</button>
+                </footer>
             </section>
         </div>
     </div>
@@ -2080,11 +2092,15 @@
                 });
                 $('#onboarding-overlay').removeClass('visible').attr('aria-hidden', 'true');
                 setTimeout(function () { $('#onboarding-overlay').css('display', 'none'); }, 300);
+                document.documentElement.classList.remove('onboarding-active');
+                document.body.classList.remove('onboarding-active');
                 joinRoom(name);
             }
 
             function startOnboarding() {
                 $('#onboarding-overlay').css('display', '').addClass('visible').attr('aria-hidden', 'false');
+                document.documentElement.classList.add('onboarding-active');
+                document.body.classList.add('onboarding-active');
                 var step = localStorage.getItem('pv_onboarding_state');
                 if (!step || ONBOARDING_STEPS.indexOf(step) === -1) step = 'song';
                 // If we somehow land on 'generating' from a resume, send them
@@ -2138,10 +2154,17 @@
                 requestNames();
             });
 
+            // Per-field tracker: the last value the dice filled in. If the user
+            // doesn't touch it before clicking dice again, we treat it as a
+            // pristine AI suggestion and ask the server for a fresh seed.
+            // If the user typed or edited the value, we send it as an anchor
+            // so the next suggestion takes inspiration from their direction.
+            var pristineDiceValues = {};
+
             // "Surprise me" dice button — generates one AI suggestion for the
             // current field. Each click is fresh; no rate-limiting beyond the
             // visual loading state.
-            $(document).on('click', '#onboarding-overlay .onboarding-dice', function () {
+            $(document).on('click', '#onboarding-overlay .dice-btn', function () {
                 var $dice = $(this);
                 if ($dice.prop('disabled')) return;
                 var field = $dice.attr('data-dice-field');
@@ -2149,7 +2172,25 @@
 
                 var $step = $dice.closest('.onboarding-step');
                 var $input = $step.find('[data-field]');
-                var originalText = $dice.text();
+                var $emoji = $dice.find('.dice-emoji');
+                var $label = $dice.find('.dice-label');
+                var originalEmoji = $emoji.text();
+                var originalLabel = $label.text();
+
+                // Decide: anchor mode (user-touched) or fresh-seed mode.
+                var currentValue = ($input.val() || '').trim();
+                var pristine = pristineDiceValues[field] || '';
+                var userTouched = currentValue && currentValue !== pristine;
+                var anchor = userTouched ? currentValue : '';
+
+                // Build context: every OTHER field's current answer.
+                var allAnswers = loadAnswers();
+                var contextOut = {};
+                for (var k in allAnswers) {
+                    if (k !== field && allAnswers[k] && String(allAnswers[k]).trim()) {
+                        contextOut[k] = allAnswers[k];
+                    }
+                }
 
                 $dice.prop('disabled', true).addClass('loading');
 
@@ -2159,7 +2200,11 @@
                 fetch('api/suggest-answer', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ field: field, context: loadAnswers() }),
+                    body: JSON.stringify({
+                        field: field,
+                        context: contextOut,
+                        anchor: anchor
+                    }),
                     signal: controller.signal
                 }).then(function (r) {
                     return r.json().catch(function () { return null; }).then(function (body) {
@@ -2176,6 +2221,9 @@
                     if (!data || typeof data.answer !== 'string' || !data.answer.trim()) {
                         throw new Error('bad_shape');
                     }
+                    // Mark this as pristine BEFORE the input event fires
+                    // (the input handler will save to LS — that's fine).
+                    pristineDiceValues[field] = data.answer;
                     $input.val(data.answer).trigger('input');
                     $input.trigger('focus');
                 }).catch(function (err) {
@@ -2183,14 +2231,14 @@
                     var label = (err && err.message) || 'unknown';
                     if (err && err.name === 'AbortError') label = 'timeout';
                     console.warn('[onboarding] /api/suggest-answer failed:', { field: field, error: err });
-                    // Brief shake to indicate failure, then restore.
-                    $dice.css('animation', 'none');
+                    $emoji.text('⚠️');
+                    $label.text('Try again');
+                    $dice.attr('title', 'Suggestion failed — ' + label);
                     setTimeout(function () {
-                        $dice.text('⚠️').attr('title', 'Suggestion failed — ' + label);
-                        setTimeout(function () {
-                            $dice.text(originalText).attr('title', 'Surprise me');
-                        }, 1400);
-                    }, 0);
+                        $emoji.text(originalEmoji);
+                        $label.text(originalLabel);
+                        $dice.removeAttr('title');
+                    }, 1600);
                 }).then(function () {
                     $dice.prop('disabled', false).removeClass('loading');
                 });
