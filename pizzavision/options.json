@@ -501,6 +501,22 @@
         "Introvert": {
             "subtext": "The band who championed the small nations — the fewest people lined up behind their points.",
             "image_url": "/static/images/introvert.jpg"
+        },
+        "Juggler": {
+            "subtext": "The band that couldn't stop fiddling — most drag-and-drops across the night.",
+            "image_url": "/static/images/juggler.jpg"
+        },
+        "Commitment Issues": {
+            "subtext": "The band that crowned the most different songs as their #1 before finally settling — or not.",
+            "image_url": "/static/images/commitment_issues.jpg"
+        },
+        "Flip Flop": {
+            "subtext": "The band that kept sending the same song back to the top — heart says yes, head says no, heart wins again.",
+            "image_url": "/static/images/flip_flop.jpg"
+        },
+        "Markie Likey": {
+            "subtext": "The band whose #1 spent the longest cumulative time on top. Early conviction or pure stubbornness.",
+            "image_url": "/static/images/markie_likey.jpg"
         }
     },
     "voting_state": "closed"

@@ -2,6 +2,7 @@ import json
 import unicodedata
 import re
 from collections import defaultdict
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
@@ -233,6 +234,42 @@ def calculate_awards(vote_store, options_data):
         user_points[uname] = up
 
     # -------------------------------------------------
+    # vote-behavior precompute (Juggler / Commitment Issues / Flip Flop / Markie Likey)
+    # -------------------------------------------------
+    now_dt = datetime.now(timezone.utc)
+
+    def _parse_iso(ts):
+        try:
+            return datetime.fromisoformat(ts)
+        except (TypeError, ValueError):
+            return now_dt
+
+    def _fmt_dur(seconds):
+        s = max(0, int(seconds))
+        h, rem = divmod(s, 3600)
+        m = rem // 60
+        return f"{h}h {m}m" if h else f"{m}m"
+
+    vote_behavior = {}
+    for u in users_raw:
+        uname = u['user']
+        history = list(u.get('top1_history') or [])
+        durations = defaultdict(float)
+        counts = defaultdict(int)
+        for i, h in enumerate(history):
+            start = _parse_iso(h.get('at'))
+            end = _parse_iso(history[i + 1].get('at')) if i + 1 < len(history) else now_dt
+            durations[h['song']] += max(0.0, (end - start).total_seconds())
+            counts[h['song']] += 1
+        vote_behavior[uname] = {
+            'history': history,
+            'mutation_count': u.get('mutation_count', 0),
+            'created_at': _parse_iso(u.get('created_at')) if u.get('created_at') else now_dt,
+            'durations': dict(durations),
+            'counts': dict(counts),
+        }
+
+    # -------------------------------------------------
     # award helpers
     # -------------------------------------------------
     awards = []
@@ -364,6 +401,18 @@ def calculate_awards(vote_store, options_data):
 
             elif award_code == "Introvert":
                 return f"{winners_str} tied for tiniest constituency — only {fmt_pop(scores[winner_names[0]])} behind their picks."
+
+            elif award_code == "Juggler":
+                return f"{winners_str} tied at {int(scores[winner_names[0]])} rank changes each — equally fidgety."
+
+            elif award_code == "Commitment Issues":
+                return f"{winners_str} each crowned {int(scores[winner_names[0]])} different songs as their #1."
+
+            elif award_code == "Flip Flop":
+                return f"{winners_str} tied — each sent the same song back to #1 {int(scores[winner_names[0]])} times."
+
+            elif award_code == "Markie Likey":
+                return f"{winners_str} kept their #1 locked in for the same stretch — {_fmt_dur(scores[winner_names[0]])}."
 
             return f"{winners_str} tied for this award with {scores[winner_names[0]]} points each."
         
@@ -548,6 +597,30 @@ def calculate_awards(vote_store, options_data):
         elif award_code == "Introvert":
             return f"The winner of this award championed the small nations — only {fmt_pop(scores[winner])} stood behind their picks."
 
+        elif award_code == "Juggler":
+            return f"The winner of this award rearranged their ranking {int(scores[winner])} times — couldn't sit still."
+
+        elif award_code == "Commitment Issues":
+            return f"The winner of this award crowned {int(scores[winner])} different songs as their #1 before settling — or did they?"
+
+        elif award_code == "Flip Flop":
+            counts = vote_behavior.get(winner, {}).get('counts', {})
+            if counts:
+                song, k = max(counts.items(), key=lambda x: x[1])
+                returns = k - 1
+                title = song.split(':', 1)[1].strip() if ':' in song else song
+                noun = "time" if returns == 1 else "times"
+                return f"The winner of this award sent '{title}' back to #1 {returns} {noun} — true love, or just indecision?"
+            return f"The winner of this award flip-flopped their #1 like nobody else."
+
+        elif award_code == "Markie Likey":
+            durations = vote_behavior.get(winner, {}).get('durations', {})
+            if durations:
+                song, t = max(durations.items(), key=lambda x: x[1])
+                title = song.split(':', 1)[1].strip() if ':' in song else song
+                return f"The winner of this award kept '{title}' at #1 for {_fmt_dur(t)} — locked in early and stayed loyal."
+            return f"The winner of this award stuck with their #1 longer than anyone."
+
         return f"The winner of this award earned this award with {scores[winner]} points."
 
     def category_filter(award_code):
@@ -696,6 +769,67 @@ def calculate_awards(vote_store, options_data):
                       if lbl not in others_top10]
             out.extend(f"{pts}pts → {lbl} (in no one else's top 10)" for pts, lbl in unique[:3])
 
+        elif award_code == "Juggler":
+            vb = vote_behavior.get(winner, {})
+            counts = vb.get('counts', {})
+            elapsed_s = (now_dt - vb.get('created_at', now_dt)).total_seconds()
+            out.append(f"{int(scores_dict.get(winner, 0))} total rank changes")
+            if elapsed_s > 60:
+                rate = scores_dict.get(winner, 0) / (elapsed_s / 3600)
+                out.append(f"~{rate:.1f} changes per hour")
+            if counts:
+                song, k = max(counts.items(), key=lambda x: x[1])
+                title = song.split(':', 1)[1].strip() if ':' in song else song
+                out.append(f"Most-crowned song: '{title}' ({k}× at #1)")
+
+        elif award_code == "Commitment Issues":
+            vb = vote_behavior.get(winner, {})
+            history = vb.get('history', [])
+            out.append(f"Crowned {int(scores_dict.get(winner, 0))} different songs as #1")
+            if history:
+                seen = []
+                for h in history:
+                    title = h['song'].split(':', 1)[1].strip() if ':' in h['song'] else h['song']
+                    if title not in seen:
+                        seen.append(title)
+                    if len(seen) >= 4:
+                        break
+                trail = " → ".join(seen)
+                if len(set(h['song'] for h in history)) > len(seen):
+                    trail += " → …"
+                out.append(f"#1 history: {trail}")
+
+        elif award_code == "Flip Flop":
+            vb = vote_behavior.get(winner, {})
+            counts = vb.get('counts', {})
+            durations = vb.get('durations', {})
+            history = vb.get('history', [])
+            if counts:
+                song, k = max(counts.items(), key=lambda x: x[1])
+                returns = k - 1
+                title = song.split(':', 1)[1].strip() if ':' in song else song
+                noun = "time" if returns == 1 else "times"
+                out.append(f"'{title}' returned to #1 {returns} {noun}")
+                out.append(f"Spent {_fmt_dur(durations.get(song, 0))} there in total")
+            out.append(f"Total #1 swaps: {len(history)}")
+
+        elif award_code == "Markie Likey":
+            vb = vote_behavior.get(winner, {})
+            durations = vb.get('durations', {})
+            elapsed_s = (now_dt - vb.get('created_at', now_dt)).total_seconds()
+            if durations:
+                sorted_d = sorted(durations.items(), key=lambda x: x[1], reverse=True)
+                top_song, top_t = sorted_d[0]
+                top_title = top_song.split(':', 1)[1].strip() if ':' in top_song else top_song
+                out.append(f"'{top_title}' at #1 for {_fmt_dur(top_t)}")
+                if elapsed_s > 60:
+                    pct = (top_t / elapsed_s) * 100
+                    out.append(f"That's {pct:.0f}% of voting time")
+                if len(sorted_d) > 1:
+                    ru_song, ru_t = sorted_d[1]
+                    ru_title = ru_song.split(':', 1)[1].strip() if ':' in ru_song else ru_song
+                    out.append(f"Runner-up song: '{ru_title}' ({_fmt_dur(ru_t)})")
+
         # 3. Snub for small-field category awards (2-6 eligible entries)
         if filt and 2 <= cat_size <= 6:
             eligible = [s['label'] for s in songs_raw if filt(s, s['label'])]
@@ -718,6 +852,13 @@ def calculate_awards(vote_store, options_data):
                         out.append(f"Runner-up: {ru_name} (by {fmt_gdp(margin)})")
                     elif award_code in ("Extrovert", "Introvert"):
                         out.append(f"Runner-up: {ru_name} (by {fmt_pop(margin)})")
+                    elif award_code == "Markie Likey":
+                        out.append(f"Runner-up: {ru_name} (by {_fmt_dur(margin)})")
+                    elif award_code in ("Juggler", "Commitment Issues", "Flip Flop"):
+                        unit = {"Juggler": "changes",
+                                "Commitment Issues": "songs",
+                                "Flip Flop": "flips"}[award_code]
+                        out.append(f"Runner-up: {ru_name} (by {int(margin)} {unit})")
                     else:
                         out.append(f"Runner-up: {ru_name} (by {int(margin)}pts)")
 
@@ -865,6 +1006,23 @@ def calculate_awards(vote_store, options_data):
     push_award("Introvert", "🤫 Introvert 🤫",
                pop_scores if not pop_scores else
                {u: -s for u, s in pop_scores.items()})
+
+    # --- vote-behavior awards (driven by mutation_count + top1_history) ---
+
+    push_award("Juggler", "🤹 Juggler 🤹",
+               {u: vb['mutation_count'] for u, vb in vote_behavior.items()})
+
+    push_award("Commitment Issues", "💔 Commitment Issues 💔",
+               {u: len({h['song'] for h in vb['history']})
+                for u, vb in vote_behavior.items()})
+
+    push_award("Flip Flop", "🩴 Flip Flop 🩴",
+               {u: max((c - 1 for c in vb['counts'].values()), default=0)
+                for u, vb in vote_behavior.items()})
+
+    push_award("Markie Likey", "💘 Markie Likey 💘",
+               {u: max(vb['durations'].values(), default=0.0)
+                for u, vb in vote_behavior.items()})
 
     # Cross-reveal contrast for symmetric economic award pairs.
     # Only attach to the SECOND award of each pair — the first hasn't been

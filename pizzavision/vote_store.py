@@ -8,7 +8,9 @@ Document shape (both backends):
     {client_id: str, user: str, rank: list[str],
      created_at: iso8601-str,        # set once on first insert
      updated_at: iso8601-str,        # bumped on any write
-     rank_updated_at: iso8601-str}   # bumped only on rank changes
+     rank_updated_at: iso8601-str,   # bumped only on rank changes
+     mutation_count: int,            # total rankchanged events processed
+     top1_history: list[{song: str, at: iso8601-str}]}  # appended when rank[0] changes
 
 In Firestore the document ID is client_id; in TinyDB rows are matched by
 Query().client_id == <uuid>.
@@ -41,11 +43,23 @@ class TinyDBVoteStore:
 
     def upsert_rank(self, client_id: str, user: str, rank: list[str]) -> None:
         now = _now_iso()
-        if self._db.search(self._Q.client_id == client_id):
-            self._db.update(
-                {"user": user, "rank": rank, "updated_at": now, "rank_updated_at": now},
-                self._Q.client_id == client_id,
-            )
+        new_top = rank[0] if rank else None
+        existing_rows = self._db.search(self._Q.client_id == client_id)
+        if existing_rows:
+            existing = existing_rows[0]
+            prev_top = (existing.get("rank") or [None])[0]
+            update = {
+                "user": user,
+                "rank": rank,
+                "updated_at": now,
+                "rank_updated_at": now,
+                "mutation_count": existing.get("mutation_count", 0) + 1,
+            }
+            if new_top is not None and new_top != prev_top:
+                history = list(existing.get("top1_history") or [])
+                history.append({"song": new_top, "at": now})
+                update["top1_history"] = history
+            self._db.update(update, self._Q.client_id == client_id)
         else:
             self._db.insert({
                 "client_id": client_id,
@@ -54,6 +68,8 @@ class TinyDBVoteStore:
                 "created_at": now,
                 "updated_at": now,
                 "rank_updated_at": now,
+                "mutation_count": 1,
+                "top1_history": [{"song": new_top, "at": now}] if new_top else [],
             })
 
     def update_name(self, client_id: str, new_name: str) -> None:
@@ -87,6 +103,8 @@ class TinyDBVoteStore:
                 "updated_at": now,
             }
             merged.setdefault("rank", [])
+            merged.setdefault("mutation_count", 0)
+            merged.setdefault("top1_history", [])
             self._db.insert(merged)
 
     def delete_by_client(self, client_id: str) -> int:
@@ -98,7 +116,13 @@ class TinyDBVoteStore:
             return False
         now = _now_iso()
         self._db.update(
-            {"rank": [], "updated_at": now, "rank_updated_at": None},
+            {
+                "rank": [],
+                "updated_at": now,
+                "rank_updated_at": None,
+                "mutation_count": 0,
+                "top1_history": [],
+            },
             self._Q.client_id == client_id,
         )
         return True
@@ -130,14 +154,24 @@ class FirestoreVoteStore:
 
     def upsert_rank(self, client_id: str, user: str, rank: list[str]) -> None:
         now = _now_iso()
+        new_top = rank[0] if rank else None
         ref = self._coll().document(client_id)
-        if ref.get().exists:
-            ref.update({
+        snap = ref.get()
+        if snap.exists:
+            existing = snap.to_dict() or {}
+            prev_top = (existing.get("rank") or [None])[0]
+            update = {
                 "user": user,
                 "rank": rank,
                 "updated_at": now,
                 "rank_updated_at": now,
-            })
+                "mutation_count": existing.get("mutation_count", 0) + 1,
+            }
+            if new_top is not None and new_top != prev_top:
+                history = list(existing.get("top1_history") or [])
+                history.append({"song": new_top, "at": now})
+                update["top1_history"] = history
+            ref.update(update)
         else:
             ref.set({
                 "client_id": client_id,
@@ -146,6 +180,8 @@ class FirestoreVoteStore:
                 "created_at": now,
                 "updated_at": now,
                 "rank_updated_at": now,
+                "mutation_count": 1,
+                "top1_history": [{"song": new_top, "at": now}] if new_top else [],
             })
 
     def update_name(self, client_id: str, new_name: str) -> None:
@@ -168,12 +204,15 @@ class FirestoreVoteStore:
         if ref.get().exists:
             ref.update({**fields, "updated_at": now})
         else:
-            ref.set({
+            merged = {
                 **fields,
                 "client_id": client_id,
                 "created_at": now,
                 "updated_at": now,
-            })
+            }
+            merged.setdefault("mutation_count", 0)
+            merged.setdefault("top1_history", [])
+            ref.set(merged)
 
     def delete_by_client(self, client_id: str) -> int:
         ref = self._coll().document(client_id)
@@ -187,7 +226,13 @@ class FirestoreVoteStore:
         if not ref.get().exists:
             return False
         now = _now_iso()
-        ref.update({"rank": [], "updated_at": now, "rank_updated_at": None})
+        ref.update({
+            "rank": [],
+            "updated_at": now,
+            "rank_updated_at": None,
+            "mutation_count": 0,
+            "top1_history": [],
+        })
         return True
 
     def truncate(self) -> None:
