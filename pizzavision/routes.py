@@ -1,8 +1,45 @@
 from flask import render_template, request, jsonify, abort, current_app
+from flask_socketio import join_room
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 import shutil
+
+
+# Windows ships without the IANA tz database; the `tzdata` pip package fills
+# that in. If it's not installed, fall back to UTC rather than crashing the
+# whole app at import time.
+try:
+    PACIFIC_TZ = ZoneInfo("America/Los_Angeles")
+    _PACIFIC_LABEL = "PT"
+except Exception:
+    PACIFIC_TZ = timezone.utc
+    _PACIFIC_LABEL = "UTC"
+
+
+# sid -> client_id, populated on 'joined', drained on 'disconnect'.
+# Single-process only (in-memory) — that matches our SocketIO setup; if we
+# ever scale out across instances we'd need a redis adapter for both this
+# and the per-client rooms below.
+_connected_sids: dict[str, str] = {}
+
+
+def _client_room(client_id: str) -> str:
+    return f"client:{client_id}"
+
+
+def _fmt_pacific(iso_str):
+    """Render an ISO-8601 UTC timestamp as a short Pacific-time string, or '—' if missing."""
+    if not iso_str:
+        return "—"
+    try:
+        dt = datetime.fromisoformat(iso_str)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(PACIFIC_TZ).strftime(f"%Y-%m-%d %H:%M {_PACIFIC_LABEL}")
+    except (ValueError, TypeError):
+        return iso_str
 
 
 from . import voting_bp
@@ -173,6 +210,33 @@ def admin_panel():
             current_app.extensions["socketio"].emit("options_updated")
             return jsonify(status="cleared")
 
+        if action == "delete_user":
+            client_id = request.form.get("client_id", "").strip()
+            if not client_id:
+                abort(400, "client_id required")
+            removed = vote_store.delete_by_client(client_id)
+            if not removed:
+                abort(404, "user not found")
+            # Targeted: only the affected client (if online) gets wiped and
+            # bounced back to onboarding. Other voters are not disturbed.
+            current_app.extensions["socketio"].emit(
+                "you_were_cleared", to=_client_room(client_id)
+            )
+            return jsonify(status="deleted")
+
+        if action == "clear_user_rank":
+            client_id = request.form.get("client_id", "").strip()
+            if not client_id:
+                abort(400, "client_id required")
+            if not vote_store.clear_rank_by_client(client_id):
+                abort(404, "user not found")
+            # Targeted: only the affected client (if online) clears its local
+            # rank and reloads. Their band name + onboarding answers stay.
+            current_app.extensions["socketio"].emit(
+                "your_rank_cleared", to=_client_room(client_id)
+            )
+            return jsonify(status="rank_cleared")
+
         if action == "unlock_votes":
             data = _load_options()
             data["locked"] = False
@@ -213,7 +277,20 @@ def admin_panel():
         abort(400, "unknown action")
 
     data = _load_options()
-    return render_template("admin.html", options=data["options"])
+    online_ids = set(_connected_sids.values())
+    users = []
+    for row in vote_store.all():
+        cid = row.get("client_id", "")
+        users.append({
+            "client_id": cid,
+            "user": row.get("user", "") or "(unnamed)",
+            "rank_count": len(row.get("rank") or []),
+            "created_at": _fmt_pacific(row.get("created_at")),
+            "rank_updated_at": _fmt_pacific(row.get("rank_updated_at")),
+            "online": cid in online_ids,
+        })
+    users.sort(key=lambda u: (u["user"] or "").lower())
+    return render_template("admin.html", options=data["options"], users=users)
 
 
 # ------------------------------------------------------------------
@@ -229,6 +306,11 @@ def register_socketio_handlers(socket_io):
         Payload: {clientId: str, userName: str}
         Reply  : {user: str, rank: list[str]}
 
+        Side effects:
+        - Tracks this sid as belonging to client_id (powers the admin online dot).
+        - Joins the client_id-keyed SocketIO room so admin actions can target
+          just this user.
+
         - If we already have a doc for this clientId, return what we have (server
           wins on the band name — the client should sync to it).
         - Otherwise, create a fresh row with the client's userName and an empty
@@ -238,6 +320,9 @@ def register_socketio_handlers(socket_io):
         user_name = data.get('userName', '')
         if not client_id:
             return {'user': user_name, 'rank': []}
+
+        _connected_sids[request.sid] = client_id
+        join_room(_client_room(client_id))
 
         existing = vote_store.get_by_client(client_id)
         if existing:
@@ -249,6 +334,10 @@ def register_socketio_handlers(socket_io):
         # First time we've seen this client — seed an empty doc.
         vote_store.update_name(client_id, user_name)
         return {'user': user_name, 'rank': []}
+
+    @socket_io.on('disconnect')
+    def on_disconnect():
+        _connected_sids.pop(request.sid, None)
 
     @socket_io.on('rankchanged')
     def on_rankchange(data):

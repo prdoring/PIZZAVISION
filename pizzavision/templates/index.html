@@ -18,14 +18,62 @@
         body {
             font-family: 'Montserrat', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: #121212;
-            background-image: url(/pizzavision/voting/static/pv25-3.png);
-            background-position: center 12px;
-            background-size: 320px;
-            background-repeat: no-repeat;
             color: #fff;
             margin: 0;
             padding: 0;
             transition: all 0.5s ease;
+        }
+
+        .pv-logo {
+            position: fixed;
+            top: 12px;
+            left: 50%;
+            width: 320px;
+            pointer-events: none;
+            z-index: 0;
+            border-radius: 0 0 16px 16px;
+            transform: translateX(-50%);
+            /* Soft edge feather so the logo blends into the plasma rather than
+               having hard rectangle edges. */
+            -webkit-mask-image: radial-gradient(ellipse 100% 100% at center, #000 85%, transparent 100%);
+            mask-image: radial-gradient(ellipse 100% 100% at center, #000 85%, transparent 100%);
+            /* Two coloured stage lights orbit the logo, anchored by a soft dark
+               drop-shadow so it still sits on the plasma instead of floating. */
+            animation: pvLogoFloat 6s ease-in-out infinite,
+                       pvLogoStageLights 14s linear infinite;
+        }
+
+        @keyframes pvLogoFloat {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50%      { transform: translateX(-50%) translateY(-4px); }
+        }
+
+        @keyframes pvLogoStageLights {
+            0% {
+                filter: drop-shadow(-14px 0 18px rgba(255, 43, 214, 0.55))
+                        drop-shadow(14px 0 18px rgba(0, 224, 255, 0.5))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            25% {
+                filter: drop-shadow(0 -14px 18px rgba(255, 43, 214, 0.55))
+                        drop-shadow(0 14px 18px rgba(0, 224, 255, 0.5))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            50% {
+                filter: drop-shadow(14px 0 18px rgba(255, 43, 214, 0.55))
+                        drop-shadow(-14px 0 18px rgba(0, 224, 255, 0.5))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            75% {
+                filter: drop-shadow(0 14px 18px rgba(255, 43, 214, 0.55))
+                        drop-shadow(0 -14px 18px rgba(0, 224, 255, 0.5))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            100% {
+                filter: drop-shadow(-14px 0 18px rgba(255, 43, 214, 0.55))
+                        drop-shadow(14px 0 18px rgba(0, 224, 255, 0.5))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
         }
 
         /* Add a subtle particle effect in the background */
@@ -55,7 +103,7 @@
         }
 
         h1 {
-            color: #4CAF50;
+            color: #fff;
             text-align: center;
             margin-bottom: 30px;
         }
@@ -68,13 +116,13 @@
         }
 
         .static-list li {
-            background-color: rgba(35, 35, 35, 0.6);
+            background-color: rgba(20, 18, 38, 0.6);
             border-radius: 8px;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px) saturate(1.3);
+            -webkit-backdrop-filter: blur(10px) saturate(1.3);
+            box-shadow: 0 8px 14px rgba(0, 0, 0, 0.28),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.08);
             margin: 14px 0;
             padding: 14px;
             transition: all 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -90,8 +138,10 @@
 
         .static-list li:hover {
             transform: translateY(-2px) scale(1.02);
-            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15);
+            box-shadow: 0 12px 22px rgba(0, 0, 0, 0.32),
+                0 0 18px rgba(0, 224, 255, 0.12),
+                inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            border-color: rgba(0, 224, 255, 0.22);
         }
 
         .sortable-list {
@@ -103,15 +153,17 @@
         }
 
         .sortable-list li {
-            background-color: rgba(45, 45, 45, 0.7);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
+            background-color: rgba(28, 22, 50, 0.65);
+            backdrop-filter: blur(10px) saturate(1.35);
+            -webkit-backdrop-filter: blur(10px) saturate(1.35);
             border-radius: 8px;
             padding: 14px 18px 14px 50px;
             margin: 14px 0 14px -10px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15),
-                inset 0 1px 0 rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.08);
+            /* inset 3px stripe on the left edge = stage-light slot */
+            box-shadow: inset 3px 0 0 rgba(0, 224, 255, 0.55),
+                0 4px 12px rgba(0, 0, 0, 0.22),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.07);
             min-height: 22px;
             max-height: 22px;
             font-weight: 500;
@@ -121,6 +173,14 @@
             display: flex;
             align-items: center;
             position: relative;
+        }
+
+        /* Top pick gets a magenta stripe instead of cyan — passion / #1 */
+        .sortable-list li:first-child {
+            box-shadow: inset 3px 0 0 rgba(255, 43, 214, 0.7),
+                0 6px 16px rgba(255, 43, 214, 0.18),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+            border-color: rgba(255, 43, 214, 0.22);
         }
 
         /* Drag handle on each song row */
@@ -147,19 +207,31 @@
         .static-list li.paired-active {
             background-color: rgba(70, 70, 70, 0.85) !important;
             box-shadow: 0 12px 20px rgba(0, 0, 0, 0.3),
-                inset 0 1px 0 rgba(255, 215, 0, 0.25),
-                0 0 0 1px rgba(255, 215, 0, 0.3) !important;
+                inset 0 1px 0 rgba(0, 224, 255, 0.3),
+                0 0 0 1px rgba(0, 224, 255, 0.45),
+                0 0 18px rgba(0, 224, 255, 0.2) !important;
         }
 
         .sortable-list li:hover {
-            background-color: rgba(60, 60, 60, 0.85);
+            background-color: rgba(40, 32, 70, 0.85);
             transform: translateY(-4px) scale(1.02);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25),
-                inset 0 1px 0 rgba(255, 255, 255, 0.1);
+            box-shadow: inset 3px 0 0 rgba(0, 224, 255, 0.8),
+                0 10px 22px rgba(0, 0, 0, 0.32),
+                0 0 22px rgba(0, 224, 255, 0.22),
+                inset 0 1px 0 rgba(255, 255, 255, 0.12);
+            border-color: rgba(0, 224, 255, 0.32);
+        }
+
+        .sortable-list li:first-child:hover {
+            box-shadow: inset 3px 0 0 rgba(255, 43, 214, 0.95),
+                0 10px 24px rgba(0, 0, 0, 0.32),
+                0 0 28px rgba(255, 43, 214, 0.3),
+                inset 0 1px 0 rgba(255, 255, 255, 0.14);
+            border-color: rgba(255, 43, 214, 0.4);
         }
 
         button {
-            background-color: #4CAF50;
+            background: linear-gradient(135deg, #ff2bd6, #c41fa8);
             color: white;
             padding: 12px 24px;
             border: none;
@@ -167,8 +239,9 @@
             border-radius: 5px;
             display: block;
             margin: 20px auto 0;
-            transition: background-color 0.3s ease;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: filter 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2),
+                0 0 18px rgba(255, 43, 214, 0.25);
         }
 
         #vote_container {
@@ -181,7 +254,9 @@
         }
 
         button:hover {
-            background-color: #45a049;
+            filter: brightness(1.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3),
+                0 0 28px rgba(255, 43, 214, 0.45);
         }
 
         @media screen and (max-width: 600px) {
@@ -480,7 +555,8 @@
 
         /* Add a subtle glow to the highest points */
         .static-list li:first-child {
-            box-shadow: 0 8px 20px rgba(255, 215, 0, 0.2),
+            box-shadow: 0 8px 20px rgba(255, 43, 214, 0.28),
+                0 0 26px rgba(255, 43, 214, 0.18),
                 inset 0 1px 0 rgba(255, 255, 255, 0.15);
             animation: floatingAnimation 3s ease-in-out infinite;
         }
@@ -516,9 +592,15 @@
 
         /* Add this class for items being dragged */
         .dragging {
-            opacity: 0.9;
+            opacity: 0.95;
             cursor: grabbing;
-            background: rgba(70, 70, 70, 0.8) !important;
+            background: rgba(58, 38, 96, 0.88) !important;
+            box-shadow: inset 3px 0 0 rgba(255, 43, 214, 1),
+                0 14px 32px rgba(0, 0, 0, 0.45),
+                0 0 38px rgba(255, 43, 214, 0.35),
+                0 0 60px rgba(0, 224, 255, 0.15),
+                inset 0 1px 0 rgba(255, 255, 255, 0.18) !important;
+            border-color: rgba(255, 43, 214, 0.55) !important;
         }
 
         /* Add a subtle spotlight effect to the background */
@@ -588,15 +670,18 @@
         .lock-icon {
             font-size: 42px;
             margin-bottom: 10px;
-            color: #ffd700;
-            filter: drop-shadow(0 0 12px rgba(255, 215, 0, 0.55));
+            color: #00e0ff;
+            filter: drop-shadow(0 0 14px rgba(0, 224, 255, 0.6));
         }
 
         .lock-message {
             font-weight: 800;
             text-align: center;
             font-size: 22px;
-            color: #ffd700;
+            background: linear-gradient(135deg, #00e0ff, #ff2bd6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
             text-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
             max-width: 88%;
             line-height: 1.25;
@@ -645,7 +730,7 @@
             font-weight: 700;
             font-size: 11px;
             margin-bottom: 10px;
-            color: rgba(255, 215, 0, 0.78);
+            color: rgba(0, 224, 255, 0.85);
             letter-spacing: 1.5px;
             text-transform: uppercase;
         }
@@ -675,7 +760,7 @@
 
         .votes-review-points {
             font-weight: 700;
-            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            background: linear-gradient(135deg, #ff2bd6, #00e0ff);
             padding: 3px 8px;
             border-radius: 12px;
             font-size: 12px;
@@ -775,7 +860,7 @@
             bottom: 22px;
             left: 50%;
             transform: translateX(-50%) translateY(16px);
-            background: linear-gradient(135deg, #4CAF50, #2E7D32);
+            background: linear-gradient(135deg, #ff2bd6, #c41fa8);
             color: #fff;
             padding: 9px 20px;
             border-radius: 30px;
@@ -783,7 +868,7 @@
             font-size: 13px;
             letter-spacing: 0.6px;
             opacity: 0;
-            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 0 22px rgba(76, 175, 80, 0.35);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, 0.5), 0 0 22px rgba(255, 43, 214, 0.4);
             pointer-events: none;
             transition: opacity 0.25s ease, transform 0.25s ease;
             z-index: 1000;
@@ -1270,6 +1355,8 @@
 </head>
 
 <body>
+    <img class="pv-logo" src="{{ url_for('voting.static', filename='pv25-3.png') }}" alt="">
+
     <!-- First-time onboarding modal -->
     <div id="onboarding-overlay" aria-hidden="true">
         <div class="onboarding-card">
@@ -1446,9 +1533,27 @@
     <!-- Include jQuery UI Touch Punch -->
     <script
         src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
+    <script src="{{ url_for('voting.static', filename='plasma-shader.js') }}"></script>
 
     <script>
         var socket = io();
+
+        // Plasma background reacts to live voting events.
+        if (window.PlasmaShader && socket) {
+            socket.on('votes_finalized', function () {
+                window.PlasmaShader.triggerBgFlash();
+                window.PlasmaShader.triggerBolt();
+            });
+            socket.on('votesUpdated', function () {
+                window.PlasmaShader.triggerPulse();
+            });
+            // Self-emitted rank changes: brief trace as ambient feedback.
+            var _pvOrigEmit = socket.emit.bind(socket);
+            socket.emit = function (name) {
+                if (name === 'rankchanged') window.PlasmaShader.triggerTrace();
+                return _pvOrigEmit.apply(socket, arguments);
+            };
+        }
         $(document).ready(function () {
             var list = $(".sortable-list");
 
@@ -1493,10 +1598,10 @@
                     $('.static-list li').eq(startIdx).addClass('paired-active');
 
                     // Fancy placeholder
-                    ui.placeholder.html('<div style="height: 100%; border: 2px dashed rgba(255,215,0,0.45); border-radius: 8px;"></div>');
+                    ui.placeholder.html('<div style="height: 100%; border: 2px dashed rgba(255, 43, 214, 0.55); border-radius: 8px;"></div>');
                     ui.placeholder.css({
                         'visibility': 'visible',
-                        'background': 'rgba(255, 215, 0, 0.08)',
+                        'background': 'rgba(255, 43, 214, 0.10)',
                         'backdrop-filter': 'blur(5px)',
                         'border-radius': '8px',
                         'margin': '14px 0 14px -10px',
@@ -1516,7 +1621,7 @@
                     }, 1400);
 
                     // Drop highlight
-                    ui.item.css('background-color', 'rgba(255, 215, 0, 0.22)');
+                    ui.item.css('background-color', 'rgba(0, 224, 255, 0.22)');
                     setTimeout(function () {
                         ui.item.css('background-color', '');
                     }, 400);
@@ -1620,8 +1725,11 @@
             var savedName = localStorage.getItem('userName');
 
             // joinRoom: emit 'joined' to the server and sync persisted state.
-            // The server's reply is the source of truth; localStorage.itemsOrder
-            // is only a fallback in case the ack is lost.
+            // The server's reply is the source of truth. We do NOT fall back
+            // to localStorage.itemsOrder when the server returns an empty rank
+            // — that path used to silently resurrect votes after an admin
+            // cleared a user's row (server reseeds rank=[], client would render
+            // stale local order, next drag re-pollutes the DB).
             function joinRoom(name) {
                 savedName = name;
                 document.getElementById("bandname").innerHTML = savedName;
@@ -1637,9 +1745,11 @@
                         updateList(state.rank);
                         list.sortable('refresh');
                         localStorage.setItem('itemsOrder', JSON.stringify(state.rank));
-                    } else if (savedOrder) {
-                        updateList(JSON.parse(savedOrder));
-                        list.sortable('refresh');
+                    } else {
+                        // Server says rank is empty — fresh seed or admin clear.
+                        // Trust it: wipe local cache so the rendered default
+                        // order (from the template) is what we keep.
+                        localStorage.removeItem('itemsOrder');
                     }
                 });
             }
@@ -2244,82 +2354,78 @@
                 });
             });
 
-            // Enhance the points colors for a more vibrant experience
-            function getEnhancedColorForPoints(points, maxPoints) {
-                const pointValue = parseInt(points);
-                const ratio = pointValue / maxPoints;
-
-                // Create more vibrant, glossy colors based on point value
-                if (ratio < 0.33) {
-                    // Lower points: copper/bronze tones
-                    return `linear-gradient(135deg, 
-                        rgba(170, 110, 70, 0.95) 0%, 
-                        rgba(145, 90, 50, 0.9) 50%, 
-                        rgba(120, 70, 40, 0.85) 100%)`;
-                } else if (ratio < 0.66) {
-                    // Mid points: silver/metallic tones
-                    return `linear-gradient(135deg, 
-                        rgba(180, 180, 190, 0.95) 0%, 
-                        rgba(150, 150, 160, 0.9) 50%, 
-                        rgba(130, 130, 140, 0.85) 100%)`;
-                } else {
-                    // Higher points: gold/vibrant tones
-                    return `linear-gradient(135deg, 
-                        rgba(220, 190, 60, 0.95) 0%, 
-                        rgba(200, 170, 40, 0.9) 50%, 
-                        rgba(180, 150, 30, 0.85) 100%)`;
-                }
+            // Stage-themed points styling: walk along the stage-light hue arc
+            // cyan(180) → blue(240) → purple(280) → magenta(320) → hot pink(340)
+            // so every adjacent card lands on a clearly different hue while
+            // staying inside the magenta/cyan family. Emits translucent overlays
+            // so the glass-morphism CSS underneath shows through.
+            function getPointsTierStyle(points, maxPoints) {
+                const ratio = Math.max(0, Math.min(1, parseInt(points) / maxPoints));
+                const hue = 180 + ratio * 160;     // 180 → 340
+                const sat = 88 + ratio * 12;       // 88 → 100%
+                const light = 55 + ratio * 10;     // 55 → 65%
+                return {
+                    hsl: hue.toFixed(1) + ', ' + sat.toFixed(1) + '%, ' + light.toFixed(1) + '%',
+                    ratio: ratio,
+                    bgAlpha:       0.14 + ratio * 0.22,
+                    stripeAlpha:   0.55 + ratio * 0.40,
+                    glowAlpha:     0.08 + ratio * 0.22,
+                    borderAlpha:   0.20 + ratio * 0.30,
+                    textGlowAlpha: 0.25 + ratio * 0.40
+                };
             }
 
             // Apply enhanced colors to the points
             function applyEnhancedPointsColors() {
                 const staticItems = $('.static-list li');
 
-                // Find the maximum points
                 let maxPoints = 0;
                 staticItems.each(function () {
-                    const pointsText = $(this).text();
-                    const pointsValue = parseInt(pointsText);
-                    if (pointsValue > maxPoints) {
-                        maxPoints = pointsValue;
-                    }
+                    const pv = parseInt($(this).text());
+                    if (pv > maxPoints) maxPoints = pv;
                 });
 
-                // Apply enhanced styling
                 staticItems.each(function (index) {
-                    const pointsText = $(this).text();
-                    const backgroundGradient = getEnhancedColorForPoints(pointsText, maxPoints);
+                    const s = getPointsTierStyle($(this).text(), maxPoints);
+                    const bg = 'linear-gradient(135deg, ' +
+                        'hsla(' + s.hsl + ', ' + s.bgAlpha.toFixed(3) + ') 0%, ' +
+                        'hsla(' + s.hsl + ', ' + (s.bgAlpha * 0.55).toFixed(3) + ') 100%)';
+                    const boxShadow = [
+                        'inset 3px 0 0 hsla(' + s.hsl + ', ' + s.stripeAlpha.toFixed(3) + ')',
+                        '0 4px 14px rgba(0, 0, 0, 0.3)',
+                        '0 0 22px hsla(' + s.hsl + ', ' + s.glowAlpha.toFixed(3) + ')',
+                        'inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                    ].join(', ');
 
-                    // Apply styling based on rank
                     $(this).css({
-                        'background': backgroundGradient,
+                        'background': bg,
                         'color': '#ffffff',
-                        'text-shadow': '0 1px 2px rgba(0, 0, 0, 0.5)',
-                        'font-weight': '600',
-                        'border': '1px solid rgba(255, 255, 255, 0.15)',
-                        'box-shadow': '0 4px 12px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15)'
+                        'text-shadow': '0 1px 2px rgba(0, 0, 0, 0.6), 0 0 10px hsla(' + s.hsl + ', ' + s.textGlowAlpha.toFixed(3) + ')',
+                        'font-weight': '700',
+                        'letter-spacing': '0.8px',
+                        'border': '1px solid hsla(' + s.hsl + ', ' + s.borderAlpha.toFixed(3) + ')',
+                        'box-shadow': boxShadow,
+                        // Reset so a row no longer in the top 3 doesn't keep stale scale/animation
+                        'transform': '',
+                        'animation': ''
                     });
 
-                    // Special styling for top 3
+                    // Top 3 get a subtle scale lift + floating animation so the
+                    // ranking hierarchy reads even before you start dragging.
                     if (index === 0) {
-                        // First place - gold effect
                         $(this).css({
                             'transform': 'scale(1.05)',
-                            'box-shadow': '0 6px 15px rgba(255, 215, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.3)',
-                            'animation': 'floatingAnimation 3s ease-in-out infinite'
+                            'animation': 'floatingAnimation 3s ease-in-out infinite',
+                            'box-shadow': boxShadow + ', 0 10px 30px hsla(' + s.hsl + ', 0.32)'
                         });
                     } else if (index === 1) {
-                        // Second place - silver effect
                         $(this).css({
-                            'transform': 'scale(1.03)',
-                            'box-shadow': '0 5px 12px rgba(192, 192, 192, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+                            'transform': 'scale(1.025)',
                             'animation': 'floatingAnimation 3.5s ease-in-out infinite'
                         });
                     } else if (index === 2) {
-                        // Third place - bronze effect
                         $(this).css({
                             'transform': 'scale(1.01)',
-                            'box-shadow': '0 4px 10px rgba(205, 127, 50, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
                             'animation': 'floatingAnimation 4s ease-in-out infinite'
                         });
                     }
@@ -2466,6 +2572,24 @@
                 socket.on('refresh', function () {
                     // Remove any local storage the page uses
                     // Hard reload
+                    location.reload(true);
+                });
+
+                // Admin deleted this client entirely. Wipe ALL PV state so we
+                // come back as a fresh first-time visitor (new clientId, full
+                // onboarding). Targeted — only this client receives this event.
+                socket.on('you_were_cleared', function () {
+                    ['clientId','userName','itemsOrder',
+                     'pv_onboarding_state','pv_onboarding_answers','pv_onboarding_options',
+                     'instructionsDismissed']
+                        .forEach(function (k) { localStorage.removeItem(k); });
+                    location.reload(true);
+                });
+
+                // Admin cleared this client's picks but kept the account.
+                // Drop just the local rank cache, keep the band name, reload.
+                socket.on('your_rank_cleared', function () {
+                    localStorage.removeItem('itemsOrder');
                     location.reload(true);
                 });
             }

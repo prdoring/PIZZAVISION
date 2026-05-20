@@ -20,12 +20,53 @@
             position: absolute;
             top: -46px;
             left: 50%;
-            margin-left: -266px;
-            max-width: 525px;
+            width: 360px;
             z-index: 100;
-            border-radius: 66px 66px 66px 66px;
-            opacity: 56%;
-            box-shadow: 3px 14px 15px 13px rgb(0 0 0 / 79%);
+            pointer-events: none;
+            opacity: 0.6;
+            border-radius: 0 0 16px 16px;
+            transform: translateX(-50%);
+            /* Edge feather so the logo blends into the slide content instead of
+               having a hard rectangle outline. */
+            -webkit-mask-image: radial-gradient(ellipse 100% 100% at center, #000 85%, transparent 100%);
+            mask-image: radial-gradient(ellipse 100% 100% at center, #000 85%, transparent 100%);
+            /* Stage-light orbit, dimmer than on index/results since this logo
+               sits over slide content as a persistent watermark. */
+            animation: pvLogoFloat 6s ease-in-out infinite,
+                       pvLogoStageLights 14s linear infinite;
+        }
+
+        @keyframes pvLogoFloat {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50%      { transform: translateX(-50%) translateY(-4px); }
+        }
+
+        @keyframes pvLogoStageLights {
+            0% {
+                filter: drop-shadow(-14px 0 18px rgba(255, 43, 214, 0.3))
+                        drop-shadow(14px 0 18px rgba(0, 224, 255, 0.28))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            25% {
+                filter: drop-shadow(0 -14px 18px rgba(255, 43, 214, 0.3))
+                        drop-shadow(0 14px 18px rgba(0, 224, 255, 0.28))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            50% {
+                filter: drop-shadow(14px 0 18px rgba(255, 43, 214, 0.3))
+                        drop-shadow(-14px 0 18px rgba(0, 224, 255, 0.28))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            75% {
+                filter: drop-shadow(0 14px 18px rgba(255, 43, 214, 0.3))
+                        drop-shadow(0 -14px 18px rgba(0, 224, 255, 0.28))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            100% {
+                filter: drop-shadow(-14px 0 18px rgba(255, 43, 214, 0.3))
+                        drop-shadow(14px 0 18px rgba(0, 224, 255, 0.28))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
         }
         .presentation-container {
             width: 100vw;
@@ -43,10 +84,36 @@
             justify-content: center;
             align-items: center;
             opacity: 0;
+            z-index: 1;
             transition: opacity 0.8s ease;
+            background: transparent;
+            overflow: hidden;
+        }
+        /* One global background layer instead of per-slide bgs. Two slides
+           that share the same image (announcement + winner) won't restart
+           the zoom — no cross-fade pulse. Image swap (different award) does
+           restart via JS by toggling .zooming. */
+        .bg-layer {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: linear-gradient(135deg, #2c3e50, #1a1a2e);
             background-size: cover;
             background-position: center;
+            background-repeat: no-repeat;
+            z-index: 0;
+            transform: scale(1);
+            transform-origin: center center;
+            will-change: transform;
+        }
+        .bg-layer.zooming {
+            animation: kenBurns 22s ease-out forwards;
+        }
+        @keyframes kenBurns {
+            from { transform: scale(1.25) translate(-3%, -2%); }
+            to   { transform: scale(1.00) translate(0, 0); }
         }
         .slide-overlay {
             position: absolute;
@@ -54,19 +121,17 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.5); /* Semi-transparent overlay for better text visibility */
+            background: rgba(0, 0, 0, 0.5);
             z-index: 1;
         }
         .slide-content {
             position: relative;
             z-index: 2;
             text-align: center;
-            padding: 20px;
+            padding: 20px 90px;
             background: #00000094;
             border-radius: 23px;
             box-shadow: 3px 14px 15px 13px rgb(0 0 0 / 79%);
-            padding-left: 90px;
-            padding-right: 90px;
         }
         .slide.active {
             opacity: 1;
@@ -78,12 +143,6 @@
             text-align: center;
             color: #e0e0e0;
             text-shadow: 0 4px 15px rgba(0,0,0,0.5);
-        }
-        .award-description {
-            font-size: 2rem;
-            color: #ffd700;
-            margin-bottom: 2rem;
-            text-align: center;
         }
         .award-subtext {
             font-size: 2.5rem;
@@ -112,13 +171,14 @@
             text-shadow: 0 4px 15px rgba(0,0,0,0.5);
             text-transform: uppercase;
         }
-        .winner-subtext {
-            font-size: 2.5rem;
-            color: #e0e0e0;
-            margin-top: 1rem;
+        .winner-total {
+            font-size: 4rem;
+            color: #ffd700;
+            font-weight: bold;
             text-align: center;
-            padding-left: 100px;
-            padding-right: 100px;
+            margin-top: 1.2rem;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            font-variant-numeric: tabular-nums;
         }
         .winner-stats {
             margin-top: 2rem;
@@ -144,34 +204,87 @@
             color: rgba(255, 255, 255, 0.6);
             z-index: 100;
             font-size: 14px;
+            text-align: right;
         }
         .progress {
             position: fixed;
             bottom: 20px;
             left: 20px;
-            color: rgba(255, 255, 255, 0.6);
+            color: rgba(255, 255, 255, 0.85);
             z-index: 100;
+            font-size: 1rem;
+        }
+        #slide-counter {
+            font-weight: bold;
+            letter-spacing: 0.04em;
+            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
         }
         .progress-bar {
             display: flex;
-            margin-top: 5px;
+            margin-top: 8px;
+            gap: 4px;
+            max-width: 60vw;
+            flex-wrap: wrap;
         }
         .progress-step {
-            width: 10px;
-            height: 10px;
+            width: 14px;
+            height: 14px;
             border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.3);
-            margin-right: 5px;
+            background-color: rgba(255, 255, 255, 0.25);
+            box-shadow: 0 0 4px rgba(0,0,0,0.5);
         }
         .progress-step.active {
             background-color: #ffd700;
+            box-shadow: 0 0 8px #ffd700;
         }
-        .transition-effect {
-            animation: fadeIn 1s ease-in;
+        .progress-step.visited {
+            background-color: rgba(255, 215, 0, 0.5);
         }
-        @keyframes fadeIn {
-            0% { opacity: 0; transform: translateY(20px); }
-            100% { opacity: 1; transform: translateY(0); }
+
+        /* Cascade entrance — each element opts in via the cascade class plus
+           an inline --delay variable. Reset on every slide activation so the
+           animation re-plays each time the slide is shown. */
+        .cascade {
+            opacity: 0;
+            animation: cascadeIn 0.6s ease-out forwards;
+            animation-delay: var(--delay, 0s);
+        }
+        .slide:not(.active) .cascade {
+            animation: none;
+            opacity: 0;
+        }
+        @keyframes cascadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Winner name gets its own dramatic drop with overshoot + glow. */
+        .winner-name.drop {
+            opacity: 0;
+            animation: nameDrop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+            animation-delay: var(--delay, 1.5s);
+        }
+        .slide:not(.active) .winner-name.drop {
+            animation: none;
+            opacity: 0;
+        }
+        @keyframes nameDrop {
+            0%   { opacity: 0; transform: scale(0.35); filter: blur(18px);
+                   text-shadow: 0 0 0 rgba(255,215,0,0); }
+            55%  { opacity: 1; transform: scale(1.12); filter: blur(0);
+                   text-shadow: 0 0 80px rgba(255,215,0,0.9); }
+            100% { opacity: 1; transform: scale(1);    filter: blur(0);
+                   text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        }
+
+        /* "And the winner is..." pulses briefly during the dramatic pause,
+           then settles. 2 iterations × 0.75s = 1.5s, matching the name delay. */
+        .winner-title.pulse {
+            animation: pulseTitle 0.75s ease-in-out 2;
+        }
+        @keyframes pulseTitle {
+            0%, 100% { opacity: 0.75; transform: scale(1); }
+            50%      { opacity: 1;    transform: scale(1.05); }
         }
         .error-message {
             background: rgba(255, 0, 0, 0.2);
@@ -205,17 +318,27 @@
     <!-- Logo that appears on all slides -->
     <img src="{{ url_for('voting.static', filename='pv25.png') }}" alt="PV25 Logo" class="logo">
     
+    <!-- Single Ken-Burns'ing background layer, shared across all slides.
+         Only the .slide-content cards crossfade above it. -->
+    <div class="bg-layer" id="bg-layer"></div>
+
     <div class="presentation-container" id="presentation">
         <!-- Slides will be dynamically created here -->
         <!-- Loading indicator -->
         <div class="slide active">
             <div class="slide-overlay"></div>
             <div class="slide-content">
-                <div class="award-title transition-effect">Loading Awards...</div>
-                <div class="award-subtext transition-effect">Please wait</div>
+                <div class="award-title cascade">Loading Awards...</div>
+                <div class="award-subtext cascade" style="--delay: 0.3s">Please wait</div>
             </div>
         </div>
     </div>
+
+    <!-- Reuse the same party-horn sound the results page uses. A random
+         toot segment is picked per reveal, so each award sounds different. -->
+    <audio id="partyHornSound" preload="auto" style="display:none;">
+        <source src="{{ url_for('voting.static', filename='party-horn.mp3') }}" type="audio/mpeg">
+    </audio>
     
     <div class="controls">
         <div>← Previous | Next →</div>
@@ -288,8 +411,8 @@
                         <div class="slide active">
                             <div class="slide-overlay"></div>
                             <div class="slide-content">
-                                <div class="award-title transition-effect">PIZZAVISION AWARDS</div>
-                                <div class="award-subtext transition-effect">2025</div>
+                                <div class="award-title cascade">PIZZAVISION AWARDS</div>
+                                <div class="award-subtext cascade" style="--delay: 0.4s">2026</div>
                                 <div class="error-message">
                                     Failed to load awards from API. Using sample data instead.<br>
                                     Error: ${error.message}
@@ -306,98 +429,97 @@
                     }, 3000); // Show the error for 3 seconds before proceeding
                 });
             
+            function resolveImageUrl(url) {
+                if (!url) return null;
+                if (url.startsWith('/static/')) {
+                    return '/pizzavision/voting' + url;
+                }
+                return url;
+            }
+
+            function buildSlide({bgUrl, contentHtml, dataAttrs = {}}) {
+                const slide = document.createElement('div');
+                slide.className = 'slide';
+                Object.entries(dataAttrs).forEach(([k, v]) => slide.dataset[k] = v);
+                if (bgUrl) slide.dataset.bgUrl = bgUrl;
+                const overlay = document.createElement('div');
+                overlay.className = 'slide-overlay';
+                slide.appendChild(overlay);
+                const content = document.createElement('div');
+                content.className = 'slide-content';
+                content.innerHTML = contentHtml;
+                slide.appendChild(content);
+                return slide;
+            }
+
             function createSlides(awards) {
                 const presentationContainer = document.getElementById('presentation');
                 presentationContainer.innerHTML = '';
 
-                // Award slide
-                const awardSlide = document.createElement('div');
-                awardSlide.className = 'slide';
-                
-                // Use a hardcoded URL for the first slide background as a fallback
-                try {
-                    awardSlide.style.backgroundImage = `url('/pizzavision/voting/static/images/firstslide.webp')`;
-                } catch (e) {
-                    console.error("Error setting background image:", e);
-                }
-                
-                awardSlide.innerHTML = `
-                    <div class="slide-overlay"></div>
-                    <div class="slide-content">
-                        <div class="award-title transition-effect">PIZZAVISION AWARDS</div>
-                        <div class="award-subtext transition-effect">2025</div>
-                    </div>`;
-                presentationContainer.appendChild(awardSlide);
-                
-                // For each award, create two slides: award announcement and winner
-                awards.forEach((award, index) => {
-                    // Award slide
-                    const awardSlide = document.createElement('div');
-                    awardSlide.className = 'slide';
-                    
-                    // Apply custom background image if provided
-                    if (award.image_url) {
-                        // Make sure image URLs are correct
-                        let imageUrl = award.image_url;
-                        // If image URL is relative, adjust it
-                        if (imageUrl.startsWith('/static/')) {
-                            imageUrl = '/pizzavision/voting' + imageUrl;
-                        }
-                        awardSlide.style.backgroundImage = `url('${imageUrl}')`;
-                    }
-                    
-                    awardSlide.innerHTML = `
-                        <div class="slide-overlay"></div>
-                        <div class="slide-content">
-                            <div class="award-title transition-effect">${award.award}</div>
-                            <div class="award-description transition-effect">Award</div>
-                            ${award.subtext ? `<div class="award-subtext transition-effect">${award.subtext}</div>` : ''}
-                            </br>
-                            <div class="award-insight transition-effect">${award.insight}</div>
-                        </div>
-                    `;
-                    presentationContainer.appendChild(awardSlide);
-                    
-                    // Winner slide
-                    const winnerSlide = document.createElement('div');
-                    winnerSlide.className = 'slide';
-                    
-                    // Apply same background image to winner slide if provided
-                    if (award.image_url) {
-                        // Make sure image URLs are correct
-                        let imageUrl = award.image_url;
-                        // If image URL is relative, adjust it
-                        if (imageUrl.startsWith('/static/')) {
-                            imageUrl = '/pizzavision/voting' + imageUrl;
-                        }
-                        winnerSlide.style.backgroundImage = `url('${imageUrl}')`;
-                    }
-                    
+                // Title slide
+                presentationContainer.appendChild(buildSlide({
+                    bgUrl: '/pizzavision/voting/static/images/jj.jpg',
+                    contentHtml: `
+                        <div class="award-title cascade">PIZZAVISION AWARDS</div>
+                        <div class="award-subtext cascade" style="--delay: 0.4s">2026</div>
+                    `
+                }));
+
+                // For each award: announcement slide + winner slide
+                awards.forEach((award) => {
+                    const bgUrl = resolveImageUrl(award.image_url);
+
+                    // Announcement: title → subtext → insight, staggered
+                    presentationContainer.appendChild(buildSlide({
+                        bgUrl,
+                        contentHtml: `
+                            <div class="award-title cascade">${award.award}</div>
+                            ${award.subtext ? `<div class="award-subtext cascade" style="--delay: 0.35s">${award.subtext}</div>` : ''}
+                            <div class="award-insight cascade" style="--delay: 0.7s">${award.insight}</div>
+                        `
+                    }));
+
+                    // Winner reveal: title pulses, name drops at 1.5s, total at 2.4s,
+                    // stats cascade thereafter ~250ms apart.
                     const statsHtml = (award.stats && award.stats.length)
-                        ? `<div class="winner-stats transition-effect">${
-                            award.stats.map(s => `<div class="stat-row">${s}</div>`).join('')
+                        ? `<div class="winner-stats">${
+                            award.stats.map((s, i) => {
+                                const delay = (2.7 + i * 0.25).toFixed(2);
+                                return `<div class="stat-row cascade" style="--delay: ${delay}s">${s}</div>`;
+                            }).join('')
                           }</div>`
                         : '';
 
-                    winnerSlide.innerHTML = `
-                        <div class="slide-overlay"></div>
-                        <div class="slide-content">
-                            <div class="winner-title transition-effect">And the winner is...</div>
-                            <div class="winner-name transition-effect">${award.winner}</div>
+                    const totalAttrs = award.winner_total_value !== undefined
+                        ? `data-target="${award.winner_total_value}" data-kind="${award.winner_total_kind}"`
+                        : '';
+                    const totalHtml = award.winner_total
+                        ? `<div class="winner-total cascade" style="--delay: 2.4s" ${totalAttrs}>${award.winner_total}</div>`
+                        : '';
+
+                    presentationContainer.appendChild(buildSlide({
+                        bgUrl,
+                        dataAttrs: {
+                            kind: 'winner',
+                            code: award.code || '',
+                            theme: confettiThemeFor(award.code)
+                        },
+                        contentHtml: `
+                            <div class="winner-title pulse">And the winner is...</div>
+                            <div class="winner-name drop">${award.winner}</div>
+                            ${totalHtml}
                             ${statsHtml}
-                        </div>
-                    `;
-                    presentationContainer.appendChild(winnerSlide);
+                        `
+                    }));
                 });
-                
-                // Get all slides and set the first one as active
+
                 const slides = document.querySelectorAll('.slide');
                 totalSlides = slides.length;
                 if (slides.length > 0) {
                     slides[0].classList.add('active');
+                    applyBackgroundFor(slides[0]);
                 }
-                
-                // Create progress indicators
+
                 createProgressIndicators(totalSlides);
                 updateSlideCounter();
             }
@@ -437,111 +559,269 @@
                 }
             }
             
+            // -------- Audio (same party-horn pattern as the results page) --------
+            const tootRanges = [
+                { start: 1,    end: 3    },
+                { start: 4.5,  end: 5.5  },
+                { start: 6.75, end: 8.8  },
+                { start: 9,    end: 11   },
+                { start: 11.5, end: 13   },
+                { start: 21.5, end: 21.4 },
+                { start: 21.6, end: 23   },
+            ];
+            let pendingHornStop = null;
+
+            function playPartyHorn() {
+                const horn = document.getElementById('partyHornSound');
+                if (!horn) return;
+                const toot = tootRanges[Math.floor(Math.random() * tootRanges.length)];
+                try {
+                    horn.currentTime = toot.start;
+                    const p = horn.play();
+                    if (p && p.catch) p.catch(() => {});
+                } catch (e) { /* missing file or autoplay block — no-op */ }
+                if (pendingHornStop) clearTimeout(pendingHornStop);
+                const duration = Math.max(0.1, toot.end - toot.start);
+                pendingHornStop = setTimeout(() => {
+                    try { horn.pause(); } catch (e) {}
+                    pendingHornStop = null;
+                }, duration * 1000);
+            }
+
+            function stopPartyHorn() {
+                const horn = document.getElementById('partyHornSound');
+                if (!horn) return;
+                try { horn.pause(); horn.currentTime = 0; } catch (e) {}
+                if (pendingHornStop) { clearTimeout(pendingHornStop); pendingHornStop = null; }
+            }
+
+            // -------- Count-up animation for big totals --------
+            function fmtGdpJs(n) {
+                n = Math.abs(n);
+                if (n >= 1e12) return '$' + (n/1e12).toFixed(2) + 'T';
+                if (n >= 1e9)  return '$' + (n/1e9).toFixed(1) + 'B';
+                if (n >= 1e6)  return '$' + (n/1e6).toFixed(1) + 'M';
+                return '$' + Math.round(n).toLocaleString();
+            }
+            function fmtPopJs(n) {
+                n = Math.abs(n);
+                if (n >= 1e9) return (n/1e9).toFixed(2) + 'B people';
+                if (n >= 1e6) return (n/1e6).toFixed(1) + 'M people';
+                return Math.round(n).toLocaleString() + ' people';
+            }
+            function animateCountUp(element, target, formatter, duration) {
+                duration = duration || 1400;
+                const start = performance.now();
+                function frame(now) {
+                    const t = Math.min((now - start) / duration, 1);
+                    const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
+                    element.textContent = formatter(target * eased);
+                    if (t < 1) requestAnimationFrame(frame);
+                    else element.textContent = formatter(target);
+                }
+                requestAnimationFrame(frame);
+            }
+
+            // -------- Slide navigation --------
+            // Slide index layout:
+            //   0           = title card
+            //   1, 3, 5,... = award announcement
+            //   2, 4, 6,... = winner reveal (themed reveal + confetti + audio)
+            function isWinnerSlide(idx) { return idx > 0 && idx % 2 === 0; }
+            function isAnnounceSlide(idx) { return idx > 0 && idx % 2 === 1; }
+
             function nextSlide() {
                 if (currentSlideIndex < totalSlides - 1) {
                     updateSlide(currentSlideIndex + 1);
-                    if((currentSlideIndex%2)==0){
-                        createConfetti();
-                        setTimeout(() => {
-                            createConfetti();
-                        }, 500); // Show the error for 3 seconds before proceeding
-                        setTimeout(() => {
-                            createConfetti();
-                        }, 1000); // Show the error for 3 seconds before proceeding
-                    }
                 }
             }
-            
+
             function previousSlide() {
                 if (currentSlideIndex > 0) {
                     updateSlide(currentSlideIndex - 1);
                 }
             }
-            
+
+            function applyBackgroundFor(slide) {
+                const bgLayer = document.getElementById('bg-layer');
+                if (!bgLayer) return;
+                const newBg = slide.dataset.bgUrl || '';
+                const currentBg = bgLayer.dataset.currentBg || '';
+                if (newBg === currentBg) return; // same image — let Ken Burns continue
+                bgLayer.style.backgroundImage = newBg ? `url('${newBg}')` : '';
+                bgLayer.dataset.currentBg = newBg;
+                // Restart Ken Burns from scratch on image change
+                bgLayer.classList.remove('zooming');
+                // Force reflow so the animation actually restarts
+                void bgLayer.offsetWidth;
+                bgLayer.classList.add('zooming');
+            }
+
             function updateSlide(newIndex) {
-                // Update current slide
                 const slides = document.querySelectorAll('.slide');
                 slides[currentSlideIndex].classList.remove('active');
                 slides[newIndex].classList.add('active');
-                
-                // Update progress indicators
+
+                applyBackgroundFor(slides[newIndex]);
+
                 const indicators = document.querySelectorAll('.progress-step');
-                indicators[currentSlideIndex].classList.remove('active');
-                indicators[newIndex].classList.add('active');
-                
+                if (indicators[currentSlideIndex]) {
+                    indicators[currentSlideIndex].classList.remove('active');
+                    if (newIndex > currentSlideIndex) {
+                        indicators[currentSlideIndex].classList.add('visited');
+                    }
+                }
+                if (indicators[newIndex]) {
+                    indicators[newIndex].classList.add('active');
+                    indicators[newIndex].classList.remove('visited');
+                }
+
+                // Stop any lingering audio from a previous reveal
+                stopPartyHorn();
+
+                // Winner reveal choreography
+                if (isWinnerSlide(newIndex)) {
+                    const slide = slides[newIndex];
+                    const theme = slide.dataset.theme || 'default';
+
+                    // 1.5s — name drops; party horn toots; confetti starts
+                    setTimeout(() => {
+                        playPartyHorn();
+                        createConfetti(theme);
+                    }, 1500);
+                    setTimeout(() => createConfetti(theme), 2000);
+                    setTimeout(() => createConfetti(theme), 2700);
+
+                    // 2.4s — count up the big total (matches the CSS delay
+                    // on .winner-total so the slot-machine starts as it appears)
+                    const totalEl = slide.querySelector('.winner-total');
+                    if (totalEl && totalEl.dataset.target) {
+                        const target = parseFloat(totalEl.dataset.target);
+                        const kind = totalEl.dataset.kind;
+                        const fmt = kind === 'gdp' ? fmtGdpJs : fmtPopJs;
+                        totalEl.textContent = fmt(0);
+                        setTimeout(() => animateCountUp(totalEl, target, fmt), 2400);
+                    }
+                }
+
                 currentSlideIndex = newIndex;
                 updateSlideCounter();
             }
-            
+
             function updateSlideCounter() {
-                document.getElementById('slide-counter').textContent = `Slide ${currentSlideIndex + 1} of ${totalSlides}`;
+                const el = document.getElementById('slide-counter');
+                if (currentSlideIndex === 0) {
+                    el.textContent = `Title — ${awards.length} awards ahead`;
+                    return;
+                }
+                const awardNumber = Math.ceil(currentSlideIndex / 2);
+                const totalAwards = awards.length;
+                const subLabel = isWinnerSlide(currentSlideIndex) ? '— winner' : '— intro';
+                el.textContent = `Award ${awardNumber} of ${totalAwards} ${subLabel}`;
             }
 
-                // Create confetti animation with flag images
-            function createConfetti() {
-                const colors = ['#f94144', '#f3722c', '#f8961e', '#f9c74f', '#90be6d', '#43aa8b', '#577590'];
-                
-                // Create regular confetti pieces
-                for (let i = 0; i < 50; i++) {
-                    const confetti = document.createElement('div');
-                    confetti.className = 'confetti';
-                    
-                    confetti.style.top = confetti.style.top - Math.random() * 500;
-                    confetti.style.left = Math.random() * 100 + 'vw';
-                    confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                    confetti.style.opacity = Math.random() * 0.7 + 0.3; // More visible
-                    confetti.style.width = Math.random() * 40 + 5 + 'px';
-                    confetti.style.height = Math.random() * 40 + 5 + 'px';
-                    document.body.appendChild(confetti);
-                    
-                    const animation = confetti.animate([
-                        { transform: 'translate3d(0, -${Math.random() * 500}px, 0) rotate(0deg)', opacity: 1 },
-                        { transform: `translate3d(${Math.random() * 600 - 300}px, ${Math.random() * 600 + 1000}px, 0) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+            // -------- Themed confetti --------
+            // Each award gets a confetti theme: emoji palette + base colors.
+            // Fallback is the original flag-image rain.
+            const CONFETTI_THEMES = {
+                money:  { emojis: ['💰', '💵', '💸', '🪙'], colors: ['#2ecc71', '#27ae60', '#ffd700'] },
+                people: { emojis: ['👥', '🗣️', '🎉'],       colors: ['#3498db', '#9b59b6', '#ffd700'] },
+                nordic: { emojis: ['❄️', '⛄', '🌨️'],       colors: ['#ecf0f1', '#3498db', '#ffd700'] },
+                pop:    { emojis: ['🎤', '✨', '💖'],         colors: ['#e91e63', '#9b59b6', '#ffd700'] },
+                rock:   { emojis: ['🎸', '🤘', '🔥'],         colors: ['#c0392b', '#8e44ad', '#ffd700'] },
+                folk:   { emojis: ['🪕', '🌾', '🍂'],         colors: ['#d35400', '#8b4513', '#ffd700'] },
+                techno: { emojis: ['🤖', '⚡', '🎛️'],         colors: ['#9b59b6', '#1abc9c', '#ffd700'] },
+                ballad: { emojis: ['🎙️', '💔', '🌹'],         colors: ['#e74c3c', '#34495e', '#ffd700'] },
+                wine_r: { emojis: ['🍷', '🍇', '🌹'],         colors: ['#8e0000', '#5d0000', '#ffd700'] },
+                wine_w: { emojis: ['🥂', '🍾', '✨'],         colors: ['#f1c40f', '#ecf0f1', '#ffd700'] },
+                beer:   { emojis: ['🍺', '🥨', '🌭'],         colors: ['#f39c12', '#d35400', '#ffd700'] },
+                girls:  { emojis: ['👩', '💃', '💖'],         colors: ['#e91e63', '#f06292', '#ffd700'] },
+                lang:   { emojis: ['🌍', '🗣️', '📚'],         colors: ['#1abc9c', '#3498db', '#ffd700'] },
+                soviet: { emojis: ['🚩', '⚒️', '⭐'],         colors: ['#c0392b', '#7f0000', '#ffd700'] },
+                solo:   { emojis: ['🐺', '🌙', '⭐'],         colors: ['#34495e', '#7f8c8d', '#ffd700'] },
+                squad:  { emojis: ['👯', '🤝', '🎉'],         colors: ['#e67e22', '#16a085', '#ffd700'] },
+                vote:   { emojis: ['🗳️', '✅', '📊'],         colors: ['#3498db', '#2ecc71', '#ffd700'] },
+                back:   { emojis: ['👋', '🔄', '🎉'],         colors: ['#f39c12', '#16a085', '#ffd700'] },
+                meta:   { emojis: ['👑', '🏆', '✨'],         colors: ['#f1c40f', '#9b59b6', '#ffd700'] },
+                twin:   { emojis: ['👯', '👯‍♂️', '✨'],         colors: ['#9b59b6', '#3498db', '#ffd700'] },
+                big5:   { emojis: ['5️⃣', '🇪🇺', '⭐'],         colors: ['#003399', '#ffcc00', '#ffd700'] },
+                default:{ emojis: ['🍕', '🎉', '✨', '🏆'],   colors: ['#f94144', '#f3722c', '#f9c74f'] },
+            };
+
+            function confettiThemeFor(code) {
+                return {
+                    "Moneybags": "money", "Slummin' It": "money",
+                    "Extrovert": "people", "Introvert": "people",
+                    "Nordic Friend Zone": "nordic",
+                    "Pop Diva": "pop",
+                    "Rockstar": "rock",
+                    "Folk Hero": "folk",
+                    "Mr. Roboto": "techno",
+                    "Crooner": "ballad",
+                    "A Bottle Of Red": "wine_r",
+                    "A Bottle Of White": "wine_w",
+                    "A Bottle Of Beer": "beer",
+                    "For the Girls": "girls",
+                    "Polyglot": "lang",
+                    "Red George": "soviet",
+                    "Call me Dadoi": "nordic",
+                    "Lone Wolf": "solo",
+                    "Squad Goals": "squad",
+                    "Voice of the People": "vote",
+                    "Welcome Back": "back",
+                    "Tastemaker": "meta",
+                    "Contrarian": "meta",
+                    "Twinzies": "twin",
+                    "Big 5": "big5",
+                }[code] || "default";
+            }
+
+            function createConfetti(themeName) {
+                const theme = CONFETTI_THEMES[themeName] || CONFETTI_THEMES.default;
+
+                // Solid color squares
+                for (let i = 0; i < 40; i++) {
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti';
+                    piece.style.left = Math.random() * 100 + 'vw';
+                    piece.style.top = -Math.random() * 200 + 'px';
+                    piece.style.backgroundColor = theme.colors[Math.floor(Math.random() * theme.colors.length)];
+                    piece.style.opacity = Math.random() * 0.6 + 0.4;
+                    const size = Math.random() * 18 + 8;
+                    piece.style.width = `${size}px`;
+                    piece.style.height = `${size}px`;
+                    document.body.appendChild(piece);
+
+                    piece.animate([
+                        { transform: 'translate3d(0, 0, 0) rotate(0deg)', opacity: 1 },
+                        { transform: `translate3d(${Math.random()*600-300}px, ${window.innerHeight + 200}px, 0) rotate(${Math.random()*720-360}deg)`, opacity: 0 }
                     ], {
-                        duration: Math.random() * 3000 + 3000,
-                        easing: 'cubic-bezier(.59,.87,.5,.95)'
-                    });
-                    
-                    animation.onfinish = () => confetti.remove();
+                        duration: Math.random() * 2500 + 2500,
+                        easing: 'cubic-bezier(.40,.10,.55,.95)'
+                    }).onfinish = () => piece.remove();
                 }
 
-                for (let i = 0; i < 50; i++) { // More flag confetti
-                    const flagConfetti = document.createElement('div');
-                    flagConfetti.className = 'confetti flag-confetti';
-                    flagConfetti.style.left = Math.random() * 100 + 'vw';
-                    
-                    // Size randomization
-                    const size = Math.random() * 60 + 30; // 40-70px width - even larger!
-                    const ratio = 1; // Standard flag ratio
-                    flagConfetti.style.width = `${size}px`;
-                    flagConfetti.style.height = `${size * ratio}px`;
+                // Emoji confetti — the themed flair
+                for (let i = 0; i < 30; i++) {
+                    const piece = document.createElement('div');
+                    piece.className = 'confetti emoji-confetti';
+                    piece.textContent = theme.emojis[Math.floor(Math.random() * theme.emojis.length)];
+                    piece.style.left = Math.random() * 100 + 'vw';
+                    piece.style.top = -Math.random() * 200 + 'px';
+                    piece.style.fontSize = (Math.random() * 30 + 30) + 'px';
+                    piece.style.background = 'transparent';
+                    piece.style.width = 'auto';
+                    piece.style.height = 'auto';
+                    piece.style.opacity = Math.random() * 0.3 + 0.7;
+                    document.body.appendChild(piece);
 
-                    const possibleUrls = [
-                        "{{ url_for('voting.static', filename='luna.png') }}",
-                        "{{ url_for('voting.static', filename='nev.png') }}",
-                        "{{ url_for('voting.static', filename='reb.png') }}"
-                        ];
-
-                    // Randomly select one URL from the array
-                    var url = possibleUrls[Math.floor(Math.random() * possibleUrls.length)];
-
-                    // Higher quality flag images
-                    flagConfetti.style.backgroundImage = `url(${url})`;
-                    flagConfetti.style.backgroundSize = 'cover';
-                    flagConfetti.style.opacity = Math.random() * 0.3 + 0.7; // Very visible
-                    document.body.appendChild(flagConfetti);
-                    
-                    // More dynamic animation
-                    const animation = flagConfetti.animate([
-                        { transform: 'translate3d(0, -${Math.random() * 500}px, 0) rotate(0deg)', opacity: 1 },
-                        { transform: `translate3d(${Math.random() * 600 - 300}px, ${Math.random() * 600 + 1000}px, 0) rotate(${Math.random() * 360}deg)`, opacity: 0 }
+                    piece.animate([
+                        { transform: 'translate3d(0, 0, 0) rotate(0deg)', opacity: 1 },
+                        { transform: `translate3d(${Math.random()*600-300}px, ${window.innerHeight + 200}px, 0) rotate(${Math.random()*720-360}deg)`, opacity: 0 }
                     ], {
-                        duration: Math.random() * 3000 + 3000, // Even longer duration
-                        
-                        easing: 'cubic-bezier(.59,.87,.5,.95)'
-                    });
-                    
-                    animation.onfinish = () => flagConfetti.remove();
+                        duration: Math.random() * 3000 + 3000,
+                        easing: 'cubic-bezier(.40,.10,.55,.95)'
+                    }).onfinish = () => piece.remove();
                 }
             }
         });

@@ -5,7 +5,10 @@ mutable band name. The factory picks Firestore when GOOGLE_CLOUD_PROJECT is
 set (Cloud Run) and falls back to TinyDB on local dev.
 
 Document shape (both backends):
-    {client_id: str, user: str, rank: list[str], updated_at: iso8601-str}
+    {client_id: str, user: str, rank: list[str],
+     created_at: iso8601-str,        # set once on first insert
+     updated_at: iso8601-str,        # bumped on any write
+     rank_updated_at: iso8601-str}   # bumped only on rank changes
 
 In Firestore the document ID is client_id; in TinyDB rows are matched by
 Query().client_id == <uuid>.
@@ -37,40 +40,68 @@ class TinyDBVoteStore:
         return rows[0] if rows else None
 
     def upsert_rank(self, client_id: str, user: str, rank: list[str]) -> None:
-        doc = {
-            "client_id": client_id,
-            "user": user,
-            "rank": rank,
-            "updated_at": _now_iso(),
-        }
-        if self._db.search(self._Q.client_id == client_id):
-            self._db.update(doc, self._Q.client_id == client_id)
-        else:
-            self._db.insert(doc)
-
-    def update_name(self, client_id: str, new_name: str) -> None:
+        now = _now_iso()
         if self._db.search(self._Q.client_id == client_id):
             self._db.update(
-                {"user": new_name, "updated_at": _now_iso()},
+                {"user": user, "rank": rank, "updated_at": now, "rank_updated_at": now},
                 self._Q.client_id == client_id,
             )
         else:
-            self._db.insert(
-                {
-                    "client_id": client_id,
-                    "user": new_name,
-                    "rank": [],
-                    "updated_at": _now_iso(),
-                }
+            self._db.insert({
+                "client_id": client_id,
+                "user": user,
+                "rank": rank,
+                "created_at": now,
+                "updated_at": now,
+                "rank_updated_at": now,
+            })
+
+    def update_name(self, client_id: str, new_name: str) -> None:
+        now = _now_iso()
+        if self._db.search(self._Q.client_id == client_id):
+            self._db.update(
+                {"user": new_name, "updated_at": now},
+                self._Q.client_id == client_id,
             )
+        else:
+            self._db.insert({
+                "client_id": client_id,
+                "user": new_name,
+                "rank": [],
+                "created_at": now,
+                "updated_at": now,
+            })
 
     def upsert_user_profile(self, client_id: str, fields: dict) -> None:
-        merged = {**fields, "client_id": client_id, "updated_at": _now_iso()}
+        now = _now_iso()
         if self._db.search(self._Q.client_id == client_id):
-            self._db.update(merged, self._Q.client_id == client_id)
+            self._db.update(
+                {**fields, "updated_at": now},
+                self._Q.client_id == client_id,
+            )
         else:
+            merged = {
+                **fields,
+                "client_id": client_id,
+                "created_at": now,
+                "updated_at": now,
+            }
             merged.setdefault("rank", [])
             self._db.insert(merged)
+
+    def delete_by_client(self, client_id: str) -> int:
+        removed = self._db.remove(self._Q.client_id == client_id)
+        return len(removed)
+
+    def clear_rank_by_client(self, client_id: str) -> bool:
+        if not self._db.search(self._Q.client_id == client_id):
+            return False
+        now = _now_iso()
+        self._db.update(
+            {"rank": [], "updated_at": now, "rank_updated_at": None},
+            self._Q.client_id == client_id,
+        )
+        return True
 
     def truncate(self) -> None:
         self._db.truncate()
@@ -98,32 +129,66 @@ class FirestoreVoteStore:
         return snap.to_dict() if snap.exists else None
 
     def upsert_rank(self, client_id: str, user: str, rank: list[str]) -> None:
-        self._coll().document(client_id).set(
-            {
+        now = _now_iso()
+        ref = self._coll().document(client_id)
+        if ref.get().exists:
+            ref.update({
+                "user": user,
+                "rank": rank,
+                "updated_at": now,
+                "rank_updated_at": now,
+            })
+        else:
+            ref.set({
                 "client_id": client_id,
                 "user": user,
                 "rank": rank,
-                "updated_at": _now_iso(),
-            }
-        )
+                "created_at": now,
+                "updated_at": now,
+                "rank_updated_at": now,
+            })
 
     def update_name(self, client_id: str, new_name: str) -> None:
+        now = _now_iso()
         ref = self._coll().document(client_id)
         if ref.get().exists:
-            ref.update({"user": new_name, "updated_at": _now_iso()})
+            ref.update({"user": new_name, "updated_at": now})
         else:
-            ref.set(
-                {
-                    "client_id": client_id,
-                    "user": new_name,
-                    "rank": [],
-                    "updated_at": _now_iso(),
-                }
-            )
+            ref.set({
+                "client_id": client_id,
+                "user": new_name,
+                "rank": [],
+                "created_at": now,
+                "updated_at": now,
+            })
 
     def upsert_user_profile(self, client_id: str, fields: dict) -> None:
-        payload = {**fields, "client_id": client_id, "updated_at": _now_iso()}
-        self._coll().document(client_id).set(payload, merge=True)
+        now = _now_iso()
+        ref = self._coll().document(client_id)
+        if ref.get().exists:
+            ref.update({**fields, "updated_at": now})
+        else:
+            ref.set({
+                **fields,
+                "client_id": client_id,
+                "created_at": now,
+                "updated_at": now,
+            })
+
+    def delete_by_client(self, client_id: str) -> int:
+        ref = self._coll().document(client_id)
+        if not ref.get().exists:
+            return 0
+        ref.delete()
+        return 1
+
+    def clear_rank_by_client(self, client_id: str) -> bool:
+        ref = self._coll().document(client_id)
+        if not ref.get().exists:
+            return False
+        now = _now_iso()
+        ref.update({"rank": [], "updated_at": now, "rank_updated_at": None})
+        return True
 
     def truncate(self) -> None:
         coll = self._coll()

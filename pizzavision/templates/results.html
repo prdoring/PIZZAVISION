@@ -11,25 +11,26 @@
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #4CAF50;
-            --primary-dark: #3e8e41;
+            --primary: #ff2bd6;
+            --primary-dark: #c41fa8;
+            --accent: #00e0ff;
+            --accent-dark: #0098b3;
             --gold: #ffd700;
             --gold-deep: #b8860b;
             --bg-dark: #121212;
-            --card-bg: #1e1e1e;
-            --card-hover: #2a2a2a;
+            --card-bg: rgba(20, 18, 38, 0.55);
+            --card-hover: rgba(32, 28, 56, 0.7);
             --text: #ffffff;
             --text-secondary: #b3b3b3;
         }
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-dark);
+            background: #121212;
             color: var(--text);
             margin: 0;
             padding: 0;
             min-height: 100vh;
-            background: linear-gradient(135deg, #121212 0%, #1a1a1a 100%);
             transition: all 0.3s ease;
         }
 
@@ -64,11 +65,11 @@
             position: absolute;
             width: 70%;
             height: 4px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            background: linear-gradient(90deg, transparent, var(--primary), var(--accent), transparent);
             bottom: -14px;
             left: 15%;
             border-radius: 2px;
-            box-shadow: 0 0 14px rgba(255, 215, 0, 0.35);
+            box-shadow: 0 0 18px rgba(255, 43, 214, 0.4);
         }
 
         .subtitle {
@@ -85,10 +86,14 @@
 
         .result-item {
             background-color: var(--card-bg);
+            backdrop-filter: blur(10px) saturate(1.35);
+            -webkit-backdrop-filter: blur(10px) saturate(1.35);
+            border: 1px solid rgba(255, 255, 255, 0.06);
             border-radius: 14px;
             margin: 22px 0;
             padding: 0;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.25);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.35),
+                        inset 0 1px 0 rgba(255, 255, 255, 0.04);
             overflow: hidden;
             transform: translateY(20px);
             opacity: 0;
@@ -97,13 +102,17 @@
             transition: transform 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275),
                         box-shadow 0.45s ease,
                         opacity 0.45s ease,
-                        filter 0.45s ease;
+                        filter 0.45s ease,
+                        border-color 0.45s ease;
         }
 
         .result-item:hover {
             transform: translateY(-5px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.35);
+            box-shadow: 0 14px 28px rgba(0, 0, 0, 0.4),
+                        0 0 0 1px rgba(0, 224, 255, 0.25),
+                        0 0 24px rgba(0, 224, 255, 0.12);
             background-color: var(--card-hover);
+            border-color: rgba(0, 224, 255, 0.3);
         }
 
         /* Dim non-revealed siblings while one row is in the spotlight */
@@ -114,10 +123,12 @@
         }
 
         .result-item.spotlight {
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.55),
-                        0 0 0 1px rgba(255, 215, 0, 0.5),
-                        0 0 60px rgba(255, 215, 0, 0.22);
+            box-shadow: 0 22px 55px rgba(0, 0, 0, 0.6),
+                        0 0 0 1px rgba(255, 43, 214, 0.55),
+                        0 0 50px rgba(255, 43, 214, 0.28),
+                        0 0 90px rgba(0, 224, 255, 0.18);
             background-color: var(--card-hover);
+            border-color: rgba(255, 43, 214, 0.5);
             transform: translateY(-4px);
             z-index: 2;
         }
@@ -231,9 +242,10 @@
 
         .progress-bar {
             height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--primary-dark));
+            background: linear-gradient(90deg, var(--primary), var(--accent));
             width: 0;
             transition: width 1s ease-out;
+            box-shadow: 0 0 10px rgba(255, 43, 214, 0.5);
         }
 
         /* Breakdown badges styling */
@@ -399,12 +411,52 @@
             position: absolute;
             top: -68px;
             left: 50%;
-            margin-left: -148px;
-            max-width: 295px;
+            width: 295px;
             z-index: 100;
-            border-radius: 66px 66px 66px 66px;
-            opacity: 56%;
-            box-shadow: 3px 14px 15px 13px rgb(0 0 0 / 79%);
+            pointer-events: none;
+            border-radius: 0 0 16px 16px;
+            transform: translateX(-50%);
+            /* Soft edge feather so the logo blends into the plasma rather than
+               having hard rectangle edges. */
+            -webkit-mask-image: radial-gradient(ellipse 100% 100% at center, #000 85%, transparent 100%);
+            mask-image: radial-gradient(ellipse 100% 100% at center, #000 85%, transparent 100%);
+            /* Two coloured stage lights orbit the logo, anchored by a soft dark
+               drop-shadow so it still sits on the plasma instead of floating. */
+            animation: pvLogoFloat 6s ease-in-out infinite,
+                       pvLogoStageLights 14s linear infinite;
+        }
+
+        @keyframes pvLogoFloat {
+            0%, 100% { transform: translateX(-50%) translateY(0); }
+            50%      { transform: translateX(-50%) translateY(-4px); }
+        }
+
+        @keyframes pvLogoStageLights {
+            0% {
+                filter: drop-shadow(-14px 0 18px rgba(255, 43, 214, 0.55))
+                        drop-shadow(14px 0 18px rgba(0, 224, 255, 0.5))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            25% {
+                filter: drop-shadow(0 -14px 18px rgba(255, 43, 214, 0.55))
+                        drop-shadow(0 14px 18px rgba(0, 224, 255, 0.5))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            50% {
+                filter: drop-shadow(14px 0 18px rgba(255, 43, 214, 0.55))
+                        drop-shadow(-14px 0 18px rgba(0, 224, 255, 0.5))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            75% {
+                filter: drop-shadow(0 14px 18px rgba(255, 43, 214, 0.55))
+                        drop-shadow(0 -14px 18px rgba(0, 224, 255, 0.5))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
+            100% {
+                filter: drop-shadow(-14px 0 18px rgba(255, 43, 214, 0.55))
+                        drop-shadow(14px 0 18px rgba(0, 224, 255, 0.5))
+                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
+            }
         }
     </style>
 </head>
@@ -936,5 +988,6 @@
             });
         });
     </script>
+    <script src="{{ url_for('voting.static', filename='plasma-shader.js') }}"></script>
 </body>
 </html>

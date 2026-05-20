@@ -419,7 +419,7 @@
             "image_url": "/static/images/contrarian.jpg"
         },
         "Big 5": {
-            "subtext": "The band that sent the most points to Eurovision powerhouses (or those that get to skip the semifinals) France, Germany, Italy, Spain, and the United Kingdom.",
+            "subtext": "The band that sent the most points to Eurovision's auto-qualifying powerhouses — France, Germany, Italy, <s>Spain</s>, and the United Kingdom. (Spain sat 2026 out, so the Big 5 is awkwardly a Big 4 this year. We kept the name for old times' sake.)",
             "image_url": "/static/images/big5.jpg"
         },
         "For the Girls": {
@@ -474,32 +474,20 @@
             "subtext": "The band that joined the famous Nordic voting bloc, sending the most points to Sweden, Norway, Denmark, Finland, and Iceland.",
             "image_url": "/static/images/nordic.jpg"
         },
-        "Balkan Brotherhood": {
-            "subtext": "The band that channeled Balkan solidarity, awarding the most points to entries from Albania, Croatia, Greece, Serbia, Slovenia, Bulgaria, and other Balkan nations.",
-            "image_url": "/static/images/balkan.jpg"
-        },
-        "Baltic Squad": {
-            "subtext": "The band that joined the notorious Baltic vote-trading club — most points to Estonia, Latvia, and Lithuania.",
-            "image_url": "/static/images/baltic.jpg"
-        },
-        "Mediterranean Mood": {
-            "subtext": "The band that embraced the Mediterranean vibe, giving the most points to Italy, Spain, Cyprus, Malta, Israel, and France.",
-            "image_url": "/static/images/mediterranean.jpg"
-        },
         "Moneybags": {
-            "subtext": "The band whose points went to the richest economies — every 12-point vote sends a full national GDP into the bank, every 1-pointer sends 1/12. Big spender.",
+            "subtext": "Each of your 11 votes is worth (country's GDP × points ÷ 12). Highest total wins. Big spender.",
             "image_url": "/static/images/moneybags.jpg"
         },
         "Slummin' It": {
-            "subtext": "The band who rooted for the economic underdogs — same math as Moneybags, but the lowest GDP-weighted total wins.",
+            "subtext": "Same math as Moneybags but the lowest total wins. Champion of the underdog economies.",
             "image_url": "/static/images/slummin_it.jpg"
         },
         "Extrovert": {
-            "subtext": "The band whose points went to the most populous countries — 12-pointers send a full population, 1-pointers send 1/12. The people person.",
+            "subtext": "Each of your 11 votes is worth (country's population × points ÷ 12). Highest total wins. The people person.",
             "image_url": "/static/images/extrovert.jpg"
         },
         "Introvert": {
-            "subtext": "The band who championed the small nations — the fewest people lined up behind their points.",
+            "subtext": "Same math as Extrovert but the lowest total wins. Champion of the small nations.",
             "image_url": "/static/images/introvert.jpg"
         }
     },

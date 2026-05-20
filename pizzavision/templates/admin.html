@@ -31,13 +31,30 @@ body::before{
 }
 
 .wrap{
-    max-width:680px;margin:0 auto;padding:150px 20px 60px;
-    display:flex;flex-direction:column;gap:40px;
+    max-width:880px;margin:0 auto;padding:150px 20px 60px;
+    display:flex;flex-direction:column;gap:30px;
 }
 h1{
     font-size:clamp(26px,4vw,40px);margin:0;text-align:center;
     color:#4CAF50;font-weight:800;
 }
+
+/* ---- tabs ---- */
+.tabs{
+    display:flex;gap:6px;justify-content:center;
+    border-bottom:1px solid rgba(255,255,255,.08);
+}
+.tab{
+    background:transparent;border:none;color:#aaa;
+    font-family:inherit;font-weight:700;font-size:15px;
+    padding:12px 22px;cursor:pointer;
+    border-bottom:3px solid transparent;
+    transition:color .2s, border-color .2s;
+}
+.tab:hover{color:#fff}
+.tab.active{color:#4CAF50;border-bottom-color:#4CAF50}
+.panel{display:none;flex-direction:column;gap:30px}
+.panel.active{display:flex}
 
 /* ---- sortable list ---- */
 #optlist{list-style:none;margin:0;padding:0}
@@ -77,6 +94,79 @@ h1{
 .lock:hover {background:#F57C00}
 .unlock   {background:#337a19;color:#fff}
 .unlock:hover  {background:#2e3f28;color:#fff}
+
+/* ---- users table ---- */
+.users-hint{color:#aaa;font-size:13px;text-align:center;margin:-10px 0 0}
+.user-table{
+    width:100%;border-collapse:collapse;
+    background:rgba(30,30,30,.6);
+    border:1px solid rgba(255,255,255,.08);border-radius:8px;
+    overflow:hidden;
+}
+.user-table th,.user-table td{
+    padding:10px 12px;text-align:left;
+    border-bottom:1px solid rgba(255,255,255,.06);
+    font-size:13px;
+}
+.user-table th{
+    background:rgba(76,175,80,.12);color:#4CAF50;
+    font-weight:700;text-transform:uppercase;letter-spacing:.5px;font-size:11px;
+}
+.user-table tr:last-child td{border-bottom:none}
+.user-table tr:hover td{background:rgba(255,255,255,.03)}
+.user-name{font-weight:700}
+.user-cid{color:#888;font-family:monospace;font-size:11px}
+.user-rank-count{
+    display:inline-block;min-width:24px;text-align:center;
+    padding:2px 8px;border-radius:10px;font-weight:700;font-size:12px;
+    background:rgba(76,175,80,.2);color:#4CAF50;
+}
+.user-rank-count.zero{background:rgba(255,255,255,.08);color:#888}
+.user-actions{display:flex;gap:6px;justify-content:flex-end}
+.user-actions button{
+    border:none;color:#fff;border-radius:5px;
+    padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer;
+    font-family:inherit;
+}
+.btn-clear-rank{background:#FF9800}
+.btn-clear-rank:hover{background:#F57C00}
+.btn-delete-user{background:#d04444}
+.btn-delete-user:hover{background:#992d22}
+.user-empty{text-align:center;padding:20px;color:#888;font-style:italic}
+.online-dot{
+    display:inline-block;width:8px;height:8px;border-radius:50%;
+    margin-right:6px;vertical-align:middle;
+    background:#555;box-shadow:0 0 0 1px rgba(0,0,0,.3);
+}
+.online-dot.on{
+    background:#4CAF50;
+    box-shadow:0 0 0 1px rgba(0,0,0,.3),0 0 6px rgba(76,175,80,.7);
+}
+
+/* in-place row state changes */
+@keyframes rowFlash{
+    0%{background:rgba(76,175,80,.35)}
+    100%{background:transparent}
+}
+.user-table tr.row-flash td{animation:rowFlash .9s ease-out}
+.user-table tr.row-removing{
+    transition:opacity .3s ease, transform .3s ease;
+    opacity:0;transform:translateX(-12px);
+}
+
+/* admin toast */
+#admin-toast{
+    position:fixed;left:50%;bottom:32px;transform:translate(-50%,16px);
+    background:linear-gradient(135deg,#4CAF50,#2E7D32);
+    color:#fff;padding:10px 22px;border-radius:30px;
+    font-weight:700;font-size:13px;letter-spacing:.4px;
+    box-shadow:0 10px 24px rgba(0,0,0,.5),0 0 22px rgba(76,175,80,.35);
+    opacity:0;pointer-events:none;z-index:1000;
+    transition:opacity .25s ease, transform .25s ease;
+}
+#admin-toast.visible{opacity:1;transform:translate(-50%,0)}
+#admin-toast.warn{background:linear-gradient(135deg,#FF9800,#F57C00);
+    box-shadow:0 10px 24px rgba(0,0,0,.5),0 0 22px rgba(255,152,0,.35)}
 </style>
 </head>
 <body>
@@ -85,21 +175,79 @@ h1{
 <div class="wrap">
     <h1>Admin Control Panel</h1>
 
-    <!-- sortable + deletable list -->
-    <ul id="optlist">
-        {% for opt in options %}
-          <li data-label="{{ opt.label|e }}"><span>{{ opt.label }}</span><button class="rm">✕</button></li>
-        {% endfor %}
-    </ul>
-
-    <!-- password + buttons -->
+    <!-- password is shared across all tabs -->
     <div class="bar">
         <input class="pw" type="password" id="pw" placeholder="Admin password" required>
-        <button class="save">Save order / deletions</button>
-        <button class="clear">Clear vote DB</button>
-        <button class="restore">Restore from backup</button>
-        <button class="lock">Lock Votes</button>
-        <button class="unlock">Unlock Votes</button>
+    </div>
+
+    <div class="tabs">
+        <button class="tab active" data-panel="options">Options</button>
+        <button class="tab" data-panel="users">Users <span style="opacity:.6">({{ users|length }})</span></button>
+    </div>
+
+    <!-- ============== Options panel ============== -->
+    <div class="panel active" id="panel-options">
+        <ul id="optlist">
+            {% for opt in options %}
+              <li data-label="{{ opt.label|e }}"><span>{{ opt.label }}</span><button class="rm">✕</button></li>
+            {% endfor %}
+        </ul>
+
+        <div class="bar">
+            <button class="save">Save order / deletions</button>
+            <button class="clear">Clear vote DB</button>
+            <button class="restore">Restore from backup</button>
+            <button class="lock">Lock Votes</button>
+            <button class="unlock">Unlock Votes</button>
+        </div>
+    </div>
+
+    <!-- ============== Users panel ============== -->
+    <div class="panel" id="panel-users">
+        <p class="users-hint">
+            <strong>Clear Rank</strong> empties their picks but keeps their account.
+            <strong>Delete</strong> removes them entirely (test cleanup).
+        </p>
+        {% if users %}
+        <table class="user-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Picks</th>
+                    <th>Created (PT)</th>
+                    <th>Last vote (PT)</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr data-client-id="{{ u.client_id|e }}" data-user-name="{{ u.user|e }}">
+                    <td>
+                        <div class="user-name">
+                            <span class="online-dot {% if u.online %}on{% endif %}"
+                                  title="{% if u.online %}Online — they'll see the change immediately{% else %}Offline — change applies next time they open the page{% endif %}"></span>
+                            {{ u.user }}
+                        </div>
+                        <div class="user-cid">{{ u.client_id[:12] }}…</div>
+                    </td>
+                    <td>
+                        <span class="user-rank-count {% if u.rank_count == 0 %}zero{% endif %}">{{ u.rank_count }}</span>
+                    </td>
+                    <td>{{ u.created_at }}</td>
+                    <td>{{ u.rank_updated_at }}</td>
+                    <td>
+                        <div class="user-actions">
+                            <button class="btn-clear-rank">Clear Rank</button>
+                            <button class="btn-delete-user">Delete</button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="user-empty">No users in the vote store yet.</div>
+        {% endif %}
     </div>
 
     <div class="linkback">
@@ -114,6 +262,15 @@ document.addEventListener("mousemove",e=>{
   s.style.background=`radial-gradient(circle at ${e.clientX/window.innerWidth*100}% ${e.clientY/window.innerHeight*100}%,rgba(100,40,200,.1) 0%,rgba(20,20,20,0) 50%)`;
 });
 
+/* tabs */
+$(".tab").on("click", function(){
+  const target = $(this).data("panel");
+  $(".tab").removeClass("active");
+  $(this).addClass("active");
+  $(".panel").removeClass("active");
+  $("#panel-" + target).addClass("active");
+});
+
 /* drag‑drop */
 $("#optlist").sortable({tolerance:"pointer"}).disableSelection();
 
@@ -122,26 +279,49 @@ $(document).on("click",".rm",function(){
   $(this).closest("li").fadeOut(200,function(){$(this).remove();});
 });
 
-/* helper for AJAX calls */
-function adminAction(action, extra={}){
+/* helper for AJAX calls. Pass `onSuccess` to skip the default alert+reload
+   and update the DOM in place instead. */
+function adminAction(action, extra={}, onSuccess=null){
   const pw=$("#pw").val();
   if(!pw){alert("Enter admin password first");return;}
   $.post({
     url:"{{ url_for('voting.admin_panel') }}",
     data:{password:pw,action:action,...extra},
-    success:()=>{alert("Success!");location.reload();},
+    success:(resp)=>{
+      if(onSuccess){ onSuccess(resp); }
+      else { alert("Success!"); location.reload(); }
+    },
     error:x=>alert("Error: "+x.responseText)
   });
 }
 
+/* tiny toast for in-place actions — slides in bottom-center, fades out */
+let _toastTimer=null;
+function adminToast(message, kind="ok"){
+  let el=$("#admin-toast");
+  if(el.length===0){
+    el=$('<div id="admin-toast"></div>').appendTo("body");
+  }
+  el.removeClass("ok warn").addClass(kind).text(message).addClass("visible");
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.removeClass("visible"),2200);
+}
+
+function refreshUserCount(){
+  const n=$("#panel-users tbody tr").length;
+  $(".tab[data-panel=users] span").text("("+n+")");
+  if(n===0 && $(".user-empty").length===0){
+    $("#panel-users .user-table").replaceWith('<div class="user-empty">No users in the vote store yet.</div>');
+  }
+}
 
 $(".lock").on("click",()=>{
-  if(confirm("This will finalize votes and prevent further changes. Continue?")) 
+  if(confirm("This will finalize votes and prevent further changes. Continue?"))
     adminAction("lock_votes");
 });
 
 $(".unlock").on("click",()=>{
-  if(confirm("This will unlock the votes and allow user changes. Continue?")) 
+  if(confirm("This will unlock the votes and allow user changes. Continue?"))
     adminAction("unlock_votes");
 });
 
@@ -159,6 +339,36 @@ $(".clear").on("click",()=>{
 /* restore */
 $(".restore").on("click",()=>{
   if(confirm("Replace options.json with options_bak.json?")) adminAction("restore_options");
+});
+
+/* per-user actions — update the row in place so you stay on the Users tab */
+$(document).on("click", ".btn-clear-rank", function(){
+  const row = $(this).closest("tr");
+  const name = row.data("user-name");
+  if(!confirm(`Clear ${name}'s picks? Their account stays — they can re-rank.`)) return;
+  adminAction("clear_user_rank", {client_id: row.data("client-id")}, ()=>{
+    // Server zeroed their rank + nulled rank_updated_at. Mirror that here.
+    const pill = row.find(".user-rank-count");
+    pill.text("0").addClass("zero");
+    row.find("td").eq(3).text("—");  // "Last vote" column
+    row.addClass("row-flash");
+    setTimeout(()=>row.removeClass("row-flash"),900);
+    adminToast(`${name}'s picks cleared`);
+  });
+});
+
+$(document).on("click", ".btn-delete-user", function(){
+  const row = $(this).closest("tr");
+  const name = row.data("user-name");
+  if(!confirm(`Delete ${name} entirely? This removes their entire row from the vote store.`)) return;
+  adminAction("delete_user", {client_id: row.data("client-id")}, ()=>{
+    row.addClass("row-removing");
+    setTimeout(()=>{
+      row.remove();
+      refreshUserCount();
+    },300);
+    adminToast(`${name} deleted`);
+  });
 });
 </script>
 </body>
