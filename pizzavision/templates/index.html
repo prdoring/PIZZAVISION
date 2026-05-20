@@ -1534,7 +1534,97 @@
         }
         .vote-roast.loaded .vote-roast-spinner { display: none; }
         .vote-roast.loaded .vote-roast-text { display: block; }
+
+        /* ============================================================
+           Pre-paint state guards. The inline script in <head> adds
+           `pv-state-{pre|open|closed}` plus either `pv-has-band` or
+           `pv-no-band` to <html> before any body content paints. These
+           rules hide/show the right UI on the very first frame.
+           ============================================================ */
+
+        /* Pre-vote (any band status): the voting UI doesn't belong here
+           yet, hide it behind whatever modal is taking over. */
+        html.pv-state-pre #vote_container,
+        html.pv-state-pre #bandnamecontainer,
+        html.pv-state-pre #firstVisitTip {
+            visibility: hidden;
+        }
+
+        /* Open + no band: onboarding overlay is about to take over the
+           full viewport. Hide the voting UI underneath so it doesn't
+           flash before the overlay JS reveals it. */
+        html.pv-state-open.pv-no-band #vote_container,
+        html.pv-state-open.pv-no-band #bandnamecontainer,
+        html.pv-state-open.pv-no-band #firstVisitTip {
+            visibility: hidden;
+        }
+
+        /* Returning voter in pre-vote state: show the prevote modal
+           immediately on first paint (script after the markup fills the
+           band-name slot, also pre-paint). */
+        html.pv-state-pre.pv-has-band #prevote-overlay {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1;
+        }
+        html.pv-state-pre.pv-has-band #prevote-overlay .pv-state-card {
+            transform: none;
+        }
+
+        /* Closed + no band: spectator visit. Hide the personal-ballot
+           pieces and the voter copy of the lock message. Use
+           visibility:hidden on #votes/#candidates so vote_container
+           keeps its size (the absolutely-positioned lock overlay needs
+           a container to cover). */
+        html.pv-state-closed.pv-no-band #votes,
+        html.pv-state-closed.pv-no-band #candidates {
+            visibility: hidden;
+        }
+        html.pv-state-closed.pv-no-band #bandnamecontainer,
+        html.pv-state-closed.pv-no-band #firstVisitTip,
+        html.pv-state-closed.pv-no-band .votes-locked-overlay .lock-message-voter,
+        html.pv-state-closed.pv-no-band .votes-locked-overlay .podium,
+        html.pv-state-closed.pv-no-band .votes-locked-overlay .votes-review,
+        html.pv-state-closed.pv-no-band #vote-roast {
+            display: none !important;
+        }
+
+        /* Closed + did vote: hide the spectator copy. */
+        html.pv-has-band .votes-locked-overlay .lock-message-spectator {
+            display: none;
+        }
+        /* Defensive: in any non-closed state, neither lock-message
+           variant should render. */
+        html:not(.pv-state-closed) .lock-message-voter,
+        html:not(.pv-state-closed) .lock-message-spectator {
+            display: none;
+        }
+
+        /* On a page-load that lands directly in closed state, show the
+           locked overlay opaque on the first frame. The JS path that
+           toggles `.visible` (used for live "open → closed" transitions)
+           still does its fade-in because that case starts on
+           html.pv-state-open. */
+        html.pv-state-closed .votes-locked-overlay {
+            opacity: 1;
+        }
     </style>
+    <script>
+        // Runs synchronously during HTML parsing, BEFORE the body content
+        // is encountered. Classifies <html> with the current voting state
+        // and whether this browser already has a band name in localStorage.
+        // The CSS rules in the <style> block above use these classes to
+        // hide/show the right UI on the very first paint — no flash.
+        (function () {
+            var state = "{{ voting_state }}";
+            var hasBand = false;
+            try { hasBand = !!localStorage.getItem('userName'); } catch (e) {}
+            var c = document.documentElement.classList;
+            c.add('pv-state-' + state);
+            c.add(hasBand ? 'pv-has-band' : 'pv-no-band');
+        })();
+    </script>
 </head>
 
 <body>
@@ -1673,6 +1763,17 @@
             </div>
         </div>
     </div>
+    <script>
+        // Populate the prevote modal's band name slot inline, BEFORE any
+        // paint — the CSS already shows the modal immediately for
+        // pv-state-pre.pv-has-band, so the name needs to be in place
+        // before the browser draws the card.
+        (function () {
+            var slot = document.getElementById('prevoteBandName');
+            if (!slot) return;
+            try { slot.textContent = localStorage.getItem('userName') || ''; } catch (e) {}
+        })();
+    </script>
 
     <div id="open-vote-overlay" class="pv-state-overlay" aria-hidden="true">
         <div class="pv-state-card">
@@ -1714,7 +1815,8 @@
             {% if votes_locked %}
             <div class="votes-locked-overlay">
                 <div class="lock-icon">🏁</div>
-                <div class="lock-message">Douze points, dispatched.<span class="lock-subtext">Ballot sealed. Prosecco poured. Let the spectacle commence.</span></div>
+                <div class="lock-message lock-message-voter">Douze points, dispatched.<span class="lock-subtext">Ballot sealed. Prosecco poured. Let the spectacle commence.</span></div>
+                <div class="lock-message lock-message-spectator">The points are sealed.<span class="lock-subtext">You're late to the ballot — but right on time for the spectacle.</span></div>
 
                 <!-- Snarky AI roast of this voter's ballot -->
                 <div id="vote-roast" class="vote-roast" hidden>
@@ -1861,6 +1963,12 @@
             if (!$roast.length) return;
             if ($roast.data('fetched')) return;
             $roast.data('fetched', true);
+
+            // No band name means no ballot to roast and no band to roast.
+            // Bail before hitting the API.
+            var bandName = '';
+            try { bandName = localStorage.getItem('userName') || ''; } catch (e) {}
+            if (!bandName) { $roast.attr('hidden', true); return; }
 
             var cid = '';
             try { cid = localStorage.getItem('clientId') || ''; } catch (e) {}
@@ -2146,7 +2254,13 @@
             var ONBOARDING_FIELDS = ['song_title', 'song_vibe', 'personal_vibe', 'extra'];
             var generatingCopyTimer = null;
 
-            if (!savedName || localStorage.getItem('pv_onboarding_state')) {
+            if (window.PV_VOTING_STATE === 'closed' && !savedName) {
+                // Spectator visit: voting is over and this browser never
+                // made a band. Skip onboarding entirely — they don't need
+                // to invent a fictional act for a contest that's already
+                // closed. The CSS guards already render the spectator
+                // copy of the locked overlay; nothing else to wire up.
+            } else if (!savedName || localStorage.getItem('pv_onboarding_state')) {
                 startOnboarding();
             } else {
                 joinRoom(savedName);
@@ -2913,7 +3027,8 @@
                     var overlay = $(
                         '<div class="votes-locked-overlay">' +
                             '<div class="lock-icon">🏁</div>' +
-                            '<div class="lock-message">Douze points, dispatched.<span class="lock-subtext">Ballot sealed. Prosecco poured. Let the spectacle commence.</span></div>' +
+                            '<div class="lock-message lock-message-voter">Douze points, dispatched.<span class="lock-subtext">Ballot sealed. Prosecco poured. Let the spectacle commence.</span></div>' +
+                            '<div class="lock-message lock-message-spectator">The points are sealed.<span class="lock-subtext">You\'re late to the ballot — but right on time for the spectacle.</span></div>' +
                             '<div id="vote-roast" class="vote-roast" hidden>' +
                                 '<div class="vote-roast-spinner" aria-hidden="true"></div>' +
                                 '<div class="vote-roast-text"></div>' +
