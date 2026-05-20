@@ -12,16 +12,66 @@ from __future__ import annotations
 
 import json
 import os
+import secrets
 
 
-SYSTEM_PROMPT = """You name fictional Eurovision Song Contest acts. The user is inventing an act and has told you about their song. Your job: name the ACT (solo artist, duo, or group) that would actually perform that song on the Eurovision stage.
+_FINALISTS_PATH = os.path.join(os.path.dirname(__file__), "options.json")
+
+
+def _load_finalists() -> list[dict]:
+    """Load the current year's finalist entries from options.json.
+
+    Returns an empty list on any failure — callers treat that as "no fresh
+    examples available" and fall back to the static prompt examples.
+    """
+    try:
+        with open(_FINALISTS_PATH, encoding="utf-8") as f:
+            data = json.load(f)
+        opts = data.get("options")
+        return [o for o in opts if isinstance(o, dict)] if isinstance(opts, list) else []
+    except Exception:
+        return []
+
+
+def _random_finalist_block(n: int = 6) -> str:
+    """Format N random finalist entries as a compact example block.
+
+    Each line is "Country: Title — region / genre / language" so the model
+    sees both the *naming style* and the *vibe range* of real entries this
+    year. The randomness counters the model's tendency to default to a few
+    favourite archetypes (Balkan ballads, Nordic pop) every call.
+    """
+    finalists = _load_finalists()
+    if not finalists:
+        return ""
+    rng = secrets.SystemRandom()
+    sample = rng.sample(finalists, min(n, len(finalists)))
+    lines = []
+    for f in sample:
+        label = (f.get("label") or "").strip()
+        if not label:
+            continue
+        bits = []
+        if f.get("region"):
+            bits.append(str(f["region"]))
+        if f.get("genre"):
+            bits.append(str(f["genre"]))
+        if f.get("language"):
+            bits.append(f'{f["language"]} lyrics')
+        meta = " / ".join(bits)
+        lines.append(f"- {label}" + (f" — {meta}" if meta else ""))
+    return "\n".join(lines)
+
+
+SYSTEM_PROMPT = """You name fictional Eurovision Song Contest acts for a WATCH PARTY. The user is inventing an act for a fun night with friends — names should feel like real Eurovision entries but also make the room laugh when announced. Lean PLAYFUL. This is a party, not a record label meeting.
 
 STUDY REAL EUROVISION ARTIST NAMES (these are the energy):
-Loreen, Måneskin, Käärijä, Conchita Wurst, ABBA, Hatari, Subwoolfer, Go_A, Daði og Gagnamagnið, Salvador Sobral, Sennek, Eleni Foureira, Marco Mengoni, Mahmood, Duncan Laurence, Netta, Lordi, Alexander Rybak, Barbara Pravi, Kalush Orchestra, Rosa Linn, Tix, The Roop, We Are Domi, Sam Ryder, Olly Alexander, Bambie Thug, Slimane, Nemo, Baby Lasagna, Joost Klein.
+Loreen, Måneskin, Käärijä, Conchita Wurst, ABBA, Hatari, Subwoolfer, Go_A, Daði og Gagnamagnið, Salvador Sobral, Sennek, Eleni Foureira, Marco Mengoni, Mahmood, Duncan Laurence, Netta, Lordi, Alexander Rybak, Barbara Pravi, Kalush Orchestra, Rosa Linn, Tix, The Roop, We Are Domi, Sam Ryder, Olly Alexander, Bambie Thug, Slimane, Nemo, Baby Lasagna, Joost Klein, Let 3, Windows95man, Marcus & Martinus, Cornelia Jakobs, Silia Kapsis, Teya & Salena, Mae Muller, Blanca Paloma.
 
 Notice the patterns:
 - Many are SHORT — 1-2 words, often a mononym or stage name.
-- Many are NOT IN ENGLISH or use non-English spellings (Käärijä, Måneskin, Slimane, Baby Lasagna).
+- Many are PLAYFUL, ABSURD, or memorable on the lyric sheet — Baby Lasagna, Subwoolfer, Windows95man, Let 3, Joost Klein, Lordi.
+- Mix of languages — English AND non-English. Neither dominates.
 - They feel like REAL ARTISTS — not stereotypes, not adjective-stacks.
 
 HARD BANS (the model defaults to these — DO NOT):
@@ -30,14 +80,21 @@ HARD BANS (the model defaults to these — DO NOT):
 - No two-adjective-noun formulas like "Velvet Disco Chickens" or "Cosmic Sequined Wolves".
 - No "DJ X", no "Lil Y", no English-suburban-indie names.
 
-Output EXACTLY 3 names. Each must feel like a REAL person/group who'd actually compete at Eurovision. Vary them:
+Output EXACTLY 3 names. Vary them across THREE axes — language, format, and tone:
+
+LANGUAGE MIX (do not stack three foreign names — at least ONE must be readable/sayable in English):
+- Roughly: one English or English-readable, one with non-English flair (accents, foreign word), one wildcard.
+- Use accents where they fit (ö, å, æ, é, ž, ñ, ø, ł) but don't force every name into another language.
+- Occasionally sprinkle a gratuitous accent onto an otherwise English word (Mëtal, Söft Boi, Yäs) — this is a real Eurovision tic and it's funny. Don't do it on every name, and don't pile multiple accents into one word. One stray umlaut max.
+
+FORMAT MIX:
 - One mononym or single-name stage name (like Loreen, Slimane, Nemo).
-- One duo or group name (like Subwoolfer, We Are Domi, The Roop).
-- One that takes more risk — non-English, theatrical, or oblique (like Daði og Gagnamagnið, Käärijä, Baby Lasagna).
+- One duo or group name (like Subwoolfer, We Are Domi, The Roop, Teya & Salena).
+- One wildcard that takes a risk — absurd noun, theatrical, or oblique (like Baby Lasagna, Windows95man, Let 3, Lordi, Daði og Gagnamagnið).
 
-Anchor each name in the user's SONG TITLE and SONG VIBE. The act should sound like the artist who'd actually release that song.
+TONE: at least ONE of the three should be genuinely FUN — a name that gets a laugh or a "wait what" when the host reads it out. Think Baby Lasagna, Subwoolfer, Windows95man. Cheeky food references, weirdly specific objects, deadpan-absurd nouns, alliterative gags — all fair game. Just don't tip into the banned camp stereotypes above.
 
-Use accents and non-English letters where they fit (ö, å, æ, é, ž, ñ, ø, ł). Lean into Italian, Swedish, French, Spanish, Icelandic, Ukrainian, Greek where the vibe calls for it.
+Anchor each name in the user's SONG TITLE and SONG VIBE. The act should sound like the artist who'd actually release that song — but a party crowd should also enjoy hearing the name.
 
 Output strict JSON only: {"names": ["...", "...", "..."]}
 Each name 2–35 characters. No quotes inside names, no markdown, no commentary."""
@@ -48,6 +105,7 @@ def generate_band_names(
     song_vibe: str,
     personal_vibe: str,
     extra: str,
+    avoid: list[str] | None = None,
 ) -> list[str]:
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -57,12 +115,38 @@ def generate_band_names(
 
     client = OpenAI(api_key=api_key, timeout=8.0)
 
+    # Random nonce to perturb output. Two party-goers with near-identical
+    # onboarding answers would otherwise tend to converge on the same names;
+    # a fresh seed per call breaks the tie. Has no semantic meaning — the
+    # model just uses it as entropy.
+    variation_seed = secrets.token_hex(4)
+
     user_prompt = (
         f"Song title: {song_title}\n"
         f"Song vibe: {song_vibe}\n"
         f"Performer's personal vibe: {personal_vibe}\n"
-        f"Anything else: {extra or '(none)'}"
+        f"Anything else: {extra or '(none)'}\n"
+        f"Variation seed (ignore for meaning, use only to diverge from prior runs): {variation_seed}"
     )
+
+    finalist_block = _random_finalist_block(6)
+    if finalist_block:
+        user_prompt += (
+            "\n\nFor regional and stylistic RANGE this turn, here are a random "
+            "sample of actual finalists from this year's contest — DO NOT name "
+            "the act after any of them, just let their spread of regions, "
+            "genres, and languages broaden your imagination beyond your default "
+            "Eurovision archetypes:\n"
+            f"{finalist_block}"
+        )
+
+    avoid_clean = [a.strip() for a in (avoid or []) if isinstance(a, str) and a.strip()]
+    if avoid_clean:
+        avoid_str = ", ".join(f'"{a}"' for a in avoid_clean)
+        user_prompt += (
+            "\n\nDO NOT suggest any of these — the user has already seen them and wants "
+            f"different options: {avoid_str}"
+        )
 
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
@@ -100,13 +184,22 @@ def generate_band_names(
 _FIELD_PROMPTS = {
     "song_title": (
         "Suggest ONE Eurovision song title. PUNCHY. 1–3 words. MAX 25 characters.\n\n"
-        "Study real Eurovision titles for the energy: \"Cha Cha Cha\", \"Tattoo\", \"Soldi\", "
-        "\"Zitti e buoni\", \"Stefania\", \"Snap\", \"Voilà\", \"Arcade\", \"Euphoria\", "
-        "\"Fairytale\", \"Toy\", \"El Diablo\", \"Discoteque\", \"Shum\", \"Hatrið mun sigra\", "
-        "\"Bara bada bastu\", \"Heroes\", \"Rim Tim Tagi Dim\", \"Mama ŠČ!\".\n\n"
+        "Study real Eurovision titles for the energy.\n"
+        "English titles: \"Tattoo\", \"Snap\", \"Arcade\", \"Euphoria\", \"Toy\", "
+        "\"Discoteque\", \"Heroes\", \"Fairytale\", \"Cha Cha Cha\", \"Made of Stars\", "
+        "\"Space Man\", \"My Number One\".\n"
+        "Non-English titles: \"Soldi\", \"Zitti e buoni\", \"Stefania\", \"Voilà\", "
+        "\"Shum\", \"Hatrið mun sigra\", \"Bara bada bastu\", \"Rim Tim Tagi Dim\", "
+        "\"Mama ŠČ!\", \"El Diablo\".\n\n"
         "Patterns:\n"
-        "- Often NOT in English — Italian, Spanish, French, Swedish, Finnish, Icelandic, "
-        "Ukrainian, Greek, Albanian. Use real words from those languages.\n"
+        "- LANGUAGE MIX: English titles are just as common as foreign ones. Don't "
+        "default to either — rotate. About half your suggestions over time should "
+        "be English, the rest can be Italian, Spanish, French, Swedish, Finnish, "
+        "Icelandic, Ukrainian, Greek, Albanian, etc. Use real words.\n"
+        "- Occasionally sprinkle a gratuitous accent onto an otherwise English "
+        "word (Lövé, Crÿ, Föör Yöu) — it's a real Eurovision tic and it's funny. "
+        "Don't do it on every title, and never more than one stray umlaut per "
+        "title.\n"
         "- Short. 1–2 words is common. 3 max.\n"
         "- Emotional, cryptic, or oblique. Not cute.\n\n"
         "HARD BANS: no sparkle, no glitter, no unicorn, no rainbow, no disco-X, no diva, "
@@ -116,13 +209,22 @@ _FIELD_PROMPTS = {
     "song_vibe": (
         "Describe a Eurovision song's vibe in ONE short sentence. MAX 110 characters.\n\n"
         "Lead with genre, instrument, or emotional beat — not adjective stacks. Be specific.\n\n"
-        "Examples:\n"
-        "- \"Slow-burn breakup ballad with a string section that explodes at minute 3.\"\n"
-        "- \"Hyperpop revenge anthem sung in Lithuanian.\"\n"
-        "- \"Italian opera-rap with a flamenco bridge.\"\n"
-        "- \"Sad accordion folk that detonates into industrial techno.\"\n\n"
-        "Avoid: \"glitter\", \"sparkle\", \"sequins\", \"rainbow\", \"unicorn\", "
-        "\"electrifying\", \"pulsating\", \"foot-tapping\".\n\n"
+        "ANTI-DEFAULT WARNING: Your single strongest Eurovision prior is 'Balkan "
+        "ballad' / accordion folk / Eastern-European wail / string-backed breakup "
+        "ballad. If your first instinct lands anywhere in that cluster, throw it "
+        "out and start over. The real contest is far broader than that prior.\n\n"
+        "For this turn's regional, genre, language, and instrumental inspiration, "
+        "use ONLY the random finalist sample provided in the user message — it "
+        "rotates each call to keep you honest. Do not lean on whatever Eurovision "
+        "stereotypes are sitting at the top of your prior.\n\n"
+        "Format anchor (this shows the SHAPE only — do NOT copy its content):\n"
+        "- \"A whisper-quiet first verse that lurches into a wall-of-sound chorus.\"\n"
+        "That's the shape we want: short, specific, one musical idea plus one "
+        "production detail. The actual region, genre, and instruments for your "
+        "suggestion come from the finalist sample below, not from this example.\n\n"
+        "Avoid: \"balkan\", \"glitter\", \"sparkle\", \"sequins\", \"rainbow\", "
+        "\"unicorn\", \"electrifying\", \"pulsating\", \"foot-tapping\". Never use "
+        "the word \"balkan\" in the output.\n\n"
         "Output ONLY the description. No quotes. Under 110 characters."
     ),
     "personal_vibe": (
@@ -355,8 +457,31 @@ def suggest_answer(field: str, context: dict, anchor: str = "") -> str:
             "from your previous answers in this session."
         )
 
+    # Random nonce — same trick as generate_band_names. Without this, the
+    # model heavily defaults to certain archetypes (e.g. Balkan vibes) for
+    # similar inputs. Pure entropy, no semantic meaning.
+    variation_seed = secrets.token_hex(4)
+
+    # Inject a fresh random sample of real finalist entries each call. Without
+    # this the model keeps defaulting to the same archetype (e.g. Balkan
+    # ballad) because that matches its strongest Eurovision prior. Showing it
+    # the real range of this year's contest each turn forces variety.
+    finalist_block = _random_finalist_block(6)
+    finalist_section = (
+        f"\n\nA random sample of actual finalists from this year's contest — "
+        f"use them ONLY as a reminder of how varied real Eurovision is across "
+        f"region, genre, and language. DO NOT copy any of them verbatim:\n"
+        f"{finalist_block}"
+        if finalist_block else ""
+    )
+
     system = _FIELD_PROMPTS[field]
-    user_msg = f"{context_block}\n\n{anchor_block}\n\nNow give me ONE suggestion."
+    user_msg = (
+        f"{context_block}\n\n{anchor_block}"
+        f"{finalist_section}\n\n"
+        f"Variation seed (ignore for meaning, use only to diverge from prior runs): {variation_seed}\n\n"
+        "Now give me ONE suggestion."
+    )
 
     resp = client.chat.completions.create(
         model="gpt-4o-mini",

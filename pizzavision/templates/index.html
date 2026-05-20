@@ -1150,6 +1150,7 @@
         #onboarding-overlay .onboarding-textarea {
             resize: none;
             min-height: 76px;
+            overflow-y: hidden;
         }
         #onboarding-overlay .onboarding-input:focus,
         #onboarding-overlay .onboarding-textarea:focus {
@@ -1269,6 +1270,36 @@
             background: rgba(255, 255, 255, 0.12);
         }
 
+        /* Pick step stacks its action buttons full-width, mobile-first. */
+        .onboarding-step[data-step="pick"] .onboarding-actions {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+        }
+        .onboarding-step[data-step="pick"] .onboarding-actions .onboarding-btn {
+            width: 100%;
+            display: flex;
+        }
+        /* Quieter ghost variant — same shape as .ghost but muted so it reads
+           as the subordinate destructive action (Start over under Reroll). */
+        .onboarding-btn.ghost-quiet {
+            flex: 1 1 auto;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+        }
+        .onboarding-btn.ghost-quiet:active {
+            transform: scale(0.97);
+            background: rgba(255, 255, 255, 0.06);
+            color: #fff;
+        }
+        .onboarding-btn.ghost-quiet.is-armed {
+            background: rgba(255, 90, 110, 0.18);
+            color: #ffd5dc;
+            box-shadow: inset 0 0 0 1px rgba(255, 120, 140, 0.55);
+        }
+
         /* Generating step — spinner + cycling copy, centered. */
         .onboarding-spinner {
             width: 56px;
@@ -1293,37 +1324,120 @@
             transition: opacity 0.3s ease;
         }
 
-        /* Pick step — name cards stack. */
+        /* Pick step — name cards stack. Each card is split into a pick
+           zone (left, flex) and a pin zone (right, fixed width). */
         .name-options {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
-        .name-option {
-            display: block;
+        .name-option-wrap {
+            display: flex;
+            align-items: stretch;
             width: 100%;
             box-sizing: border-box;
-            padding: 18px 16px;
+            min-height: 60px;
             border-radius: 16px;
             border: 1px solid rgba(255, 255, 255, 0.12);
             background: linear-gradient(135deg, rgba(255, 215, 0, 0.08), rgba(255, 79, 175, 0.08), rgba(0, 224, 255, 0.08));
+            overflow: hidden;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+        }
+        .name-option-wrap:hover {
+            border-color: rgba(255, 215, 0, 0.5);
+            box-shadow: 0 12px 28px rgba(255, 79, 175, 0.25);
+        }
+        .name-option-pick {
+            flex: 1 1 auto;
+            min-width: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 16px;
+            margin: 0;
+            border: 0;
+            background: transparent;
+            appearance: none;
+            -webkit-appearance: none;
             color: #fff;
             font-family: inherit;
             font-size: clamp(17px, 5vw, 21px);
             font-weight: 800;
             text-align: center;
             cursor: pointer;
-            transition: transform 0.15s ease, box-shadow 0.2s ease, border-color 0.2s ease;
             text-shadow: 0 2px 6px rgba(0, 0, 0, 0.45);
-            line-height: 1.25;
+            line-height: 1.2;
             word-break: break-word;
+            transition: background 0.15s ease, transform 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
         }
-        .name-option:hover {
-            border-color: rgba(255, 215, 0, 0.5);
-            box-shadow: 0 12px 28px rgba(255, 79, 175, 0.25);
+        .name-option-pick:active {
+            background: rgba(255, 255, 255, 0.06);
+            transform: scale(0.99);
         }
-        .name-option:active {
-            transform: scale(0.98);
+        .name-option-pin {
+            flex: 0 0 60px;
+            margin: 0;
+            border: 0;
+            border-left: 1px solid rgba(255, 255, 255, 0.18);
+            background: rgba(0, 0, 0, 0.22);
+            padding: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            appearance: none;
+            -webkit-appearance: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.15s ease, border-color 0.15s ease;
+        }
+        .name-option-pin:active {
+            background: rgba(0, 0, 0, 0.35);
+        }
+        .name-pin-icon {
+            display: inline-block;
+            font-size: 22px;
+            line-height: 1;
+            opacity: 0.7;
+            transition: opacity 0.15s ease, transform 0.15s ease;
+        }
+        .name-option-pin:active .name-pin-icon {
+            transform: scale(0.9);
+        }
+        /* Pinned state — gold border, gold pin panel. */
+        .name-option-wrap.is-pinned {
+            border-color: rgba(255, 215, 0, 0.85);
+            box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.5), 0 12px 28px rgba(255, 79, 175, 0.22);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.18), rgba(255, 79, 175, 0.12), rgba(0, 224, 255, 0.08));
+        }
+        .name-option-wrap.is-pinned .name-option-pin {
+            background: rgba(255, 215, 0, 0.9);
+            border-left-color: rgba(255, 215, 0, 1);
+        }
+        .name-option-wrap.is-pinned .name-pin-icon {
+            opacity: 1;
+        }
+        /* Inline reroll — shimmer the pick zone, hide the pin zone. */
+        .name-option-wrap.is-rerolling .name-option-pick {
+            pointer-events: none;
+            color: transparent;
+            text-shadow: none;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.05) 0%,
+                rgba(255, 215, 0, 0.12) 50%,
+                rgba(255, 255, 255, 0.05) 100%
+            );
+            background-size: 200% 100%;
+            animation: name-shimmer 1.1s ease-in-out infinite;
+        }
+        .name-option-wrap.is-rerolling .name-option-pin {
+            opacity: 0;
+            pointer-events: none;
+        }
+        @keyframes name-shimmer {
+            0%   { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
         }
 
         #onboarding-overlay .names-source-banner {
@@ -1652,9 +1766,9 @@
                 </div>
                 <footer class="onboarding-actions">
                     <button type="button" class="onboarding-btn dice-btn" data-dice-field="song_title"
-                            aria-label="Surprise me with an AI suggestion">
+                            aria-label="Suggest an AI-written answer for this field">
                         <span class="dice-emoji">🎲</span>
-                        <span class="dice-label">Surprise me</span>
+                        <span class="dice-label">Suggest one</span>
                     </button>
                     <button type="button" class="onboarding-btn primary" data-next disabled>Next →</button>
                 </footer>
@@ -1672,9 +1786,9 @@
                 </div>
                 <footer class="onboarding-actions">
                     <button type="button" class="onboarding-btn dice-btn" data-dice-field="song_vibe"
-                            aria-label="Surprise me with an AI suggestion">
+                            aria-label="Suggest an AI-written answer for this field">
                         <span class="dice-emoji">🎲</span>
-                        <span class="dice-label">Surprise me</span>
+                        <span class="dice-label">Suggest one</span>
                     </button>
                     <button type="button" class="onboarding-btn primary" data-next disabled>Next →</button>
                 </footer>
@@ -1692,9 +1806,9 @@
                 </div>
                 <footer class="onboarding-actions">
                     <button type="button" class="onboarding-btn dice-btn" data-dice-field="personal_vibe"
-                            aria-label="Surprise me with an AI suggestion">
+                            aria-label="Suggest an AI-written answer for this field">
                         <span class="dice-emoji">🎲</span>
-                        <span class="dice-label">Surprise me</span>
+                        <span class="dice-label">Suggest one</span>
                     </button>
                     <button type="button" class="onboarding-btn primary" data-next disabled>Next →</button>
                 </footer>
@@ -1712,9 +1826,9 @@
                 </div>
                 <footer class="onboarding-actions">
                     <button type="button" class="onboarding-btn dice-btn" data-dice-field="extra"
-                            aria-label="Surprise me with an AI suggestion">
+                            aria-label="Suggest an AI-written answer for this field">
                         <span class="dice-emoji">🎲</span>
-                        <span class="dice-label">Surprise me</span>
+                        <span class="dice-label">Suggest one</span>
                     </button>
                     <button type="button" class="onboarding-btn primary" data-generate>Name my band ✨</button>
                 </footer>
@@ -1733,7 +1847,7 @@
             <section class="onboarding-step" data-step="pick">
                 <header class="onboarding-header">
                     <h1 class="onboarding-heading">Pick your stage name</h1>
-                    <p class="onboarding-sub">Three options. Pick one — or reroll.</p>
+                    <p class="onboarding-sub">Pick one — or tap 📌 to keep a favorite and reroll the rest.</p>
                 </header>
                 <div class="onboarding-field pick-body">
                     <div id="names-source-banner" class="names-source-banner" hidden></div>
@@ -1741,6 +1855,7 @@
                 </div>
                 <footer class="onboarding-actions">
                     <button type="button" class="onboarding-btn ghost" id="reroll-btn">↻ Reroll all three</button>
+                    <button type="button" class="onboarding-btn ghost-quiet" id="start-over-btn">Start over</button>
                 </footer>
             </section>
         </div>
@@ -2509,10 +2624,49 @@
                 localStorage.setItem('pv_onboarding_options', JSON.stringify(opts));
             }
 
+            function loadPinned() {
+                try {
+                    var v = localStorage.getItem('pv_onboarding_pinned');
+                    return (typeof v === 'string' && v) ? v : null;
+                } catch (e) { return null; }
+            }
+
+            function savePinned(name) {
+                if (name) localStorage.setItem('pv_onboarding_pinned', name);
+                else localStorage.removeItem('pv_onboarding_pinned');
+            }
+
+            // Names the user has been shown but didn't keep. Sent as `avoid`
+            // on each reroll so the model stops circling back to repeats.
+            function loadSeenNames() {
+                try {
+                    var arr = JSON.parse(localStorage.getItem('pv_onboarding_seen_names'));
+                    return Array.isArray(arr) ? arr : [];
+                } catch (e) { return []; }
+            }
+
+            function addSeenNames(names) {
+                if (!names || !names.length) return;
+                var seen = loadSeenNames();
+                var set = {};
+                seen.forEach(function (n) { set[n] = true; });
+                names.forEach(function (n) {
+                    if (n && typeof n === 'string' && !set[n]) {
+                        set[n] = true;
+                        seen.push(n);
+                    }
+                });
+                // Cap the list so the prompt doesn't balloon over a long session.
+                if (seen.length > 40) seen = seen.slice(seen.length - 40);
+                localStorage.setItem('pv_onboarding_seen_names', JSON.stringify(seen));
+            }
+
             function clearOnboardingLS() {
                 localStorage.removeItem('pv_onboarding_state');
                 localStorage.removeItem('pv_onboarding_answers');
                 localStorage.removeItem('pv_onboarding_options');
+                localStorage.removeItem('pv_onboarding_pinned');
+                localStorage.removeItem('pv_onboarding_seen_names');
             }
 
             function renderProgress(step) {
@@ -2561,6 +2715,7 @@
                     var $input = $step.find('[data-field]');
                     var prior = loadAnswers()[field] || '';
                     $input.val(prior);
+                    autosizeTextarea($input[0]);
                     updateStepButtonState($step);
                     setTimeout(function () { $input.trigger('focus'); }, 50);
                 }
@@ -2608,16 +2763,51 @@
 
             function renderNameOptions() {
                 var opts = loadOptions() || [];
+                var pinned = loadPinned();
+                // If the pinned name is no longer in the option set (defensive),
+                // clear the pin so the UI stays consistent.
+                if (pinned && opts.indexOf(pinned) === -1) {
+                    savePinned(null);
+                    pinned = null;
+                }
                 var $wrap = $('#name-options').empty();
                 opts.forEach(function (name) {
-                    var $btn = $('<button>')
+                    var isPinned = (name === pinned);
+                    var $card = $('<div>')
+                        .addClass('name-option-wrap')
+                        .toggleClass('is-pinned', isPinned)
+                        .attr('data-name', name);
+                    var $pick = $('<button>')
                         .attr('type', 'button')
-                        .addClass('name-option')
+                        .addClass('name-option-pick')
                         .text(name)
                         .on('click', function () { pickName(name); });
-                    $wrap.append($btn);
+                    var $pin = $('<button>')
+                        .attr('type', 'button')
+                        .addClass('name-option-pin')
+                        .attr('aria-pressed', isPinned ? 'true' : 'false')
+                        .attr('aria-label', (isPinned ? 'Unlock ' : 'Lock ') + name + ' across rerolls')
+                        .append($('<span>').addClass('name-pin-icon').text('📌'))
+                        .on('click', function (e) {
+                            e.stopPropagation();
+                            togglePin(name);
+                        });
+                    $card.append($pick).append($pin);
+                    $wrap.append($card);
                 });
                 renderNamesSourceBanner();
+                renderRerollLabel();
+            }
+
+            function renderRerollLabel() {
+                var pinned = loadPinned();
+                $('#reroll-btn').text(pinned ? '↻ Reroll the other two' : '↻ Reroll all three');
+            }
+
+            function togglePin(name) {
+                var current = loadPinned();
+                savePinned(current === name ? null : name);
+                renderNameOptions();
             }
 
             function renderNamesSourceBanner() {
@@ -2647,11 +2837,47 @@
                 return out;
             }
 
-            function requestNames() {
-                setStep('generating');
+            function requestNames(opts) {
+                opts = opts || {};
+                var pinnedName = opts.pinned || null;
+                // Partial reroll = we already have a pinned card on-screen and
+                // only need fresh names for the other slots. Keep the pick step
+                // visible so the pinned card stays in view; mark unpinned cards
+                // as "rerolling" for a shimmer state.
+                var partial = !!pinnedName;
+
+                if (partial) {
+                    $('.name-option-wrap').each(function () {
+                        if ($(this).attr('data-name') !== pinnedName) {
+                            $(this).addClass('is-rerolling');
+                        }
+                    });
+                    $('#reroll-btn').prop('disabled', true);
+                } else {
+                    setStep('generating');
+                }
+
                 lastNamesSource = null;
                 lastNamesError = null;
                 var answers = loadAnswers();
+                var payload = Object.assign({}, answers);
+
+                // The user is rejecting whatever is currently on screen — record
+                // those names so the model won't suggest them again. Skip the
+                // pinned one (they want to keep it).
+                var currentOpts = loadOptions() || [];
+                var dismissedNow = currentOpts.filter(function (n) {
+                    return n && n !== pinnedName;
+                });
+                addSeenNames(dismissedNow);
+
+                // `avoid` = everything we've seen this session minus the pinned
+                // name. Pinned must never end up in the avoid list.
+                var avoid = loadSeenNames().filter(function (n) {
+                    return n !== pinnedName;
+                });
+                if (avoid.length) payload.avoid = avoid;
+
                 var controller = new AbortController();
                 var timeoutId = setTimeout(function () { controller.abort(); }, 10000);
                 var capturedStatus = null;
@@ -2660,7 +2886,7 @@
                 fetch('api/generate-names', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(answers),
+                    body: JSON.stringify(payload),
                     signal: controller.signal
                 }).then(function (r) {
                     clearTimeout(timeoutId);
@@ -2677,9 +2903,8 @@
                     if (!data || !Array.isArray(data.names) || data.names.length !== 3) {
                         throw new Error('bad_shape');
                     }
-                    saveOptions(data.names);
                     lastNamesSource = data.source || 'openai';
-                    setStep('pick');
+                    applyNamesAfterReroll(data.names, pinnedName);
                 }).catch(function (err) {
                     clearTimeout(timeoutId);
                     var label = err && err.message ? err.message : 'unknown';
@@ -2689,11 +2914,41 @@
                         body: capturedBody,
                         error: err
                     });
-                    saveOptions(fallbackThreeRandom());
                     lastNamesSource = 'fallback';
                     lastNamesError = label;
-                    setStep('pick');
+                    applyNamesAfterReroll(fallbackThreeRandom(), pinnedName);
                 });
+            }
+
+            // Merge fresh names into the option set, preserving the pinned
+            // name in its original slot. Filters duplicates of the pinned name
+            // (in case the model ignored `avoid`) and tops up from local
+            // random if filtering left us short. Always re-renders via the
+            // pick step so partial and full rerolls share one paint path.
+            function applyNamesAfterReroll(freshNames, pinnedName) {
+                if (!pinnedName) {
+                    saveOptions(freshNames.slice(0, 3));
+                    setStep('pick');
+                    return;
+                }
+                var currentOpts = loadOptions() || [];
+                // Drop any fresh names that collide with the pinned one.
+                var fresh = freshNames.filter(function (n) { return n && n !== pinnedName; });
+                // Top up if filtering left us short.
+                var safety = 0;
+                while (fresh.length < currentOpts.length - 1 && safety < 20) {
+                    var r = randomEurovisionName();
+                    if (r && r !== pinnedName && fresh.indexOf(r) === -1) fresh.push(r);
+                    safety++;
+                }
+                var newOpts = currentOpts.map(function (name) {
+                    if (name === pinnedName) return pinnedName;
+                    return fresh.shift() || randomEurovisionName();
+                });
+                saveOptions(newOpts);
+                $('#reroll-btn').prop('disabled', false);
+                // Re-render in place — we're already on the pick step.
+                renderNameOptions();
             }
 
             function pickName(name) {
@@ -2709,6 +2964,11 @@
                 setTimeout(function () { $('#onboarding-overlay').css('display', 'none'); }, 300);
                 document.documentElement.classList.remove('onboarding-active');
                 document.body.classList.remove('onboarding-active');
+                // Flip the band-state guard so the post-onboarding UI (prevote
+                // modal, voting container, band name strip) is no longer
+                // hidden by the .pv-no-band CSS rules.
+                document.documentElement.classList.remove('pv-no-band');
+                document.documentElement.classList.add('pv-has-band');
                 joinRoom(name);
                 // If voting hasn't started yet, surface the blocking modal
                 // immediately after the user finishes onboarding.
@@ -2734,10 +2994,19 @@
                 setStep(step);
             }
 
+            // Grow textareas to fit their content so mobile users never
+            // scroll inside a tiny box. Also reset to min-height when emptied.
+            function autosizeTextarea(el) {
+                if (!el || el.tagName !== 'TEXTAREA') return;
+                el.style.height = 'auto';
+                el.style.height = el.scrollHeight + 'px';
+            }
+
             // Wire up onboarding interactions.
             $(document).on('input', '#onboarding-overlay [data-field]', function () {
                 var $step = $(this).closest('.onboarding-step');
                 updateStepButtonState($step);
+                autosizeTextarea(this);
                 // Persist as the user types so refresh-mid-flow resumes their text.
                 var field = $step.data('step');
                 field = getFieldForStep(field);
@@ -2771,7 +3040,26 @@
             });
 
             $(document).on('click', '#reroll-btn', function () {
-                requestNames();
+                requestNames({ pinned: loadPinned() });
+            });
+
+            // Two-tap confirm — first tap arms, second tap (within 3s) wipes.
+            var startOverArmTimer = null;
+            $(document).on('click', '#start-over-btn', function () {
+                var $btn = $(this);
+                if ($btn.hasClass('is-armed')) {
+                    clearTimeout(startOverArmTimer);
+                    startOverArmTimer = null;
+                    $btn.removeClass('is-armed').text('Start over');
+                    clearOnboardingLS();
+                    setStep('song');
+                    return;
+                }
+                $btn.addClass('is-armed').text('Tap again to start over');
+                startOverArmTimer = setTimeout(function () {
+                    $btn.removeClass('is-armed').text('Start over');
+                    startOverArmTimer = null;
+                }, 3000);
             });
 
             // Per-field tracker: the last value the dice filled in. If the user
@@ -3099,6 +3387,7 @@
                 socket.on('you_were_cleared', function () {
                     ['clientId','userName','itemsOrder',
                      'pv_onboarding_state','pv_onboarding_answers','pv_onboarding_options',
+                     'pv_onboarding_pinned',
                      'instructionsDismissed']
                         .forEach(function (k) { localStorage.removeItem(k); });
                     location.reload(true);

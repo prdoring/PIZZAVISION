@@ -80,6 +80,7 @@ def generate_names():
             body.get('song_vibe', ''),
             body.get('personal_vibe', ''),
             body.get('extra', ''),
+            avoid=body.get('avoid') or None,
         )
         return jsonify(names=names, source='openai')
     except ModuleNotFoundError as e:
