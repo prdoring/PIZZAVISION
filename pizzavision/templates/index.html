@@ -996,6 +996,11 @@
             overscroll-behavior: contain;
             touch-action: none;
         }
+        /* Hide the fixed PV header logo while onboarding is open — it would
+           otherwise overlap the modal content at the top of the viewport. */
+        body.onboarding-active .pv-logo {
+            display: none;
+        }
         /* Re-enable touch inside the modal itself (the body rule above
            would otherwise block scrolling within the overlay too). */
         body.onboarding-active #onboarding-overlay {
@@ -1007,11 +1012,7 @@
             inset: 0;
             z-index: 9999;
             display: none;
-            background: radial-gradient(circle at 20% 10%, rgba(255, 0, 128, 0.18), transparent 60%),
-                        radial-gradient(circle at 80% 90%, rgba(0, 200, 255, 0.18), transparent 60%),
-                        rgba(8, 4, 20, 0.94);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
+            background: transparent;
             overflow-y: auto;
             -webkit-overflow-scrolling: touch;
         }
@@ -1042,9 +1043,9 @@
                 min-height: auto;
                 margin: 5vh auto;
                 border-radius: 28px;
-                box-shadow: 0 30px 70px rgba(0, 0, 0, 0.55),
-                            0 0 0 1px rgba(255, 255, 255, 0.07);
-                background: rgba(20, 8, 35, 0.7);
+                box-shadow: 0 30px 70px rgba(0, 0, 0, 0.6),
+                            0 0 0 1px rgba(255, 255, 255, 0.08);
+                background: rgba(20, 8, 35, 0.92);
                 padding: 32px 32px;
             }
         }
