@@ -1,18 +1,26 @@
-"""Google Gemini "Nano Banana Pro" image generation wrapper.
+"""Google Gemini image generation wrapper.
 
 Single function: takes a director-style text prompt, returns PNG bytes.
 One retry on transient errors (timeouts, 5xx). Other errors propagate so
 callers can mark the slot as failed and tell the user.
 
-The model is `gemini-3-pro-image-preview` — Google's late-2025 image model
-codenamed "Nano Banana Pro." It expects narrative prose, not tag soup; the
-prompt-writing happens upstream in openai_client.generate_image_prompt.
+Currently configured for `gemini-2.5-flash-image` -- the original "Nano
+Banana" model. Faster per image and cheaper than its big sibling
+`gemini-3-pro-image-preview` ("Nano Banana Pro") at the cost of less
+coherent staging and weaker text rendering. Swap MODEL_ID below to A/B.
+The prompt-writing upstream in openai_client.generate_image_prompts
+works for both -- both reward narrative prose over tag soup.
 """
 
 from __future__ import annotations
 
 import os
 import time
+
+# A/B switch. To compare quality vs latency:
+#   - "gemini-2.5-flash-image"        -- Nano Banana, faster & cheaper.
+#   - "gemini-3-pro-image-preview"    -- Nano Banana Pro, slower, higher fidelity.
+MODEL_ID = "gemini-3-pro-image-preview"
 
 # Errors that probably mean "try again in a moment" — network blips, 5xx,
 # upstream load. Anything else (auth failure, safety block, bad request) is
@@ -43,7 +51,7 @@ def _call_once(prompt: str) -> bytes:
 
     client = genai.Client()
     resp = client.models.generate_content(
-        model="gemini-3-pro-image-preview",
+        model=MODEL_ID,
         contents=prompt,
     )
 

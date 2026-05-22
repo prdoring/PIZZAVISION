@@ -3,3 +3,10 @@ pizzavision/__pycache__/
 __pycache__/
 pizzavision/static/generated/*
 !pizzavision/static/generated/.gitkeep
+
+# Local DB / vote backups and snapshots
+pizzavision/*.bak
+pizzavision/*.bak_*
+pizzavision/*_bak.json
+pizzavision/db.json.bak*
+pizzavision/votes_finalized_*.json

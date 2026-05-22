@@ -5,138 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" type="image/x-icon" href="{{ url_for('voting.static', filename='pizza.png') }}">
+    <link rel="stylesheet" href="{{ url_for('voting.static', filename='presentation.css') }}">
 
     <title>PIZZAWARDS</title>
     <style>
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            background-color: #1e1e1e;
-            color: white;
-        }
-        .logo {
-            position: absolute;
-            top: -46px;
-            left: 50%;
-            width: 360px;
-            z-index: 100;
-            pointer-events: none;
-            opacity: 0.6;
-            border-radius: 0 0 16px 16px;
-            transform: translateX(-50%);
-            /* Edge feather so the logo blends into the slide content instead of
-               having a hard rectangle outline. */
-            -webkit-mask-image: radial-gradient(ellipse 100% 100% at center, #000 85%, transparent 100%);
-            mask-image: radial-gradient(ellipse 100% 100% at center, #000 85%, transparent 100%);
-            /* Stage-light orbit, dimmer than on index/results since this logo
-               sits over slide content as a persistent watermark. */
-            animation: pvLogoFloat 6s ease-in-out infinite,
-                       pvLogoStageLights 14s linear infinite;
-        }
-
-        @keyframes pvLogoFloat {
-            0%, 100% { transform: translateX(-50%) translateY(0); }
-            50%      { transform: translateX(-50%) translateY(-4px); }
-        }
-
-        @keyframes pvLogoStageLights {
-            0% {
-                filter: drop-shadow(-14px 0 18px rgba(255, 43, 214, 0.3))
-                        drop-shadow(14px 0 18px rgba(0, 224, 255, 0.28))
-                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
-            }
-            25% {
-                filter: drop-shadow(0 -14px 18px rgba(255, 43, 214, 0.3))
-                        drop-shadow(0 14px 18px rgba(0, 224, 255, 0.28))
-                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
-            }
-            50% {
-                filter: drop-shadow(14px 0 18px rgba(255, 43, 214, 0.3))
-                        drop-shadow(-14px 0 18px rgba(0, 224, 255, 0.28))
-                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
-            }
-            75% {
-                filter: drop-shadow(0 14px 18px rgba(255, 43, 214, 0.3))
-                        drop-shadow(0 -14px 18px rgba(0, 224, 255, 0.28))
-                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
-            }
-            100% {
-                filter: drop-shadow(-14px 0 18px rgba(255, 43, 214, 0.3))
-                        drop-shadow(14px 0 18px rgba(0, 224, 255, 0.28))
-                        drop-shadow(0 6px 14px rgba(0, 0, 0, 0.55));
-            }
-        }
-        .presentation-container {
-            width: 100vw;
-            height: 100vh;
-            position: relative;
-        }
-        .slide {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            z-index: 1;
-            transition: opacity 0.8s ease;
-            background: transparent;
-            overflow: hidden;
-        }
-        /* One global background layer instead of per-slide bgs. Two slides
-           that share the same image (announcement + winner) won't restart
-           the zoom — no cross-fade pulse. Image swap (different award) does
-           restart via JS by toggling .zooming. */
-        .bg-layer {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #2c3e50, #1a1a2e);
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            z-index: 0;
-            transform: scale(1);
-            transform-origin: center center;
-            will-change: transform;
-        }
-        .bg-layer.zooming {
-            animation: kenBurns 22s ease-out forwards;
-        }
-        @keyframes kenBurns {
-            from { transform: scale(1.25) translate(-3%, -2%); }
-            to   { transform: scale(1.00) translate(0, 0); }
-        }
-        .slide-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 1;
-        }
-        .slide-content {
-            position: relative;
-            z-index: 2;
-            text-align: center;
-            padding: 20px 90px;
-            background: #00000094;
-            border-radius: 23px;
-            box-shadow: 3px 14px 15px 13px rgb(0 0 0 / 79%);
-        }
-        .slide.active {
-            opacity: 1;
-            z-index: 10;
-        }
+        /* Awards-specific typography. Shared chrome (logo, slides, bg-layer,
+           cascade, drop-reveal, pulse-title, progress, controls, confetti)
+           lives in presentation.css. */
         .award-title {
             font-size: 4.5rem;
             margin-bottom: 0.5rem;
@@ -162,14 +37,6 @@
             font-size: 2.5rem;
             margin-bottom: 1rem;
             text-align: center;
-        }
-        .winner-name {
-            font-size: 5rem;
-            color: #ffd700;
-            text-align: center;
-            font-weight: bold;
-            text-shadow: 0 4px 15px rgba(0,0,0,0.5);
-            text-transform: uppercase;
         }
         .winner-total {
             font-size: 4rem;
@@ -197,95 +64,6 @@
             font-variant-numeric: tabular-nums;
             white-space: nowrap;
         }
-        .controls {
-            position: fixed;
-            bottom: 20px;
-            right: 20px;
-            color: rgba(255, 255, 255, 0.6);
-            z-index: 100;
-            font-size: 14px;
-            text-align: right;
-        }
-        .progress {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            color: rgba(255, 255, 255, 0.85);
-            z-index: 100;
-            font-size: 1rem;
-        }
-        #slide-counter {
-            font-weight: bold;
-            letter-spacing: 0.04em;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.8);
-        }
-        .progress-bar {
-            display: flex;
-            margin-top: 8px;
-            gap: 4px;
-            max-width: 60vw;
-            flex-wrap: wrap;
-        }
-        .progress-step {
-            width: 14px;
-            height: 14px;
-            border-radius: 50%;
-            background-color: rgba(255, 255, 255, 0.25);
-            box-shadow: 0 0 4px rgba(0,0,0,0.5);
-        }
-        .progress-step.active {
-            background-color: #ffd700;
-            box-shadow: 0 0 8px #ffd700;
-        }
-        .progress-step.visited {
-            background-color: rgba(255, 215, 0, 0.5);
-        }
-
-        /* Cascade entrance — each element opts in via the cascade class plus
-           an inline --delay variable. Reset on every slide activation so the
-           animation re-plays each time the slide is shown. */
-        .cascade {
-            opacity: 0;
-            animation: cascadeIn 0.6s ease-out forwards;
-            animation-delay: var(--delay, 0s);
-        }
-        .slide:not(.active) .cascade {
-            animation: none;
-            opacity: 0;
-        }
-        @keyframes cascadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Winner name gets its own dramatic drop with overshoot + glow. */
-        .winner-name.drop {
-            opacity: 0;
-            animation: nameDrop 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-            animation-delay: var(--delay, 1.5s);
-        }
-        .slide:not(.active) .winner-name.drop {
-            animation: none;
-            opacity: 0;
-        }
-        @keyframes nameDrop {
-            0%   { opacity: 0; transform: scale(0.35); filter: blur(18px);
-                   text-shadow: 0 0 0 rgba(255,215,0,0); }
-            55%  { opacity: 1; transform: scale(1.12); filter: blur(0);
-                   text-shadow: 0 0 80px rgba(255,215,0,0.9); }
-            100% { opacity: 1; transform: scale(1);    filter: blur(0);
-                   text-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        }
-
-        /* "And the winner is..." pulses briefly during the dramatic pause,
-           then settles. 2 iterations × 0.75s = 1.5s, matching the name delay. */
-        .winner-title.pulse {
-            animation: pulseTitle 0.75s ease-in-out 2;
-        }
-        @keyframes pulseTitle {
-            0%, 100% { opacity: 0.75; transform: scale(1); }
-            50%      { opacity: 1;    transform: scale(1.05); }
-        }
         .error-message {
             background: rgba(255, 0, 0, 0.2);
             padding: 15px;
@@ -294,30 +72,12 @@
             max-width: 800px;
             font-size: 1.2rem;
         }
-
-         .confetti {
-            position: fixed;
-            width: 20px;
-            height: 20px;
-            background-color: #f2d74e;
-            opacity: 0;
-            top: -400px;
-            z-index: 10;
-            pointer-events: none;
-        }
-        
-        .flag-confetti {
-            background-color: transparent;
-            z-index: 20; /* Ensure flags appear on top of regular confetti */
-        }
-
-        
     </style>
 </head>
 <body>
     <!-- Logo that appears on all slides -->
     <img src="{{ url_for('voting.static', filename='pv25.png') }}" alt="PV25 Logo" class="logo">
-    
+
     <!-- Single Ken-Burns'ing background layer, shared across all slides.
          Only the .slide-content cards crossfade above it. -->
     <div class="bg-layer" id="bg-layer"></div>
@@ -339,12 +99,12 @@
     <audio id="partyHornSound" preload="auto" style="display:none;">
         <source src="{{ url_for('voting.static', filename='party-horn.mp3') }}" type="audio/mpeg">
     </audio>
-    
+
     <div class="controls">
         <div>← Previous | Next →</div>
         <div>Press arrow keys or spacebar to navigate</div>
     </div>
-    
+
     <div class="progress">
         <div id="slide-counter">Slide 1 of 1</div>
         <div class="progress-bar" id="progress-bar">
@@ -353,13 +113,14 @@
         </div>
     </div>
 
+    <script src="{{ url_for('voting.static', filename='presentation.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             // Award data will be loaded from the server
             let awards = [];
             let currentSlideIndex = 0;
             let totalSlides = 0;
-            
+
             // Fallback awards in case the API fails
             const fallbackAwards = [
                 {
@@ -378,7 +139,7 @@
                     "subtext": "For keeping traditions alive"
                 }
             ];
-            
+
             // Try to load award data - use hardcoded URL to avoid template rendering issues
             fetch('/pizzavision/api/awards')
                 .then(response => {
@@ -404,7 +165,7 @@
                 })
                 .catch(error => {
                     console.error("Error loading awards:", error);
-                    
+
                     // Show error and use fallback data
                     const presentation = document.getElementById('presentation');
                     presentation.innerHTML = `
@@ -420,7 +181,7 @@
                             </div>
                         </div>
                     `;
-                    
+
                     // Use fallback awards
                     setTimeout(() => {
                         awards = fallbackAwards;
@@ -428,7 +189,7 @@
                         initializePresentation();
                     }, 3000); // Show the error for 3 seconds before proceeding
                 });
-            
+
             function resolveImageUrl(url) {
                 if (!url) return null;
                 if (url.startsWith('/static/')) {
@@ -505,8 +266,8 @@
                             theme: confettiThemeFor(award.code)
                         },
                         contentHtml: `
-                            <div class="winner-title pulse">And the winner is...</div>
-                            <div class="winner-name drop">${award.winner}</div>
+                            <div class="winner-title pulse-title">And the winner is...</div>
+                            <div class="drop-reveal">${award.winner}</div>
                             ${totalHtml}
                             ${statsHtml}
                         `
@@ -517,17 +278,17 @@
                 totalSlides = slides.length;
                 if (slides.length > 0) {
                     slides[0].classList.add('active');
-                    applyBackgroundFor(slides[0]);
+                    PVPresentation.applyBackgroundFor(slides[0]);
                 }
 
                 createProgressIndicators(totalSlides);
                 updateSlideCounter();
             }
-            
+
             function createProgressIndicators(count) {
                 const progressBar = document.getElementById('progress-bar');
                 progressBar.innerHTML = '';
-                
+
                 for (let i = 0; i < count; i++) {
                     const indicator = document.createElement('div');
                     indicator.className = 'progress-step';
@@ -535,67 +296,16 @@
                     progressBar.appendChild(indicator);
                 }
             }
-            
+
             function initializePresentation() {
-                // Add keyboard event listeners
-                document.addEventListener('keydown', handleKeyboardNavigation);
-                
-                // Optional: Add click navigation
-                document.addEventListener('click', function(event) {
-                    // Check if click is on the right or left side of the screen
-                    if (event.clientX > window.innerWidth / 2) {
-                        nextSlide();
-                    } else {
-                        previousSlide();
-                    }
+                PVPresentation.registerNavigation({
+                    onForward: nextSlide,
+                    onBack: previousSlide,
+                    clickMode: 'half',
                 });
             }
-            
-            function handleKeyboardNavigation(event) {
-                if (event.key === 'ArrowRight' || event.key === ' ' || event.key === 'Enter') {
-                    nextSlide();
-                } else if (event.key === 'ArrowLeft') {
-                    previousSlide();
-                }
-            }
-            
-            // -------- Audio (same party-horn pattern as the results page) --------
-            const tootRanges = [
-                { start: 1,    end: 3    },
-                { start: 4.5,  end: 5.5  },
-                { start: 6.75, end: 8.8  },
-                { start: 9,    end: 11   },
-                { start: 11.5, end: 13   },
-                { start: 21.5, end: 21.4 },
-                { start: 21.6, end: 23   },
-            ];
-            let pendingHornStop = null;
 
-            function playPartyHorn() {
-                const horn = document.getElementById('partyHornSound');
-                if (!horn) return;
-                const toot = tootRanges[Math.floor(Math.random() * tootRanges.length)];
-                try {
-                    horn.currentTime = toot.start;
-                    const p = horn.play();
-                    if (p && p.catch) p.catch(() => {});
-                } catch (e) { /* missing file or autoplay block — no-op */ }
-                if (pendingHornStop) clearTimeout(pendingHornStop);
-                const duration = Math.max(0.1, toot.end - toot.start);
-                pendingHornStop = setTimeout(() => {
-                    try { horn.pause(); } catch (e) {}
-                    pendingHornStop = null;
-                }, duration * 1000);
-            }
-
-            function stopPartyHorn() {
-                const horn = document.getElementById('partyHornSound');
-                if (!horn) return;
-                try { horn.pause(); horn.currentTime = 0; } catch (e) {}
-                if (pendingHornStop) { clearTimeout(pendingHornStop); pendingHornStop = null; }
-            }
-
-            // -------- Count-up animation for big totals --------
+            // -------- Count-up formatters (awards-specific big-total displays) --------
             function fmtGdpJs(n) {
                 n = Math.abs(n);
                 if (n >= 1e12) return '$' + (n/1e12).toFixed(2) + 'T';
@@ -608,18 +318,6 @@
                 if (n >= 1e9) return (n/1e9).toFixed(2) + 'B people';
                 if (n >= 1e6) return (n/1e6).toFixed(1) + 'M people';
                 return Math.round(n).toLocaleString() + ' people';
-            }
-            function animateCountUp(element, target, formatter, duration) {
-                duration = duration || 1400;
-                const start = performance.now();
-                function frame(now) {
-                    const t = Math.min((now - start) / duration, 1);
-                    const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic
-                    element.textContent = formatter(target * eased);
-                    if (t < 1) requestAnimationFrame(frame);
-                    else element.textContent = formatter(target);
-                }
-                requestAnimationFrame(frame);
             }
 
             // -------- Slide navigation --------
@@ -642,27 +340,12 @@
                 }
             }
 
-            function applyBackgroundFor(slide) {
-                const bgLayer = document.getElementById('bg-layer');
-                if (!bgLayer) return;
-                const newBg = slide.dataset.bgUrl || '';
-                const currentBg = bgLayer.dataset.currentBg || '';
-                if (newBg === currentBg) return; // same image — let Ken Burns continue
-                bgLayer.style.backgroundImage = newBg ? `url('${newBg}')` : '';
-                bgLayer.dataset.currentBg = newBg;
-                // Restart Ken Burns from scratch on image change
-                bgLayer.classList.remove('zooming');
-                // Force reflow so the animation actually restarts
-                void bgLayer.offsetWidth;
-                bgLayer.classList.add('zooming');
-            }
-
             function updateSlide(newIndex) {
                 const slides = document.querySelectorAll('.slide');
                 slides[currentSlideIndex].classList.remove('active');
                 slides[newIndex].classList.add('active');
 
-                applyBackgroundFor(slides[newIndex]);
+                PVPresentation.applyBackgroundFor(slides[newIndex]);
 
                 const indicators = document.querySelectorAll('.progress-step');
                 if (indicators[currentSlideIndex]) {
@@ -677,7 +360,7 @@
                 }
 
                 // Stop any lingering audio from a previous reveal
-                stopPartyHorn();
+                PVPresentation.stopPartyHorn();
 
                 // Winner reveal choreography
                 if (isWinnerSlide(newIndex)) {
@@ -686,11 +369,11 @@
 
                     // 1.5s — name drops; party horn toots; confetti starts
                     setTimeout(() => {
-                        playPartyHorn();
-                        createConfetti(theme);
+                        PVPresentation.playPartyHorn();
+                        PVPresentation.createConfetti(theme);
                     }, 1500);
-                    setTimeout(() => createConfetti(theme), 2000);
-                    setTimeout(() => createConfetti(theme), 2700);
+                    setTimeout(() => PVPresentation.createConfetti(theme), 2000);
+                    setTimeout(() => PVPresentation.createConfetti(theme), 2700);
 
                     // 2.4s — count up the big total (matches the CSS delay
                     // on .winner-total so the slot-machine starts as it appears)
@@ -700,7 +383,7 @@
                         const kind = totalEl.dataset.kind;
                         const fmt = kind === 'gdp' ? fmtGdpJs : fmtPopJs;
                         totalEl.textContent = fmt(0);
-                        setTimeout(() => animateCountUp(totalEl, target, fmt), 2400);
+                        setTimeout(() => PVPresentation.animateCountUp(totalEl, target, fmt), 2400);
                     }
                 }
 
@@ -720,34 +403,7 @@
                 el.textContent = `Award ${awardNumber} of ${totalAwards} ${subLabel}`;
             }
 
-            // -------- Themed confetti --------
-            // Each award gets a confetti theme: emoji palette + base colors.
-            // Fallback is the original flag-image rain.
-            const CONFETTI_THEMES = {
-                money:  { emojis: ['💰', '💵', '💸', '🪙'], colors: ['#2ecc71', '#27ae60', '#ffd700'] },
-                people: { emojis: ['👥', '🗣️', '🎉'],       colors: ['#3498db', '#9b59b6', '#ffd700'] },
-                nordic: { emojis: ['❄️', '⛄', '🌨️'],       colors: ['#ecf0f1', '#3498db', '#ffd700'] },
-                pop:    { emojis: ['🎤', '✨', '💖'],         colors: ['#e91e63', '#9b59b6', '#ffd700'] },
-                rock:   { emojis: ['🎸', '🤘', '🔥'],         colors: ['#c0392b', '#8e44ad', '#ffd700'] },
-                folk:   { emojis: ['🪕', '🌾', '🍂'],         colors: ['#d35400', '#8b4513', '#ffd700'] },
-                techno: { emojis: ['🤖', '⚡', '🎛️'],         colors: ['#9b59b6', '#1abc9c', '#ffd700'] },
-                ballad: { emojis: ['🎙️', '💔', '🌹'],         colors: ['#e74c3c', '#34495e', '#ffd700'] },
-                wine_r: { emojis: ['🍷', '🍇', '🌹'],         colors: ['#8e0000', '#5d0000', '#ffd700'] },
-                wine_w: { emojis: ['🥂', '🍾', '✨'],         colors: ['#f1c40f', '#ecf0f1', '#ffd700'] },
-                beer:   { emojis: ['🍺', '🥨', '🌭'],         colors: ['#f39c12', '#d35400', '#ffd700'] },
-                girls:  { emojis: ['👩', '💃', '💖'],         colors: ['#e91e63', '#f06292', '#ffd700'] },
-                lang:   { emojis: ['🌍', '🗣️', '📚'],         colors: ['#1abc9c', '#3498db', '#ffd700'] },
-                soviet: { emojis: ['🚩', '⚒️', '⭐'],         colors: ['#c0392b', '#7f0000', '#ffd700'] },
-                solo:   { emojis: ['🐺', '🌙', '⭐'],         colors: ['#34495e', '#7f8c8d', '#ffd700'] },
-                squad:  { emojis: ['👯', '🤝', '🎉'],         colors: ['#e67e22', '#16a085', '#ffd700'] },
-                vote:   { emojis: ['🗳️', '✅', '📊'],         colors: ['#3498db', '#2ecc71', '#ffd700'] },
-                back:   { emojis: ['👋', '🔄', '🎉'],         colors: ['#f39c12', '#16a085', '#ffd700'] },
-                meta:   { emojis: ['👑', '🏆', '✨'],         colors: ['#f1c40f', '#9b59b6', '#ffd700'] },
-                twin:   { emojis: ['👯', '👯‍♂️', '✨'],         colors: ['#9b59b6', '#3498db', '#ffd700'] },
-                big5:   { emojis: ['5️⃣', '🇪🇺', '⭐'],         colors: ['#003399', '#ffcc00', '#ffd700'] },
-                default:{ emojis: ['🍕', '🎉', '✨', '🏆'],   colors: ['#f94144', '#f3722c', '#f9c74f'] },
-            };
-
+            // -------- Awards-specific confetti theme mapping --------
             function confettiThemeFor(code) {
                 return {
                     "Moneybags": "money", "Slummin' It": "money",
@@ -774,55 +430,6 @@
                     "Twinzies": "twin",
                     "Big 5": "big5",
                 }[code] || "default";
-            }
-
-            function createConfetti(themeName) {
-                const theme = CONFETTI_THEMES[themeName] || CONFETTI_THEMES.default;
-
-                // Solid color squares
-                for (let i = 0; i < 40; i++) {
-                    const piece = document.createElement('div');
-                    piece.className = 'confetti';
-                    piece.style.left = Math.random() * 100 + 'vw';
-                    piece.style.top = -Math.random() * 200 + 'px';
-                    piece.style.backgroundColor = theme.colors[Math.floor(Math.random() * theme.colors.length)];
-                    piece.style.opacity = Math.random() * 0.6 + 0.4;
-                    const size = Math.random() * 18 + 8;
-                    piece.style.width = `${size}px`;
-                    piece.style.height = `${size}px`;
-                    document.body.appendChild(piece);
-
-                    piece.animate([
-                        { transform: 'translate3d(0, 0, 0) rotate(0deg)', opacity: 1 },
-                        { transform: `translate3d(${Math.random()*600-300}px, ${window.innerHeight + 200}px, 0) rotate(${Math.random()*720-360}deg)`, opacity: 0 }
-                    ], {
-                        duration: Math.random() * 2500 + 2500,
-                        easing: 'cubic-bezier(.40,.10,.55,.95)'
-                    }).onfinish = () => piece.remove();
-                }
-
-                // Emoji confetti — the themed flair
-                for (let i = 0; i < 30; i++) {
-                    const piece = document.createElement('div');
-                    piece.className = 'confetti emoji-confetti';
-                    piece.textContent = theme.emojis[Math.floor(Math.random() * theme.emojis.length)];
-                    piece.style.left = Math.random() * 100 + 'vw';
-                    piece.style.top = -Math.random() * 200 + 'px';
-                    piece.style.fontSize = (Math.random() * 30 + 30) + 'px';
-                    piece.style.background = 'transparent';
-                    piece.style.width = 'auto';
-                    piece.style.height = 'auto';
-                    piece.style.opacity = Math.random() * 0.3 + 0.7;
-                    document.body.appendChild(piece);
-
-                    piece.animate([
-                        { transform: 'translate3d(0, 0, 0) rotate(0deg)', opacity: 1 },
-                        { transform: `translate3d(${Math.random()*600-300}px, ${window.innerHeight + 200}px, 0) rotate(${Math.random()*720-360}deg)`, opacity: 0 }
-                    ], {
-                        duration: Math.random() * 3000 + 3000,
-                        easing: 'cubic-bezier(.40,.10,.55,.95)'
-                    }).onfinish = () => piece.remove();
-                }
             }
         });
     </script>

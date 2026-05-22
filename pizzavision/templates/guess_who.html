@@ -1,0 +1,474 @@
+<!-- templates/guess_who.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="{{ url_for('voting.static', filename='pizza.png') }}">
+    <link rel="stylesheet" href="{{ url_for('voting.static', filename='presentation.css') }}">
+
+    <title>PIZZAGUESS</title>
+    <style>
+        /* Guess-specific layout. Shared chrome (logo, slide, bg-layer, cascade,
+           drop-reveal, pulse-title, progress, confetti) is in presentation.css. */
+
+        /* On band slides we hide overlay + content panel until the first reveal,
+           so step 0 shows the band image alone with no dark mask. */
+        .band-slide .slide-overlay,
+        .band-slide .slide-content {
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .band-slide[data-revealed="true"] .slide-overlay,
+        .band-slide[data-revealed="true"] .slide-content {
+            opacity: 1;
+        }
+
+        /* Soft halo that pulses on the image at step 0 — gives the
+           "blank" state a heartbeat so it doesn't feel inert. Fades out
+           on first reveal. mix-blend-mode: screen ADDS light rather than
+           washing the image white. */
+        .image-pulse {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 3;
+            pointer-events: none;
+            background: radial-gradient(circle at center,
+                        rgba(255, 230, 200, 0.22) 0%,
+                        rgba(255, 230, 200, 0.08) 30%,
+                        transparent 65%);
+            mix-blend-mode: screen;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+        .band-slide[data-revealed="false"] .image-pulse {
+            opacity: 1;
+            animation: imagePulse 2.6s ease-in-out infinite;
+        }
+        @keyframes imagePulse {
+            0%, 100% { transform: scale(0.92); opacity: 0.55; }
+            50%      { transform: scale(1.06); opacity: 1; }
+        }
+
+        /* Stage-spotlight cone that sweeps across the image at step 0.
+           Pairs with the Ken Burns zoom so the image feels lit, not static. */
+        .spotlight-sweep {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 60vw;
+            height: 100vh;
+            z-index: 4;
+            pointer-events: none;
+            background: radial-gradient(ellipse 55% 60% at center,
+                        rgba(255, 235, 205, 0.28) 0%,
+                        rgba(255, 235, 205, 0.10) 35%,
+                        transparent 70%);
+            mix-blend-mode: screen;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+            transform: translateX(-60%);
+        }
+        .band-slide[data-revealed="false"] .spotlight-sweep {
+            opacity: 1;
+            animation: spotlightSweep 6.5s ease-in-out infinite;
+        }
+        @keyframes spotlightSweep {
+            0%   { transform: translateX(-60%); }
+            50%  { transform: translateX(120%); }
+            100% { transform: translateX(-60%); }
+        }
+
+        /* Flavor caption shown at step 0 only — fades out on first reveal so
+           the slide-content panel can take center stage. */
+        .flavor-text {
+            position: absolute;
+            bottom: 18vh;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 5;
+            max-width: 80vw;
+            padding: 0.9rem 2rem;
+            background: rgba(0, 0, 0, 0.55);
+            border-radius: 14px;
+            color: #ffd700;
+            font-size: 2rem;
+            font-style: italic;
+            text-align: center;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.8);
+            opacity: 1;
+            transition: opacity 0.4s ease;
+            pointer-events: none;
+        }
+        .band-slide[data-revealed="true"] .flavor-text {
+            opacity: 0;
+        }
+
+        .intro-title {
+            font-size: 4.5rem;
+            margin-bottom: 0.5rem;
+            text-align: center;
+            color: #e0e0e0;
+            text-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .intro-subtext {
+            font-size: 2.5rem;
+            color: #e0e0e0;
+            margin-top: 1rem;
+            text-align: center;
+            max-width: 800px;
+        }
+        .intro-snark {
+            font-size: 1.5rem;
+            color: rgba(224, 224, 224, 0.85);
+            margin-top: 1.5rem;
+            font-style: italic;
+            text-align: center;
+            max-width: 800px;
+        }
+        .intro-hint {
+            font-size: 1.4rem;
+            color: rgba(255, 215, 0, 0.85);
+            margin-top: 2rem;
+            text-align: center;
+        }
+
+        .reveal {
+            margin: 1.4rem 0;
+            max-width: 900px;
+        }
+        .reveal-label {
+            display: block;
+            font-size: 1.15rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #d4af37;
+            margin-bottom: 0.4rem;
+            font-weight: 600;
+        }
+        .reveal-value {
+            display: block;
+            font-size: 2.2rem;
+            color: #ffffff;
+            font-weight: 500;
+            line-height: 1.3;
+        }
+        /* Final reveal — the actual-name reveal — uses the shared .drop-reveal
+           class (added via JS so the animation plays fresh on each reveal),
+           giving it the same 5rem gold uppercase + nameDrop animation as the
+           awards-page winner reveal. */
+
+        .empty-state {
+            font-size: 2rem;
+            color: #e0e0e0;
+            text-align: center;
+            max-width: 800px;
+            line-height: 1.5;
+        }
+        .empty-state code {
+            color: #ffd700;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <img src="{{ url_for('voting.static', filename='pv25.png') }}" alt="PV25 Logo" class="logo">
+
+    <div class="bg-layer" id="bg-layer"></div>
+
+    <div class="presentation-container" id="presentation">
+        {% if bands %}
+            <!-- Intro slide -->
+            <div class="slide active intro-slide" data-bg-url="{{ url_for('voting.static', filename='pizzapresent.png') }}">
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <div class="intro-title cascade">PIZZAGUESS</div>
+                    <div class="intro-subtext cascade" style="--delay: 0.35s">Guess the Person Behind the Performer</div>
+                    <div class="intro-snark cascade" style="--delay: 0.75s">Hope your onboarding answers weren't too embarrassing…</div>
+                    <div class="intro-snark cascade" style="--delay: 1.15s">…and if you already know because they showed you — don't spoil the fun.</div>
+                    <div class="intro-hint cascade" style="--delay: 1.6s">Press space, → or click to begin</div>
+                </div>
+            </div>
+
+            {# Band slides — one per band, reveals pre-rendered hidden. #}
+            {% for band in bands %}
+            <div class="slide band-slide"
+                 data-band-index="{{ loop.index0 }}"
+                 data-bg-url="{{ band.image_url or url_for('voting.static', filename='pizzapresent.png') }}"
+                 data-reveal-step="0"
+                 data-total-reveals="{{ band.reveals|length }}">
+                <div class="slide-overlay"></div>
+                <div class="image-pulse"></div>
+                <div class="spotlight-sweep"></div>
+                <div class="flavor-text">{{ band.flavor }}</div>
+                <div class="slide-content">
+                    {% for r in band.reveals %}
+                    <div class="reveal{% if r.is_final %} reveal-final{% endif %}"
+                         data-reveal-idx="{{ loop.index0 }}"
+                         {% if r.is_final %}data-final="true"{% endif %}
+                         hidden>
+                        <span class="reveal-label">{{ r.emoji }} {{ r.label }}</span>
+                        <span class="reveal-value">{{ r.value }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="slide active">
+                <div class="slide-overlay"></div>
+                <div class="slide-content">
+                    <div class="empty-state">
+                        🍕 No performers have finished onboarding yet.<br><br>
+                        Send everyone to <code>/pizzavision/voting/</code> first, then come back.
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <audio id="partyHornSound" preload="auto" style="display:none;">
+        <source src="{{ url_for('voting.static', filename='party-horn.mp3') }}" type="audio/mpeg">
+    </audio>
+
+    <div class="controls">
+        <div>Space / → / click to reveal</div>
+        <div>← to undo</div>
+    </div>
+
+    <div class="progress">
+        <div id="slide-counter">Intro</div>
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+
+    <script src="{{ url_for('voting.static', filename='presentation.js') }}"></script>
+    <script>
+    (function () {
+        const HAS_BANDS = {{ 'true' if bands else 'false' }};
+        if (!HAS_BANDS) return;  // empty-state page is static — no interaction
+
+        const TOTAL_BANDS = {{ bands|length }};
+        const slides = Array.from(document.querySelectorAll('.slide'));
+        const TOTAL_SLIDES = slides.length;  // 1 intro + N bands
+
+        let currentSlideIndex = 0;
+
+        // Activate initial slide's background
+        PVPresentation.applyBackgroundFor(slides[0]);
+
+        function isBandSlide(idx) {
+            return idx > 0;  // 0 = intro
+        }
+
+        function currentRevealStep() {
+            const slide = slides[currentSlideIndex];
+            return parseInt(slide.dataset.revealStep || '0', 10);
+        }
+
+        function setRevealStep(slide, step) {
+            slide.dataset.revealStep = String(step);
+            slide.dataset.revealed = step > 0 ? 'true' : 'false';
+            renderProgressDots();
+            updateSlideCounter();
+        }
+
+        function totalRevealsFor(slide) {
+            return parseInt(slide.dataset.totalReveals || '0', 10);
+        }
+
+        function revealsOf(slide) {
+            return Array.from(slide.querySelectorAll('.reveal'));
+        }
+
+        function showReveal(slide, idx) {
+            const reveals = revealsOf(slide);
+            const el = reveals[idx];
+            if (!el) return;
+            el.hidden = false;
+            const isFinal = el.dataset.final === 'true';
+            if (isFinal) {
+                // Apply the dramatic drop styling to the value span, with no
+                // pre-delay (the host already controls timing via the keystroke).
+                const valueEl = el.querySelector('.reveal-value');
+                if (valueEl) {
+                    valueEl.style.setProperty('--delay', '0s');
+                    // Toggle .drop-reveal off-and-on to restart the animation
+                    // even if it was applied earlier in this session.
+                    valueEl.classList.remove('drop-reveal');
+                    void valueEl.offsetWidth;  // reflow to reset animation
+                    valueEl.classList.add('drop-reveal');
+                }
+                PVPresentation.playPartyHorn();
+                PVPresentation.createConfetti('default');
+                setTimeout(() => PVPresentation.createConfetti('default'), 600);
+            } else {
+                // Standard cascade entrance for non-final reveals
+                el.style.setProperty('--delay', '0s');
+                el.classList.remove('cascade');
+                void el.offsetWidth;
+                el.classList.add('cascade');
+            }
+        }
+
+        function hideReveal(slide, idx) {
+            const reveals = revealsOf(slide);
+            const el = reveals[idx];
+            if (!el) return;
+            el.hidden = true;
+            el.classList.remove('cascade');
+            const valueEl = el.querySelector('.reveal-value');
+            if (valueEl) valueEl.classList.remove('drop-reveal');
+        }
+
+        function hideAllReveals(slide) {
+            revealsOf(slide).forEach((el, i) => hideReveal(slide, i));
+        }
+
+        function showAllReveals(slide) {
+            // Used when navigating backward into a band — show every reveal
+            // *without* re-triggering the horn/confetti for the final one.
+            revealsOf(slide).forEach((el) => {
+                el.hidden = false;
+                if (el.dataset.final === 'true') {
+                    const valueEl = el.querySelector('.reveal-value');
+                    if (valueEl) {
+                        valueEl.style.setProperty('--delay', '0s');
+                        valueEl.classList.add('drop-reveal');
+                    }
+                }
+            });
+        }
+
+        function activateSlide(newIndex, opts = {}) {
+            const oldSlide = slides[currentSlideIndex];
+            const newSlide = slides[newIndex];
+            if (!newSlide) return;
+
+            // Stop any lingering horn from a previous reveal
+            PVPresentation.stopPartyHorn();
+
+            // Reset old band-slide so revisiting it later starts at image-only
+            if (isBandSlide(currentSlideIndex)) {
+                hideAllReveals(oldSlide);
+                setRevealStep(oldSlide, 0);
+            }
+
+            oldSlide.classList.remove('active');
+            newSlide.classList.add('active');
+
+            PVPresentation.applyBackgroundFor(newSlide);
+
+            // If we're navigating *backward* into a band, pre-show all its
+            // reveals so the user sees the band's final state, not image-only.
+            if (opts.atMax && isBandSlide(newIndex)) {
+                showAllReveals(newSlide);
+                setRevealStep(newSlide, totalRevealsFor(newSlide));
+            } else {
+                setRevealStep(newSlide, 0);
+            }
+
+            currentSlideIndex = newIndex;
+            updateSlideCounter();
+            renderProgressDots();
+        }
+
+        function onForward() {
+            const slide = slides[currentSlideIndex];
+
+            if (!isBandSlide(currentSlideIndex)) {
+                // From intro → first band
+                activateSlide(1);
+                return;
+            }
+
+            const step = currentRevealStep();
+            const total = totalRevealsFor(slide);
+
+            if (step < total) {
+                showReveal(slide, step);
+                setRevealStep(slide, step + 1);
+                return;
+            }
+
+            // All reveals shown — advance to next band, if any
+            if (currentSlideIndex < TOTAL_SLIDES - 1) {
+                activateSlide(currentSlideIndex + 1);
+            }
+            // Otherwise: last band, all revealed — no-op (game over)
+        }
+
+        function onBack() {
+            const slide = slides[currentSlideIndex];
+
+            if (!isBandSlide(currentSlideIndex)) {
+                // Already on intro — no-op
+                return;
+            }
+
+            const step = currentRevealStep();
+            if (step > 0) {
+                hideReveal(slide, step - 1);
+                setRevealStep(slide, step - 1);
+                return;
+            }
+
+            // At step 0 of a band — go back to previous slide.
+            // If previous is a band, jump to its max-reveal state.
+            const prevIdx = currentSlideIndex - 1;
+            const prevIsBand = isBandSlide(prevIdx);
+            activateSlide(prevIdx, { atMax: prevIsBand });
+        }
+
+        function updateSlideCounter() {
+            const el = document.getElementById('slide-counter');
+            if (!el) return;
+            if (!isBandSlide(currentSlideIndex)) {
+                el.textContent = `Intro — ${TOTAL_BANDS} performers ahead`;
+                return;
+            }
+            const slide = slides[currentSlideIndex];
+            const num = parseInt(slide.dataset.bandIndex, 10) + 1;
+            const step = currentRevealStep();
+            const total = totalRevealsFor(slide);
+            if (step === 0) {
+                el.textContent = `Performer ${num} of ${TOTAL_BANDS} — just the image`;
+            } else {
+                el.textContent = `Performer ${num} of ${TOTAL_BANDS} — clue ${step} of ${total}`;
+            }
+        }
+
+        function renderProgressDots() {
+            const bar = document.getElementById('progress-bar');
+            if (!bar) return;
+            bar.innerHTML = '';
+            if (!isBandSlide(currentSlideIndex)) return;
+            const slide = slides[currentSlideIndex];
+            const total = totalRevealsFor(slide);
+            const step = currentRevealStep();
+            for (let i = 0; i < total; i++) {
+                const dot = document.createElement('div');
+                dot.className = 'progress-step';
+                if (i < step) dot.classList.add('visited');
+                if (i === step - 1) {
+                    dot.classList.remove('visited');
+                    dot.classList.add('active');
+                }
+                bar.appendChild(dot);
+            }
+        }
+
+        PVPresentation.registerNavigation({
+            onForward,
+            onBack,
+            clickMode: 'forward',
+        });
+
+        updateSlideCounter();
+        renderProgressDots();
+    })();
+    </script>
+</body>
+</html>

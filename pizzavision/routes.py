@@ -120,22 +120,57 @@ def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _generate_prompt_then_fan_out(sio, client_id, band_name, answers):
-    """Background task: generate the Nano Banana Pro prompt, then fan out
-    three parallel image-gen tasks. Each child task emits its own socket
-    event as it lands so the client can stream-in the candidates.
+def _prepare_image_generation(client_id, regen_idxs):
+    """Synchronously prepare the DB row + storage for a regen pass.
 
-    Runs under socketio.start_background_task (greenlet on eventlet, native
-    thread otherwise). The client's first_name is intentionally excluded —
-    the image is about the fictional act, not the person.
+    Called from the request handler BEFORE start_background_task, so any
+    /api/image-state poll between the handler returning and the bg task
+    starting sees the cleared state (slots in regen_idxs removed from
+    image_candidates / image_candidate_errors, files deleted on disk).
+
+    Pinned slots -- the indices NOT in regen_idxs -- are preserved as-is.
     """
-    room = _client_room(client_id)
-
+    regen_set = set(regen_idxs)
+    row = vote_store.get_by_client(client_id) or {}
+    keep_candidates = [
+        c for c in (row.get('image_candidates') or [])
+        if c.get('idx') not in regen_set
+    ]
+    raw_errors = row.get('image_candidate_errors') or {}
+    keep_errors = {}
+    for k, v in raw_errors.items():
+        try:
+            if int(k) not in regen_set:
+                keep_errors[str(k)] = v
+        except (TypeError, ValueError):
+            pass
     vote_store.upsert_user_profile(client_id, {
         'image_status': 'pending',
-        'image_candidates': [],
-        'image_candidate_errors': {},
+        'image_candidates': keep_candidates,
+        'image_candidate_errors': keep_errors,
     })
+    for idx in regen_idxs:
+        try:
+            image_store.delete_candidate(client_id, idx)
+        except Exception as e:
+            print(f"[image] {client_id[:8]} delete slot {idx} failed: {e!r}")
+
+
+def _generate_prompt_then_fan_out(sio, client_id, band_name, answers, regen_idxs=(0, 1)):
+    """Background task: generate the prompt LLM call, then fan out parallel
+    Gemini image-gen tasks for the slots in regen_idxs.
+
+    Runs under socketio.start_background_task. The synchronous DB +
+    storage prep MUST happen in the caller via _prepare_image_generation
+    so that polling between the handler returning and this task starting
+    sees the cleared state.
+
+    regen_idxs subset of (0, 1): which slots to (re)generate. The
+    default (0, 1) is the first-time onboarding case where everything
+    is fresh. Reroll-with-pin passes a subset, leaving the pinned slot
+    untouched on the row and on disk.
+    """
+    room = _client_room(client_id)
 
     try:
         prompts = openai_client.generate_image_prompts(
@@ -161,11 +196,15 @@ def _generate_prompt_then_fan_out(sio, client_id, band_name, answers):
         'image_prompts': prompts,
         'image_status': 'prompt_ready',
     })
-    sio.emit('band_images_starting', {'count': 3}, to=room)
-    print(f"[image] {client_id[:8]} 3 prompts ready, fanning out candidates")
+    sio.emit('band_images_starting', {'count': len(regen_idxs)}, to=room)
+    print(f"[image] {client_id[:8]} prompts ready, fanning out candidates for slots {list(regen_idxs)}")
 
-    for idx in (0, 1, 2):
-        sio.start_background_task(_generate_one_image, sio, client_id, prompts[idx], idx)
+    # Each regen slot picks the matching prompt by index. When a pinned
+    # slot is preserved, that slot's index is skipped here AND the
+    # prompts list returned by openai_client is one-per-regen-slot, so
+    # we map regen_idxs -> prompts positionally.
+    for prompt_idx, slot_idx in enumerate(regen_idxs):
+        sio.start_background_task(_generate_one_image, sio, client_id, prompts[prompt_idx], slot_idx)
 
 
 def _gemini_call(prompt):
@@ -489,6 +528,96 @@ def awards():
         return f"Error loading awards: {str(e)}", 500
 
 
+_GUESS_FLAVOR_POOL = [
+    "Here we have a rare photograph of the performer…",
+    "Captured forever in this stunning portrait…",
+    "A candid snapshot from the backstage hallway…",
+    "The official press photo, just released to the public…",
+    "Behold — a single frame from their tour documentary…",
+    "A portrait worth a thousand Eurovision votes…",
+    "The album cover that's taking the continent by storm…",
+    "Pulled straight from their forthcoming music video…",
+    "A glamour shot, lovingly produced by their team…",
+    "Their PR team's favourite photo to date…",
+    "A magazine cover shot, no Photoshop required…",
+    "The promotional image their label is rolling out everywhere…",
+    "An exclusive photograph, leaked only minutes ago…",
+    "Their official Eurovision profile picture…",
+    "Studio portrait, lit to absolute perfection…",
+    "The photo that's launched a thousand fan accounts…",
+    "Here they are, staring directly down the lens…",
+    "The press shot that briefly broke the internet…",
+    "A frame plucked from their viral promo clip…",
+    "The headshot, freshly back from the photographer…",
+    "Pictured here, in all their photogenic glory…",
+    "The image gracing every billboard in their hometown…",
+    "A single photograph that says more than any chorus could…",
+    "Snapped backstage, posted straight to the fan forums…",
+    "The cover art of their soon-to-drop debut single…",
+    "This portrait will live in a museum someday, mark my words…",
+    "Their record label's favourite shot of the whole campaign…",
+    "A photo so iconic, it deserves its own postage stamp…",
+    "Pictured: what the camera saw the moment they hit the stage…",
+    "A freshly developed Polaroid from the green room…",
+]
+
+
+@voting_bp.route('/guess')
+def guess_who():
+    """Party game: one slide per performer, progressive clue reveals.
+
+    Reveal order: image (initial) → song title → song vibe → performer vibe →
+    extra (if present) → stage name → actual first name.
+    """
+    import random
+
+    rows = list(vote_store.all())
+    bands = []
+    for row in rows:
+        first_name = (row.get('first_name') or '').strip()
+        user = (row.get('user') or '').strip()
+        if not first_name and not user:
+            continue  # skip totally empty drafts
+
+        extra = (row.get('extra') or '').strip()
+        image_ready = row.get('image_status') == 'ready' and row.get('image_url')
+
+        reveals = [
+            {'label': 'Song',           'emoji': '🎵', 'value': (row.get('song_title') or '').strip()},
+            {'label': 'Song vibe',      'emoji': '🎶', 'value': (row.get('song_vibe') or '').strip()},
+            {'label': 'Performer vibe', 'emoji': '🎭', 'value': (row.get('personal_vibe') or '').strip()},
+        ]
+        if extra:
+            reveals.append({'label': 'Also', 'emoji': '✨', 'value': extra})
+        reveals.append({'label': 'Stage name',  'emoji': '🎤', 'value': user or '(unnamed)'})
+        reveals.append({'label': 'Actual name', 'emoji': '👤',
+                        'value': first_name or '(unknown)', 'is_final': True})
+
+        bands.append({
+            'image_url': row.get('image_url') if image_ready else None,
+            'reveals':   reveals,
+        })
+
+    # Assign unique flavor lines so no two performers share one in a single
+    # /guess load. random.sample raises if k > population; if we ever have
+    # more performers than pool entries, top up the tail with extras
+    # (rare-but-possible at huge parties — accept duplicates only past the
+    # pool size).
+    pool_size = len(_GUESS_FLAVOR_POOL)
+    n = len(bands)
+    if n <= pool_size:
+        flavors = random.sample(_GUESS_FLAVOR_POOL, k=n)
+    else:
+        shuffled = list(_GUESS_FLAVOR_POOL)
+        random.shuffle(shuffled)
+        flavors = shuffled + random.choices(_GUESS_FLAVOR_POOL, k=n - pool_size)
+    for band, flavor in zip(bands, flavors):
+        band['flavor'] = flavor
+
+    random.shuffle(bands)
+    return render_template('guess_who.html', bands=bands)
+
+
 OPTIONS_FILE = os.path.join("pizzavision", "options.json")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "changeme")
 BACKUP_FILE = os.path.join("pizzavision", "options_bak.json")
@@ -668,8 +797,10 @@ def register_socketio_handlers(socket_io):
         existing = vote_store.get_by_client(client_id)
         if existing:
             return {
-                'user': existing.get('user', user_name),
-                'rank': existing.get('rank', []),
+                'user':       existing.get('user', user_name),
+                'rank':       existing.get('rank', []),
+                'song_title': existing.get('song_title', ''),
+                'image_url':  existing.get('image_url', ''),
             }
         return {'reset': True}
 
@@ -751,12 +882,66 @@ def register_socketio_handlers(socket_io):
         _emit_admin_user_upsert(socket_io, client_id)
         print(f"{client_id[:8]} onboarded as '{user_name}'")
 
+        # Synchronously clear both candidate slots before the bg task
+        # runs, so any /api/image-state poll between this handler
+        # returning and the task starting sees a clean slate.
+        _prepare_image_generation(client_id, (0, 1))
         socket_io.start_background_task(
             _generate_prompt_then_fan_out,
             socket_io,
             client_id,
             user_name,
             answers,
+            (0, 1),
+        )
+
+    @socket_io.on('regenerate_band_images')
+    def on_regenerate_band_images(data):
+        """Payload: {clientId: str, keepIdx: int | None}
+
+        Triggers a partial regen: every slot EXCEPT keepIdx gets a new
+        image. keepIdx == None means reroll both. The handler reads the
+        saved answers from the user's existing row -- the client doesn't
+        need to resend them.
+        """
+        client_id = data.get('clientId')
+        keep_idx = data.get('keepIdx')
+        if not client_id:
+            return
+
+        # Defensive room rejoin (matches on_pick_band_image / on_onboarding_complete).
+        _connected_sids[request.sid] = client_id
+        join_room(_client_room(client_id))
+
+        row = vote_store.get_by_client(client_id)
+        if not row:
+            print(f"regenerate_band_images: no row for {client_id[:8]}, ignoring")
+            return
+
+        if isinstance(keep_idx, int) and keep_idx in (0, 1):
+            regen_idxs = tuple(i for i in (0, 1) if i != keep_idx)
+        else:
+            keep_idx = None
+            regen_idxs = (0, 1)
+
+        answers = {
+            'first_name':    row.get('first_name', ''),
+            'song_title':    row.get('song_title', ''),
+            'song_vibe':     row.get('song_vibe', ''),
+            'personal_vibe': row.get('personal_vibe', ''),
+            'extra':         row.get('extra', ''),
+        }
+        band_name = row.get('user', '')
+
+        _prepare_image_generation(client_id, regen_idxs)
+        print(f"[image] {client_id[:8]} regen requested; keep={keep_idx} regen={list(regen_idxs)}")
+        socket_io.start_background_task(
+            _generate_prompt_then_fan_out,
+            socket_io,
+            client_id,
+            band_name,
+            answers,
+            regen_idxs,
         )
 
     @socket_io.on('pick_band_image')

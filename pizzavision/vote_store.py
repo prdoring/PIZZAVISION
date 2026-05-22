@@ -31,7 +31,11 @@ class TinyDBVoteStore:
     def __init__(self, db_path: str):
         from tinydb import TinyDB, Query
 
-        self._db = TinyDB(db_path)
+        # encoding='utf-8' is critical on Windows -- otherwise TinyDB's
+        # JSONStorage opens the file using the system locale (cp1252),
+        # which chokes the moment we write a band name with é / ø / ñ /
+        # etc and try to read it back.
+        self._db = TinyDB(db_path, encoding='utf-8')
         self._Q = Query()
 
     def all(self) -> list[dict]:

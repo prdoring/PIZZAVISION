@@ -26,11 +26,24 @@ against races if the client double-taps Pick).
 from __future__ import annotations
 
 import os
+import time
 from typing import Optional
 
 
-# Candidates from a single user are saved at 3 slots: 0, 1, 2.
-_CANDIDATE_INDICES = (0, 1, 2)
+# Candidate slots. Currently 2 -- keep in lockstep with the matching
+# constants on the client and in routes._generate_prompt_then_fan_out.
+_CANDIDATE_INDICES = (0, 1)
+
+
+def _bust(url: str) -> str:
+    """Append a ?v=<unix-seconds> cache-buster.
+
+    The reroll flow overwrites a slot's file at the same path. Without a
+    URL-level version, browsers happily keep showing the cached old PNG
+    after a reroll and the user thinks the regenerate didn't fire.
+    """
+    sep = '&' if '?' in url else '?'
+    return f"{url}{sep}v={int(time.time())}"
 
 
 # ---------------------------------------------------------------
@@ -60,7 +73,13 @@ class LocalImageStore:
         # Matches the registered URL routing:
         #   app prefix /pizzavision (pizzavision.py)
         #   + blueprint static_url_path /voting/static (pizzavision/__init__.py)
-        return f"/pizzavision/voting/static/generated/{client_id}/{idx}.png"
+        return _bust(f"/pizzavision/voting/static/generated/{client_id}/{idx}.png")
+
+    def delete_candidate(self, client_id: str, idx: int) -> None:
+        try:
+            os.remove(self._path_for(client_id, idx))
+        except FileNotFoundError:
+            pass
 
     def keep_chosen_delete_rest(self, client_id: str, chosen_idx: int) -> str:
         for i in _CANDIDATE_INDICES:
@@ -71,7 +90,7 @@ class LocalImageStore:
                 os.remove(path)
             except FileNotFoundError:
                 pass
-        return f"/pizzavision/voting/static/generated/{client_id}/{chosen_idx}.png"
+        return _bust(f"/pizzavision/voting/static/generated/{client_id}/{chosen_idx}.png")
 
 
 # ---------------------------------------------------------------
@@ -104,7 +123,14 @@ class GCSImageStore:
         # without authentication. Requires the bucket to be in fine-grained
         # access control mode (not Uniform).
         blob.make_public()
-        return blob.public_url
+        return _bust(blob.public_url)
+
+    def delete_candidate(self, client_id: str, idx: int) -> None:
+        try:
+            self._blob_for(client_id, idx).delete()
+        except Exception:
+            # 404 / already deleted — fine.
+            pass
 
     def keep_chosen_delete_rest(self, client_id: str, chosen_idx: int) -> str:
         for i in _CANDIDATE_INDICES:
@@ -118,7 +144,7 @@ class GCSImageStore:
                 # rather than poison the user's onboarding completion over
                 # a cleanup failure.
                 pass
-        return self._blob_for(client_id, chosen_idx).public_url
+        return _bust(self._blob_for(client_id, chosen_idx).public_url)
 
 
 # ---------------------------------------------------------------

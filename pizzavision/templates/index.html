@@ -1145,6 +1145,20 @@
             .onboarding-btn.dice-btn { padding: 12px 14px; }
         }
 
+        /* Quiet caveat under the button row — warns players that their
+           free-text answers may be revealed during the pizzaguess game. */
+        .onboarding-warning {
+            flex: 0 0 auto;
+            margin: 10px auto 0;
+            max-width: 320px;
+            text-align: center;
+            font-size: 11.5px;
+            font-weight: 500;
+            line-height: 1.4;
+            letter-spacing: 0.3px;
+            color: rgba(255, 215, 0, 0.78);
+        }
+
         /* Ghost variant — used by Reroll on the pick step. */
         .onboarding-btn.ghost {
             flex: 1 1 auto;
@@ -1156,6 +1170,20 @@
         .onboarding-btn.ghost:active {
             transform: scale(0.97);
             background: rgba(255, 255, 255, 0.12);
+        }
+        .onboarding-btn.ghost:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            color: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.04);
+        }
+        /* Hard-block clicks on ANY disabled onboarding button. The
+           [disabled] attribute alone should be enough on a top-level
+           <button>, but `pointer-events: none` guarantees a click on a
+           child element (an icon span, for example) can't bubble up
+           and trigger the handler before the disabled check runs. */
+        .onboarding-btn:disabled {
+            pointer-events: none;
         }
 
         /* Pick step stacks its action buttons full-width, mobile-first. */
@@ -1369,7 +1397,13 @@
             overflow: hidden;
             box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
         }
-        .image-hero img {
+        /* Only target the hero <img> directly by id -- NOT every img
+           descendant of .image-hero. Twemoji (loaded elsewhere on the
+           page) rewrites the 📌 character inside the pin button into
+           an <img class="emoji" src="...twemoji.../1f4cc.svg">, which
+           sits inside the hero and used to match `.image-hero img` --
+           that's what was hiding the pin icon. */
+        #image-hero-img {
             position: absolute;
             inset: 0;
             width: 100%;
@@ -1377,35 +1411,73 @@
             object-fit: cover;
             opacity: 0;
             transition: opacity 0.3s ease;
+            z-index: 3;
         }
-        .image-hero img.is-visible {
+        #image-hero-img.is-visible {
             opacity: 1;
+        }
+        /* Loading state: layered "stage lights" backdrop -- two coloured
+           radial gradients drifting on opposite cycles, plus a subtle
+           rim-light sweep across the top. Reads as "we're setting up the
+           stage" rather than "broken image". */
+        .image-hero.is-loading {
+            background:
+                radial-gradient(ellipse 70% 50% at 25% 30%, rgba(255, 79, 175, 0.28), transparent 70%),
+                radial-gradient(ellipse 60% 45% at 75% 70%, rgba(0, 200, 255, 0.26), transparent 70%),
+                #08071a;
         }
         .image-hero.is-loading::before {
             content: '';
             position: absolute;
+            inset: -25%;
+            background:
+                radial-gradient(ellipse 28% 22% at 50% 45%, rgba(122, 44, 255, 0.55), transparent 60%),
+                radial-gradient(ellipse 22% 18% at 30% 75%, rgba(255, 215, 0, 0.35), transparent 65%),
+                radial-gradient(ellipse 20% 16% at 75% 25%, rgba(0, 224, 255, 0.40), transparent 65%);
+            filter: blur(28px);
+            will-change: transform;
+            animation: stageSpotDrift 7s ease-in-out infinite;
+            z-index: 1;
+        }
+        .image-hero.is-loading::after {
+            content: '';
+            position: absolute;
             inset: 0;
             background: linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0.04) 0%,
-                rgba(255, 215, 0, 0.08) 50%,
-                rgba(255, 255, 255, 0.04) 100%
+                110deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.07) 50%,
+                transparent 70%
             );
-            background-size: 200% 100%;
-            animation: image-shimmer 1.4s ease-in-out infinite;
+            background-size: 250% 100%;
+            animation: stageLightSweep 3s ease-in-out infinite;
+            z-index: 2;
         }
-        @keyframes image-shimmer {
+        @keyframes stageSpotDrift {
+            0%, 100% { transform: translate(0%, 0%) rotate(0deg) scale(1); }
+            33%      { transform: translate(8%, -5%) rotate(18deg) scale(1.05); }
+            66%      { transform: translate(-7%, 6%) rotate(-12deg) scale(0.97); }
+        }
+        @keyframes stageLightSweep {
             0%   { background-position: 100% 0; }
             100% { background-position: -100% 0; }
         }
         .image-thumbs {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 8px;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
         }
-        .image-thumb {
+        /* Wrap is the grid item -- holds the thumb button + pin button
+           as siblings (button-in-button would be invalid HTML). */
+        .image-thumb-wrap {
             position: relative;
             aspect-ratio: 16 / 9;
+        }
+        .image-thumb {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
             border-radius: 8px;
             border: 2px solid transparent;
             background: #0a0a0a;
@@ -1429,19 +1501,129 @@
         .image-thumb.is-failed {
             cursor: default;
         }
+        /* Pin control overlaid on the HERO image. Icon-only circle to
+           match the visual language of the name-picker's .name-option-pin
+           (no text label, just the pin emoji that goes from subtle to
+           gold-filled on toggle). The user pins whichever image is
+           currently in the hero. Hidden until the hero is showing a
+           ready image. */
+        .image-hero-pin {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            margin: 0;
+            border-radius: 50%;
+            border: 1.5px solid rgba(255, 255, 255, 0.30);
+            background: rgba(0, 0, 0, 0.65);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4);
+            transition: background 0.18s ease, border-color 0.18s ease,
+                        transform 0.12s ease, box-shadow 0.18s ease;
+            z-index: 6;
+            -webkit-appearance: none;
+            appearance: none;
+            -webkit-tap-highlight-color: transparent;
+            /* Emoji rendering -- match the thumbnail indicator that the
+               user confirmed renders correctly. No backdrop-filter (was
+               possibly clipping the text glyph in this browser/OS combo),
+               no `color` override (let the emoji render in its own colors),
+               and an explicit emoji font stack. */
+            font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', sans-serif;
+            font-size: 24px;
+            line-height: 1;
+        }
+        .image-hero-pin:hover {
+            background: rgba(0, 0, 0, 0.75);
+            border-color: rgba(255, 255, 255, 0.55);
+            opacity: 1;
+        }
+        .image-hero-pin:active {
+            transform: scale(0.92);
+        }
+        /* Pinned state: gold-filled. Matches .name-option-wrap.is-pinned
+           .name-option-pin from the name-picker step. */
+        .image-hero-pin.is-pinned {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 1), rgba(255, 168, 0, 1));
+            border-color: rgba(255, 215, 0, 1);
+            box-shadow: 0 6px 20px rgba(255, 168, 0, 0.55);
+            opacity: 1;
+        }
+        /* Small read-only indicator on the thumb. Only visible when
+           that thumb's wrap has .is-pinned. Not interactive -- the
+           control lives on the hero. */
+        .image-thumb-pin-indicator {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', sans-serif;
+            font-size: 12px;
+            line-height: 1;
+            background: linear-gradient(135deg, rgba(255, 215, 0, 1), rgba(255, 168, 0, 1));
+            color: #08071a;
+            box-shadow: 0 3px 8px rgba(255, 168, 0, 0.45);
+            opacity: 0;
+            transform: scale(0.7);
+            transition: opacity 0.18s ease, transform 0.18s ease;
+            pointer-events: none;
+            z-index: 4;
+        }
+        .image-thumb-wrap.is-pinned .image-thumb-pin-indicator {
+            opacity: 1;
+            transform: scale(1);
+        }
+        /* Pinned thumb: gold border to match the hero's pinned-pill colour. */
+        .image-thumb-wrap.is-pinned .image-thumb {
+            border-color: rgba(255, 215, 0, 0.85);
+            box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.6), 0 6px 14px rgba(255, 79, 175, 0.30);
+        }
+        /* Pending thumb: scaled-down version of the hero stage lights so
+           the trio reads as a unit. Each thumb gets a slightly different
+           animation-delay (set inline below) so the lights aren't in
+           lockstep. */
+        .image-thumb.is-pending {
+            background:
+                radial-gradient(ellipse 70% 60% at 30% 35%, rgba(255, 79, 175, 0.32), transparent 70%),
+                radial-gradient(ellipse 60% 50% at 70% 65%, rgba(0, 200, 255, 0.28), transparent 70%),
+                #08071a;
+        }
         .image-thumb.is-pending::before {
+            content: '';
+            position: absolute;
+            inset: -30%;
+            background:
+                radial-gradient(ellipse 35% 30% at 50% 50%, rgba(122, 44, 255, 0.55), transparent 60%),
+                radial-gradient(ellipse 25% 22% at 30% 70%, rgba(255, 215, 0, 0.35), transparent 60%);
+            filter: blur(18px);
+            will-change: transform;
+            animation: stageSpotDrift 7s ease-in-out infinite;
+        }
+        .image-thumb-wrap:nth-child(2) .image-thumb.is-pending::before { animation-delay: -2.3s; }
+        .image-thumb.is-pending::after {
             content: '';
             position: absolute;
             inset: 0;
             background: linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0.05) 0%,
-                rgba(255, 215, 0, 0.10) 50%,
-                rgba(255, 255, 255, 0.05) 100%
+                110deg,
+                transparent 30%,
+                rgba(255, 255, 255, 0.08) 50%,
+                transparent 70%
             );
-            background-size: 200% 100%;
-            animation: image-shimmer 1.4s ease-in-out infinite;
+            background-size: 250% 100%;
+            animation: stageLightSweep 2.2s ease-in-out infinite;
         }
+        .image-thumb-wrap:nth-child(2) .image-thumb.is-pending::after { animation-delay: -0.7s; }
         .image-thumb.is-failed {
             opacity: 0.4;
             background:
@@ -1464,13 +1646,61 @@
             color: rgba(255, 200, 200, 0.85);
             font-size: 22px;
         }
+        /* Active thumb = the one currently showing in the hero slot.
+           Pink outline to differentiate from the gold "pinned" state;
+           a thumb can be active AND pinned (gold corner + pink outline). */
         .image-thumb.is-active {
-            border-color: rgba(255, 215, 0, 0.9);
-            box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.5), 0 6px 14px rgba(255, 79, 175, 0.3);
+            border-color: rgba(255, 79, 175, 0.95);
+            box-shadow: 0 0 0 1px rgba(255, 79, 175, 0.5), 0 6px 14px rgba(255, 79, 175, 0.35);
         }
         .image-thumb:not(.is-pending):not(.is-failed):not(.is-active):active {
             transform: scale(0.97);
         }
+        /* Cycling caption underneath the thumbs while images are still
+           generating. Hides itself the moment all three slots are
+           decided (ready or failed). */
+        .image-picker-status {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 2px;
+            min-height: 22px;
+            font-size: 13.5px;
+            line-height: 1.4;
+            color: rgba(255, 255, 255, 0.78);
+            font-weight: 600;
+            letter-spacing: 0.2px;
+            transition: opacity 0.25s ease;
+        }
+        .image-picker-status[hidden] {
+            display: none;
+        }
+        .image-picker-status .status-icon {
+            display: inline-block;
+            font-size: 18px;
+            line-height: 1;
+            transform-origin: center;
+            animation: statusIconPulse 1.4s ease-in-out infinite;
+        }
+        @keyframes statusIconPulse {
+            0%, 100% { transform: scale(1); }
+            50%      { transform: scale(1.18); }
+        }
+
+        /* Respect users who asked for reduced motion -- kill the
+           drifting stage lights and the icon pulse, leave the static
+           glow so it still reads as a styled loading state. */
+        @media (prefers-reduced-motion: reduce) {
+            .image-hero.is-loading::before,
+            .image-hero.is-loading::after,
+            .image-thumb.is-pending::before,
+            .image-thumb.is-pending::after,
+            .image-picker-status .status-icon {
+                animation: none;
+            }
+        }
+
         #onboarding-overlay .image-picker-error {
             margin: 4px 0 0;
             padding: 8px 12px;
@@ -1563,13 +1793,103 @@
             box-shadow: 0 18px 36px rgba(122, 44, 255, 0.55);
         }
 
-        /* Pre-voting: gentle pulsing dot under the message */
-        #prevote-overlay .pv-state-emoji {
-            animation: prevotePulse 2.4s ease-in-out infinite;
+        /* ============================================================
+           Prevote card — mobile-first, no scroll.
+           Stacked vertically: tagline, band photo, band name, song
+           title, roast, waiting dots. The card uses clamp() and
+           viewport-relative units so it fits on phones from iPhone SE
+           up without overflowing or feeling cramped on larger screens.
+           ============================================================ */
+        #prevote-overlay .pv-state-card.prevote-card {
+            padding: clamp(18px, 4vw, 28px) clamp(18px, 5vw, 26px) clamp(20px, 4vw, 26px);
+            max-height: 100dvh;
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            gap: clamp(8px, 2.2vh, 16px);
+            text-align: center;
+            overflow: hidden;
         }
-        @keyframes prevotePulse {
-            0%, 100% { transform: scale(1); }
-            50%      { transform: scale(1.08); }
+        .prevote-tagline {
+            margin: 0;
+            font-size: clamp(11px, 2.8vw, 13px);
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.55);
+        }
+        .prevote-band-photo {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            border-radius: 14px;
+            overflow: hidden;
+            background:
+                radial-gradient(ellipse 70% 50% at 25% 30%, rgba(255, 79, 175, 0.18), transparent 70%),
+                radial-gradient(ellipse 60% 45% at 75% 70%, rgba(0, 200, 255, 0.16), transparent 70%),
+                #08071a;
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55),
+                        0 0 0 1px rgba(255, 255, 255, 0.06) inset;
+        }
+        .prevote-band-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            opacity: 0;
+            transition: opacity 0.35s ease;
+        }
+        .prevote-band-photo img[src] {
+            opacity: 1;
+        }
+        .prevote-band-name {
+            margin: 0;
+            font-size: clamp(24px, 7vw, 36px);
+            font-weight: 800;
+            line-height: 1.05;
+            letter-spacing: 0.3px;
+            background: linear-gradient(90deg, #ff3aa3, #ffd93a, #00e0ff);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            text-shadow: 0 2px 18px rgba(255, 79, 175, 0.18);
+        }
+        .prevote-song-title {
+            margin: 0;
+            font-size: clamp(14px, 3.6vw, 17px);
+            font-style: italic;
+            color: rgba(255, 255, 255, 0.86);
+            font-weight: 500;
+            line-height: 1.3;
+        }
+        /* On very short viewports (landscape phone, tiny windows) trim
+           the photo so the whole stack still fits without scrolling. */
+        @media (max-height: 600px) {
+            #prevote-overlay .pv-state-card.prevote-card {
+                gap: 8px;
+            }
+            .prevote-band-photo {
+                aspect-ratio: 21 / 9;
+            }
+        }
+        @media (max-height: 480px) {
+            .prevote-band-photo {
+                display: none !important;
+            }
+        }
+        /* Reset the global .vote-roast / .prevote-waiting margins+widths
+           when they live INSIDE the prevote card -- the card uses a flex
+           gap for spacing, and the inner blocks should fill its content
+           width without extra horizontal insets. */
+        #prevote-overlay .pv-state-card.prevote-card .vote-roast {
+            margin: 0;
+            width: 100%;
+            max-width: none;
+            min-height: 56px;
+            padding: 12px 14px;
+        }
+        #prevote-overlay .pv-state-card.prevote-card .prevote-waiting {
+            margin: 0 auto;
         }
         /* Spinner kept ONLY for the brief AI roast loads — see .vote-roast-spinner */
         @keyframes prevoteSpin {
@@ -1808,6 +2128,7 @@
                     </button>
                     <button type="button" class="onboarding-btn primary" data-next disabled>Next →</button>
                 </footer>
+                <p class="onboarding-warning">⚠️ Careful — your answers may be revealed later in the evening.</p>
             </section>
 
             <section class="onboarding-step" data-step="song_vibe">
@@ -1828,6 +2149,7 @@
                     </button>
                     <button type="button" class="onboarding-btn primary" data-next disabled>Next →</button>
                 </footer>
+                <p class="onboarding-warning">⚠️ Careful — your answers may be revealed later in the evening.</p>
             </section>
 
             <section class="onboarding-step" data-step="personal_vibe">
@@ -1848,6 +2170,7 @@
                     </button>
                     <button type="button" class="onboarding-btn primary" data-next disabled>Next →</button>
                 </footer>
+                <p class="onboarding-warning">⚠️ Careful — your answers may be revealed later in the evening.</p>
             </section>
 
             <section class="onboarding-step" data-step="extra" data-optional="true">
@@ -1866,8 +2189,9 @@
                         <span class="dice-emoji">🎲</span>
                         <span class="dice-label">Suggest one</span>
                     </button>
-                    <button type="button" class="onboarding-btn primary" data-generate>Name my band ✨</button>
+                    <button type="button" class="onboarding-btn primary" data-generate>Name my band</button>
                 </footer>
+                <p class="onboarding-warning">⚠️ Careful — your answers may be revealed later in the evening.</p>
             </section>
 
             <section class="onboarding-step" data-step="generating">
@@ -1903,15 +2227,27 @@
                 <div class="onboarding-field image-pick-body">
                     <div class="image-hero is-loading" id="image-hero">
                         <img id="image-hero-img" alt="" />
+                        <button type="button" class="image-hero-pin" id="image-hero-pin"
+                                aria-label="Pin this photo and reroll the other" aria-pressed="false" hidden>📌</button>
                     </div>
                     <div class="image-thumbs" id="image-thumbs">
-                        <button type="button" class="image-thumb is-pending" data-thumb-idx="0" aria-label="Photo 1" disabled></button>
-                        <button type="button" class="image-thumb is-pending" data-thumb-idx="1" aria-label="Photo 2" disabled></button>
-                        <button type="button" class="image-thumb is-pending" data-thumb-idx="2" aria-label="Photo 3" disabled></button>
+                        <div class="image-thumb-wrap" data-thumb-wrap-idx="0">
+                            <button type="button" class="image-thumb is-pending" data-thumb-idx="0" aria-label="Photo 1" disabled></button>
+                            <span class="image-thumb-pin-indicator" aria-hidden="true">📌</span>
+                        </div>
+                        <div class="image-thumb-wrap" data-thumb-wrap-idx="1">
+                            <button type="button" class="image-thumb is-pending" data-thumb-idx="1" aria-label="Photo 2" disabled></button>
+                            <span class="image-thumb-pin-indicator" aria-hidden="true">📌</span>
+                        </div>
+                    </div>
+                    <div id="image-picker-status" class="image-picker-status" hidden>
+                        <span class="status-icon" aria-hidden="true">🎤</span>
+                        <span class="status-text">Tuning your harmonies…</span>
                     </div>
                     <div id="image-picker-error" class="image-picker-error" hidden></div>
                 </div>
                 <footer class="onboarding-actions">
+                    <button type="button" class="onboarding-btn ghost" id="reroll-images-btn" disabled>↻ Reroll both</button>
                     <button type="button" class="onboarding-btn primary" id="pick-image-btn" disabled>Pick this</button>
                 </footer>
             </section>
@@ -1920,10 +2256,15 @@
 
     <!-- 3-state voting lifecycle overlays -->
     <div id="prevote-overlay" class="pv-state-overlay" aria-hidden="true">
-        <div class="pv-state-card">
-            <div class="pv-state-emoji">🍕</div>
-            <h1>Voting hasn't started yet</h1>
-            <p>Hang tight, <span id="prevoteBandName"></span> — once the host opens the vote, the song list will appear here.</p>
+        <div class="pv-state-card prevote-card">
+            <p class="prevote-tagline">Voting hasn't started yet</p>
+            <div class="prevote-band-photo" style="display:none;">
+                <img id="prevoteImage" alt="" />
+            </div>
+            <h1 class="prevote-band-name" id="prevoteBandName"></h1>
+            <p class="prevote-song-title" style="display:none;">
+                "<span id="prevoteSongTitle"></span>"
+            </p>
             <div id="band-roast" class="vote-roast" hidden>
                 <div class="vote-roast-spinner" aria-hidden="true"></div>
                 <div class="vote-roast-text"></div>
@@ -1936,14 +2277,31 @@
         </div>
     </div>
     <script>
-        // Populate the prevote modal's band name slot inline, BEFORE any
-        // paint — the CSS already shows the modal immediately for
-        // pv-state-pre.pv-has-band, so the name needs to be in place
-        // before the browser draws the card.
+        // Populate the prevote modal's name / song title / band image
+        // INLINE BEFORE the first paint — the CSS already shows the modal
+        // immediately for pv-state-pre.pv-has-band, so these slots need to
+        // be filled before the browser draws the card. Values come from
+        // localStorage (cached during onboarding + refreshed by joinRoom).
         (function () {
-            var slot = document.getElementById('prevoteBandName');
-            if (!slot) return;
-            try { slot.textContent = localStorage.getItem('userName') || ''; } catch (e) {}
+            try {
+                var nameSlot  = document.getElementById('prevoteBandName');
+                var titleSlot = document.getElementById('prevoteSongTitle');
+                var imgSlot   = document.getElementById('prevoteImage');
+                var name  = localStorage.getItem('userName')      || '';
+                var title = localStorage.getItem('pv_song_title') || '';
+                var url   = localStorage.getItem('pv_image_url')  || '';
+                if (nameSlot)  nameSlot.textContent  = name;
+                if (titleSlot) titleSlot.textContent = title;
+                if (titleSlot && title) {
+                    var titleWrap = titleSlot.closest('.prevote-song-title');
+                    if (titleWrap) titleWrap.style.display = '';
+                }
+                if (imgSlot && url) {
+                    imgSlot.setAttribute('src', url);
+                    var imgWrap = imgSlot.closest('.prevote-band-photo');
+                    if (imgWrap) imgWrap.style.display = '';
+                }
+            } catch (e) {}
         })();
     </script>
 
@@ -2416,7 +2774,44 @@
                         // their picks. Trust the server, wipe local cache.
                         localStorage.removeItem('itemsOrder');
                     }
+                    // Cache song title + band image URL locally so the prevote
+                    // card can render them on first paint without waiting for
+                    // another socket round-trip.
+                    if (state) {
+                        if (state.song_title) localStorage.setItem('pv_song_title', state.song_title);
+                        else localStorage.removeItem('pv_song_title');
+                        if (state.image_url) localStorage.setItem('pv_image_url', state.image_url);
+                        else localStorage.removeItem('pv_image_url');
+                        populatePrevoteCard();
+                    }
                 });
+            }
+
+            // Wire the prevote modal's content (band name, song title, band
+            // photo) from whatever's cached in localStorage. Called both at
+            // page load (after the inline pre-paint pass) and any time we
+            // refresh those values from the server.
+            function populatePrevoteCard() {
+                var $name  = $('#prevoteBandName');
+                var $title = $('#prevoteSongTitle');
+                var $photo = $('#prevoteImage');
+                var name  = localStorage.getItem('userName')      || '';
+                var title = localStorage.getItem('pv_song_title') || '';
+                var url   = localStorage.getItem('pv_image_url')  || '';
+                if ($name.length) $name.text(name);
+                if ($title.length) {
+                    $title.text(title);
+                    $title.closest('.prevote-song-title').toggle(!!title);
+                }
+                if ($photo.length) {
+                    if (url) {
+                        if ($photo.attr('src') !== url) $photo.attr('src', url);
+                        $photo.closest('.prevote-band-photo').show();
+                    } else {
+                        $photo.removeAttr('src');
+                        $photo.closest('.prevote-band-photo').hide();
+                    }
+                }
             }
 
             // Fire-and-forget sid registration. Just tells the server "this
@@ -2464,6 +2859,27 @@
             // the polling loop would early-return forever.
             var imagePickerState = null;
             var imagePickerPollId = null;
+            // Same reason for IMAGE_STATUS_LINES: resetImagePicker calls
+            // startImagePickerStatusCycle which reads
+            // IMAGE_STATUS_LINES.length immediately. If the array is
+            // assigned later in source order, the resume path gets
+            // undefined and crashes with "Cannot read properties of
+            // undefined (reading 'length')".
+            var IMAGE_STATUS_LINES = [
+                { icon: '🎬', text: 'Rolling the entrance…' },
+                { icon: '💡', text: 'Setting the spotlights…' },
+                { icon: '🎤', text: 'Tuning your harmonies…' },
+                { icon: '🎭', text: 'Adjusting the costume…' },
+                { icon: '🌪️', text: 'Cueing the wind machine…' },
+                { icon: '🔥', text: 'Calibrating the pyro…' },
+                { icon: '📸', text: 'Striking a pose…' },
+                { icon: '✨', text: 'Adding one more key change…' },
+                { icon: '🎚️', text: 'Final sound check…' },
+                { icon: '🪩', text: 'Polishing the discoball…' },
+                { icon: '🎻', text: 'Briefing the strings…' },
+                { icon: '🎟️', text: 'Counting jury votes (kidding)…' },
+            ];
+            var imageStatusTimer = null;
 
             if (window.PV_VOTING_STATE === 'closed' && !savedName) {
                 // Spectator visit: voting is over and this browser never
@@ -3077,10 +3493,18 @@
             // finalized in a previous session).
             function finishOnboarding() {
                 stopImagePickerPolling();
+                stopImagePickerStatusCycle();
                 var name = localStorage.getItem('pv_pending_band_name')
                         || localStorage.getItem('userName')
                         || '';
                 if (name) localStorage.setItem('userName', name);
+                // Cache the user's song title (from onboarding answers)
+                // before clearOnboardingLS wipes the answer blob, so the
+                // prevote card has something to render on first paint.
+                try {
+                    var ans = loadAnswers() || {};
+                    if (ans.song_title) localStorage.setItem('pv_song_title', ans.song_title);
+                } catch (e) {}
                 clearOnboardingLS();
                 localStorage.removeItem('pv_pending_band_name');
                 $('#onboarding-overlay').removeClass('visible').attr('aria-hidden', 'true');
@@ -3310,12 +3734,47 @@
             // can safely populate them on a refresh-resume before this code
             // would otherwise reach the reinitialization.)
 
+            // (IMAGE_STATUS_LINES + imageStatusTimer are hoisted to the
+            // top of this script alongside ONBOARDING_STEPS for the same
+            // reason imagePickerState is -- startOnboarding's resume
+            // path runs before this code would otherwise execute.)
+
+            function startImagePickerStatusCycle() {
+                var $status = $('#image-picker-status');
+                if (!$status.length) return;
+                var i = Math.floor(Math.random() * IMAGE_STATUS_LINES.length);
+                var apply = function () {
+                    var line = IMAGE_STATUS_LINES[i];
+                    $status.find('.status-icon').text(line.icon);
+                    $status.find('.status-text').text(line.text);
+                };
+                apply();
+                $status.removeAttr('hidden').css('opacity', 1);
+                if (imageStatusTimer) clearInterval(imageStatusTimer);
+                imageStatusTimer = setInterval(function () {
+                    i = (i + 1) % IMAGE_STATUS_LINES.length;
+                    $status.css('opacity', 0);
+                    setTimeout(function () {
+                        apply();
+                        $status.css('opacity', 1);
+                    }, 220);
+                }, 1800);
+            }
+
+            function stopImagePickerStatusCycle() {
+                if (imageStatusTimer) {
+                    clearInterval(imageStatusTimer);
+                    imageStatusTimer = null;
+                }
+                $('#image-picker-status').attr('hidden', 'hidden');
+            }
+
             function _emptyImagePickerState() {
                 return {
                     hero_idx: null,
+                    pinned_idx: null,
                     candidates: { 0: { state: 'pending', url: null },
-                                  1: { state: 'pending', url: null },
-                                  2: { state: 'pending', url: null } },
+                                  1: { state: 'pending', url: null } },
                     allFailed: false
                 };
             }
@@ -3333,6 +3792,7 @@
                 imagePickerState = _emptyImagePickerState();
                 renderImagePicker();
                 stopImagePickerPolling();
+                startImagePickerStatusCycle();
                 if (!clientId) {
                     console.warn('[image-pick] no clientId; cannot poll state');
                     return;
@@ -3368,6 +3828,7 @@
                     // User finalized in a prior session (e.g. picked, then
                     // refreshed before the modal closed). Just close out.
                     if (state.status === 'ready' && state.chosen_url) {
+                        localStorage.setItem('pv_image_url', state.chosen_url);
                         stopImagePickerPolling();
                         imagePickerState = null;
                         finishOnboarding();
@@ -3402,7 +3863,10 @@
                         var s = imagePickerState.candidates[k2].state;
                         if (s !== 'ready' && s !== 'failed') { allDecided = false; break; }
                     }
-                    if (allDecided) stopImagePickerPolling();
+                    if (allDecided) {
+                        stopImagePickerPolling();
+                        stopImagePickerStatusCycle();
+                    }
                 }).catch(function (err) {
                     console.warn('[image-pick] state poll failed:', err);
                     // Keep the interval running -- transient network blips
@@ -3435,6 +3899,7 @@
                     $heroWrap.addClass('is-loading');
                 }
 
+                var anyPending = false;
                 $('.image-thumb').each(function () {
                     var $thumb = $(this);
                     var idx = parseInt($thumb.attr('data-thumb-idx'), 10);
@@ -3449,10 +3914,46 @@
                         $thumb.addClass('is-failed').prop('disabled', true);
                     } else {
                         $thumb.addClass('is-pending').prop('disabled', true);
+                        anyPending = true;
                     }
                 });
 
-                $('#pick-image-btn').prop('disabled', heroIdx === null);
+                // Pinned-thumb decoration -- one wrap at most. The thumb
+                // only shows a static gold dot; the actual control lives
+                // on the hero.
+                $('.image-thumb-wrap').each(function () {
+                    var $wrap = $(this);
+                    var wIdx = parseInt($wrap.attr('data-thumb-wrap-idx'), 10);
+                    $wrap.toggleClass('is-pinned', imagePickerState.pinned_idx === wIdx);
+                });
+
+                // Hero pin button: visible + interactive only when the
+                // hero is showing a ready image. Reflects whether the
+                // currently-displayed slot is the pinned one.
+                var $heroPin = $('#image-hero-pin');
+                var heroSlot = (heroIdx !== null) ? imagePickerState.candidates[heroIdx] : null;
+                if (heroSlot && heroSlot.state === 'ready') {
+                    $heroPin.removeAttr('hidden');
+                    var heroIsPinned = (imagePickerState.pinned_idx === heroIdx);
+                    $heroPin.toggleClass('is-pinned', heroIsPinned);
+                    $heroPin.attr('aria-pressed', heroIsPinned ? 'true' : 'false');
+                    $heroPin.attr('aria-label', heroIsPinned
+                        ? 'Unpin this photo'
+                        : 'Pin this photo and reroll the other');
+                } else {
+                    $heroPin.attr('hidden', 'hidden').removeClass('is-pinned');
+                }
+
+                $('#pick-image-btn').prop('disabled', heroIdx === null || anyPending);
+
+                // Reroll button: enabled only when no slot is still
+                // generating. Label flips to reflect which slots will be
+                // affected by the click.
+                var $reroll = $('#reroll-images-btn');
+                $reroll.text(imagePickerState.pinned_idx !== null
+                    ? '↻ Reroll the other one'
+                    : '↻ Reroll both');
+                $reroll.prop('disabled', anyPending);
 
                 if (imagePickerState.allFailed) {
                     showImagePickerHardError("Couldn't generate any photos. Please refresh to try again.");
@@ -3521,6 +4022,60 @@
                 imagePickerPollId = setInterval(pollImageState, 1000);
             });
 
+            // Pin toggle lives on the HERO (the small thumbs were too
+            // tap-tiny). The control pins whichever slot is currently in
+            // the hero, and unpins it on a second tap. At most one slot
+            // pinned at a time. Only ready slots can be pinned (the
+            // button stays hidden until the hero is showing a ready
+            // image -- but guard JS-side too).
+            $(document).on('click', '#image-hero-pin', function (e) {
+                e.stopPropagation();
+                if (!imagePickerState) return;
+                if ($(this).prop('disabled')) return;
+                var idx = imagePickerState.hero_idx;
+                if (idx === null) return;
+                var slot = imagePickerState.candidates[idx];
+                if (!slot || slot.state !== 'ready') return;
+                imagePickerState.pinned_idx = (imagePickerState.pinned_idx === idx)
+                    ? null
+                    : idx;
+                renderImagePicker();
+            });
+
+            // Reroll. Sets affected slots back to 'pending' instantly so
+            // the user sees the loading state without waiting for the
+            // first poll, then asks the server to regenerate. The server
+            // synchronously clears those slots' DB + storage state
+            // before kicking off the background gen, so the very next
+            // poll sees the cleaned state (not stale candidates).
+            $(document).on('click', '#reroll-images-btn', function () {
+                if (!imagePickerState) return;
+                if ($(this).prop('disabled')) return;
+                var pinned = imagePickerState.pinned_idx;  // null = roll all 3
+                Object.keys(imagePickerState.candidates).forEach(function (k) {
+                    var ki = parseInt(k, 10);
+                    if (ki !== pinned) {
+                        imagePickerState.candidates[ki] = { state: 'pending', url: null };
+                    }
+                });
+                // If the hero was an unpinned slot, swap to the pinned one
+                // (or null) so we don't render a stale hero during reroll.
+                if (imagePickerState.hero_idx !== pinned) {
+                    imagePickerState.hero_idx = pinned;
+                }
+                imagePickerState.allFailed = false;
+                $('#image-picker-error').attr('hidden', 'hidden');
+                renderImagePicker();
+                startImagePickerStatusCycle();
+                socket.emit('regenerate_band_images', {
+                    clientId: clientId,
+                    keepIdx: pinned
+                });
+                stopImagePickerPolling();
+                pollImageState();   // immediate first poll
+                imagePickerPollId = setInterval(pollImageState, 2000);
+            });
+
             // Server-side image pipeline socket listeners.
             socket.on('band_images_starting', function (data) {
                 console.log('[image-pick] band_images_starting:', data);
@@ -3551,6 +4106,7 @@
 
             socket.on('band_image_finalized', function (data) {
                 console.log('[image-pick] band_image_finalized:', data);
+                if (data && data.url) localStorage.setItem('pv_image_url', data.url);
                 imagePickerState = null;
                 finishOnboarding();
             });

@@ -508,26 +508,26 @@ def suggest_answer(field: str, context: dict, anchor: str = "") -> str:
 
 _IMAGE_PROMPTS_SYSTEM = """You write image-generation prompts for Google's Nano Banana Pro (gemini-3-pro-image-preview). The model rewards DIRECTOR-STYLE NARRATION, not tag soup.
 
-Produce THREE DISTINCT prompts for press-style stills of the SAME fictional Eurovision act. Each prompt is a separate paragraph, 80-150 words, plain prose. The user will pick one as their band photo — give them three genuinely different options to choose from.
+Produce TWO DISTINCT prompts for press-style stills of the SAME fictional Eurovision act. Each prompt is a separate paragraph, 80-150 words, plain prose. The user will pick one as their band photo — give them two genuinely different options to choose from.
 
-VARY AGGRESSIVELY across the three prompts. Each should differ on at LEAST three of these axes:
-- Camera framing — one wide establishing shot of the full stage; one medium 3/4 portrait of the performer; one tight close-up or low-angle hero shot.
-- Lighting — one cool LED palette (icy blues, purples, cyan); one warm gel palette (amber, magenta, oranges); one high-contrast cinematic with hard backlight / rim light / haze.
-- Performance moment — pick three different beats from {entrance, peak chorus drop, quiet bridge, costume-change reveal, key change, final tableau, surprise pyro burst}.
-- Composition — one centered and symmetrical; one rule-of-thirds with negative space; one extreme angle (low looking up, or high looking down).
-- Energy — one explosive peak, one intimate restrained, one theatrical/staged tableau.
-- Costume/persona — three distinctly different costume or styling choices that still feel like the same act (e.g. opening outfit vs encore outfit vs music-video-style alt).
+CONTRAST AGGRESSIVELY between the two prompts. They are paired opposites, not minor variants. Choose at LEAST THREE of these axes and put the two prompts on opposite ends of each:
+- Camera framing — wide establishing shot of the full stage vs tight close-up / low-angle hero shot.
+- Lighting palette — cool LED (icy blues, purples, cyan) vs warm gel (amber, magenta, orange) OR high-contrast cinematic backlight/rim-light.
+- Performance moment — pick two strongly different beats from {entrance, peak chorus drop, quiet bridge, costume-change reveal, key change, final tableau, surprise pyro burst}.
+- Composition — centered + symmetrical vs rule-of-thirds with negative space OR extreme angle.
+- Energy — explosive peak vs intimate restrained, OR explosive peak vs theatrical/staged tableau.
+- Costume/persona — two distinctly different styling choices that still feel like the same act (e.g. opening outfit vs encore outfit; theatrical garment vs streetwear-glam).
 
-ANCHOR consistency across all three:
+ANCHOR consistency across both:
 - Same act identity, same song, same genre.
 - Same performer gender (see GENDER rules below).
-- All three should clearly read as the SAME band, just photographed in three very different ways.
+- Both should clearly read as the SAME band, just photographed two very different ways.
 
 GENDER:
 - Use the performer's FIRST NAME provided to infer their likely gender (e.g. "Sarah" → female, "Marcus" → male).
 - Ambiguous names ("Alex", "Sam", "Jordan", "Robin") → use gender-neutral framing (avoid he/she pronouns, focus on the act's energy and outfit instead).
 - HOWEVER, if SONG VIBE, PERSONAL VIBE, or EXTRA explicitly indicate gender or presentation ("she sings", "drag queen", "boy band", "they/them", "non-binary lead", "frontwoman"), follow that — it OVERRIDES the name-based inference.
-- The same gender choice applies across all 3 prompts (consistency).
+- The same gender choice applies to both prompts (consistency).
 
 STYLE RULES (apply to every prompt):
 - Plain prose, single paragraph, 80-150 words.
@@ -537,8 +537,8 @@ STYLE RULES (apply to every prompt):
 - Avoid Eurovision-camp stereotypes: no sparkly diva, glitter, rainbow, unicorn, disco-X, fabulous, sequin-X.
 - Cinematic, photoreal, 16:9 widescreen feel.
 
-Output strict JSON ONLY: {"prompts": ["...", "...", "..."]}
-Three strings. No commentary, no markdown, no preamble."""
+Output strict JSON ONLY: {"prompts": ["...", "..."]}
+Two strings. No commentary, no markdown, no preamble."""
 
 
 def generate_image_prompts(
@@ -549,12 +549,12 @@ def generate_image_prompts(
     personal_vibe: str,
     extra: str,
 ) -> list[str]:
-    """Generate THREE distinct Nano Banana Pro image prompts for the user's act.
+    """Generate TWO distinct Nano Banana Pro image prompts for the user's act.
 
-    Returns a list of exactly 3 prompt strings, each 80-150 words. The
-    three are deliberately varied across framing, lighting, performance
-    moment, and energy so the user has three genuinely different photos
-    to pick from -- not three near-identical shots.
+    Returns a list of exactly 2 prompt strings, each 80-150 words. The
+    two are deliberately CONTRASTED across framing, lighting, performance
+    moment, and energy -- paired opposites, so the user picks between
+    two genuinely different takes on the same act.
 
     Gender handling: the performer's real first_name is fed in so the LLM
     can infer likely gender for the imagery. The instructions explicitly
@@ -585,7 +585,7 @@ def generate_image_prompts(
         f"Performer's personal vibe: {personal_vibe or '(unspecified)'}\n"
         f"Anything else: {extra or '(none)'}\n\n"
         f"Variation seed (use only as entropy to diverge from prior runs): {variation_seed}\n\n"
-        "Now write the three distinct image prompts as JSON."
+        "Now write the two contrasted image prompts as JSON."
     )
 
     resp = client.chat.completions.create(
@@ -601,8 +601,8 @@ def generate_image_prompts(
     raw = (resp.choices[0].message.content or "").strip()
     data = json.loads(raw)
     prompts = data.get("prompts")
-    if not isinstance(prompts, list) or len(prompts) != 3:
-        raise ValueError(f"expected 3 prompts, got: {prompts!r}")
+    if not isinstance(prompts, list) or len(prompts) != 2:
+        raise ValueError(f"expected 2 prompts, got: {prompts!r}")
 
     cleaned: list[str] = []
     for p in prompts:
