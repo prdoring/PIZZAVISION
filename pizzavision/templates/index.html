@@ -893,6 +893,13 @@
             touch-action: auto;
         }
 
+        /* The banner is cramped on mobile during onboarding — shift it up so
+           the top ~17% is clipped by the viewport edge, then pull the card
+           up by the same amount to keep the gap below the banner consistent. */
+        body.onboarding-active .pv-logo {
+            top: -22px;
+        }
+
         #onboarding-overlay {
             position: fixed;
             inset: 0;
@@ -917,7 +924,7 @@
             min-height: 100vh;            /* fallback for older browsers */
             min-height: 100dvh;           /* dynamic viewport — shrinks with keyboard, grows when it's dismissed */
             padding: 16px 18px;
-            padding-top: calc(150px + env(safe-area-inset-top));
+            padding-top: calc(116px + env(safe-area-inset-top));
             padding-bottom: max(16px, env(safe-area-inset-bottom));
             display: flex;
             flex-direction: column;
@@ -933,7 +940,7 @@
                             0 0 0 1px rgba(255, 255, 255, 0.08);
                 background: rgba(20, 8, 35, 0.92);
                 padding: 32px 32px;
-                margin-top: calc(140px + 5vh);
+                margin-top: calc(106px + 5vh);
             }
         }
 
@@ -1332,6 +1339,15 @@
         }
         .name-option-wrap.is-pinned .name-pin-icon {
             opacity: 1;
+        }
+        /* Selected state — bright fuchsia ring, brighter fill. Layers
+           cleanly on top of .is-pinned (gold border + fuchsia ring read
+           as both pinned AND selected). */
+        .name-option-wrap.is-selected {
+            border-color: rgba(255, 79, 175, 0.9);
+            box-shadow: 0 0 0 2px rgba(255, 79, 175, 0.55),
+                        0 14px 32px rgba(255, 79, 175, 0.35);
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.22), rgba(255, 79, 175, 0.22), rgba(0, 224, 255, 0.14));
         }
         /* Inline reroll — shimmer the pick zone, hide the pin zone. */
         .name-option-wrap.is-rerolling .name-option-pick {
@@ -2113,7 +2129,7 @@
             <section class="onboarding-step" data-step="song">
                 <header class="onboarding-header">
                     <h1 class="onboarding-heading">What's your song called?</h1>
-                    <p class="onboarding-sub">Every act needs an anthem. We'll name the band to match.</p>
+                    <p class="onboarding-sub">Every act needs an anthem. We'll name the performer to match.</p>
                 </header>
                 <div class="onboarding-field">
                     <input type="text" class="onboarding-input" data-field="song_title"
@@ -2189,7 +2205,7 @@
                         <span class="dice-emoji">🎲</span>
                         <span class="dice-label">Suggest one</span>
                     </button>
-                    <button type="button" class="onboarding-btn primary" data-generate>Name my band</button>
+                    <button type="button" class="onboarding-btn primary" data-generate>Name my performer</button>
                 </footer>
                 <p class="onboarding-warning">⚠️ Careful — your answers may be revealed later in the evening.</p>
             </section>
@@ -2207,13 +2223,14 @@
             <section class="onboarding-step" data-step="pick">
                 <header class="onboarding-header">
                     <h1 class="onboarding-heading">Pick your stage name</h1>
-                    <p class="onboarding-sub">Pick one — or tap 📌 to keep a favorite and reroll the rest.</p>
+                    <p class="onboarding-sub">Tap to select — or 📌 to keep a favorite and reroll the rest.</p>
                 </header>
                 <div class="onboarding-field pick-body">
                     <div id="names-source-banner" class="names-source-banner" hidden></div>
                     <div class="name-options" id="name-options"></div>
                 </div>
                 <footer class="onboarding-actions">
+                    <button type="button" class="onboarding-btn primary" id="pick-name-btn" disabled>Pick this</button>
                     <button type="button" class="onboarding-btn ghost" id="reroll-btn">↻ Reroll all three</button>
                     <button type="button" class="onboarding-btn ghost-quiet" id="start-over-btn">Start over</button>
                 </footer>
@@ -2221,8 +2238,8 @@
 
             <section class="onboarding-step" data-step="images">
                 <header class="onboarding-header">
-                    <h1 class="onboarding-heading">Pick your band photo</h1>
-                    <p class="onboarding-sub">Tap a thumb to preview. Pick when you're ready.</p>
+                    <h1 class="onboarding-heading">Pick your performer photo</h1>
+                    <p class="onboarding-sub">Pat's using a fancy model, may take a moment...</p>
                 </header>
                 <div class="onboarding-field image-pick-body">
                     <div class="image-hero is-loading" id="image-hero">
@@ -2413,6 +2430,15 @@
             var $prevote = $('#prevote-overlay');
             var $open    = $('#open-vote-overlay');
             var $list    = $('.sortable-list');
+
+            // Keep the <html> pv-state-* class in sync. The pre-paint script
+            // only sets this once at load; without this, CSS guards like
+            // `html.pv-state-pre #vote_container { visibility: hidden }` and
+            // `html.pv-state-pre.pv-has-band #prevote-overlay { display:flex; opacity:1 }`
+            // keep the prevote UI pinned after a live pre→open transition.
+            var rootCls = document.documentElement.classList;
+            rootCls.remove('pv-state-pre', 'pv-state-open', 'pv-state-closed');
+            rootCls.add('pv-state-' + state);
 
             // Hide overlays that don't belong in this state.
             if (state !== 'pre')  { $prevote.removeClass('visible').attr('aria-hidden', 'true'); }
@@ -2736,6 +2762,27 @@
             var savedOrder = localStorage.getItem('itemsOrder');
             var savedName = localStorage.getItem('userName');
 
+            // Server says "you don't exist" — admin deleted us. Wipe every
+            // localStorage key the app writes (the list grew over time;
+            // partial wipes left half-onboarded zombies that resumed onto
+            // a step their server row no longer backed) and hard-reload as
+            // a fresh first-time visitor.
+            //
+            // Used from any caller that has authoritative evidence the row
+            // is gone: joinRoom's {reset: true} reply, and the image-state
+            // poller's status === 'missing'.
+            function wipeAllClientStateAndReload() {
+                ['clientId', 'userName', 'itemsOrder', 'instructionsDismissed',
+                 'pv_onboarding_state', 'pv_onboarding_answers',
+                 'pv_onboarding_options', 'pv_onboarding_pinned',
+                 'pv_onboarding_seen_names', 'pv_pending_band_name',
+                 'pv_song_title', 'pv_image_url']
+                    .forEach(function (k) {
+                        try { localStorage.removeItem(k); } catch (e) {}
+                    });
+                location.reload(true);
+            }
+
             // joinRoom: emit 'joined' to the server and sync persisted state.
             // The server's reply is the source of truth. We do NOT fall back
             // to localStorage.itemsOrder when the server returns an empty rank
@@ -2747,16 +2794,8 @@
                 document.getElementById("bandname").innerHTML = savedName;
                 $('#nameField').val(savedName);
                 socket.emit('joined', { clientId: clientId, userName: savedName }, function (state) {
-                    // Server has no row for our clientId — we were deleted by
-                    // an admin while offline. Wipe ALL local state and reload
-                    // so we come back as a fresh first-time visitor (new
-                    // clientId, full onboarding modal).
                     if (state && state.reset) {
-                        ['clientId','userName','itemsOrder',
-                         'pv_onboarding_state','pv_onboarding_answers','pv_onboarding_options',
-                         'instructionsDismissed']
-                            .forEach(function (k) { localStorage.removeItem(k); });
-                        location.reload(true);
+                        wipeAllClientStateAndReload();
                         return;
                     }
                     if (state && state.user && state.user !== savedName) {
@@ -2820,12 +2859,18 @@
             // want a server `{reset: true}` response to reload the page mid-
             // onboarding (which would wipe localStorage progress).
             //
+            // Intentionally does NOT gate on savedName: a user on the image
+            // picker has a server row (created by onboarding_complete) but
+            // localStorage.userName isn't set until finishOnboarding. The
+            // server's on_joined skips the admin-online emit when no row
+            // exists, so a nameless register from a true first-time visitor
+            // is harmless.
+            //
             // joinRoom() does the same emit plus UI setup (band name, rank
             // list) — use that on initial load for fully-onboarded voters.
             function registerSid() {
-                if (clientId && savedName) {
-                    socket.emit('joined', { clientId: clientId, userName: savedName });
-                }
+                if (!clientId) return;
+                socket.emit('joined', { clientId: clientId, userName: savedName || '' });
             }
 
             // Re-register on socket reconnect (server restart, network blip,
@@ -3278,6 +3323,18 @@
 
             var lastNamesSource = null;     // 'openai' | 'fallback'
             var lastNamesError = null;      // populated when fallback
+            // Selected (but not yet committed) name on the pick step.
+            // Cleared on reroll / start-over; held only in-memory because it's
+            // ephemeral within the pick step.
+            var selectedName = null;
+
+            function setSelectedName(name) {
+                selectedName = name;
+                $('.name-option-wrap').each(function () {
+                    $(this).toggleClass('is-selected', $(this).attr('data-name') === name);
+                });
+                $('#pick-name-btn').prop('disabled', !name);
+            }
 
             function renderNameOptions() {
                 var opts = loadOptions() || [];
@@ -3288,18 +3345,26 @@
                     savePinned(null);
                     pinned = null;
                 }
+                // Drop the selection if its name is no longer on offer (e.g.
+                // after a reroll wiped it). Keep it otherwise so a pin toggle
+                // re-render doesn't lose the user's current pick.
+                if (selectedName && opts.indexOf(selectedName) === -1) {
+                    selectedName = null;
+                }
                 var $wrap = $('#name-options').empty();
                 opts.forEach(function (name) {
                     var isPinned = (name === pinned);
+                    var isSelected = (name === selectedName);
                     var $card = $('<div>')
                         .addClass('name-option-wrap')
                         .toggleClass('is-pinned', isPinned)
+                        .toggleClass('is-selected', isSelected)
                         .attr('data-name', name);
                     var $pick = $('<button>')
                         .attr('type', 'button')
                         .addClass('name-option-pick')
                         .text(name)
-                        .on('click', function () { pickName(name); });
+                        .on('click', function () { setSelectedName(name); });
                     var $pin = $('<button>')
                         .attr('type', 'button')
                         .addClass('name-option-pin')
@@ -3313,6 +3378,7 @@
                     $card.append($pick).append($pin);
                     $wrap.append($card);
                 });
+                $('#pick-name-btn').prop('disabled', !selectedName);
                 renderNamesSourceBanner();
                 renderRerollLabel();
             }
@@ -3371,6 +3437,10 @@
                         }
                     });
                     $('#reroll-btn').prop('disabled', true);
+                    // Prevent a stale "Pick this" while the other slots are
+                    // mid-shimmer. renderNameOptions() re-enables based on
+                    // whether selectedName survived the reroll.
+                    $('#pick-name-btn').prop('disabled', true);
                 } else {
                     setStep('generating');
                 }
@@ -3603,6 +3673,14 @@
                 requestNames({ pinned: loadPinned() });
             });
 
+            $(document).on('click', '#pick-name-btn', function () {
+                if (!selectedName) return;
+                // Lock the button immediately so a double-tap can't fire
+                // pickName twice before the step transitions.
+                $('#pick-name-btn').prop('disabled', true);
+                pickName(selectedName);
+            });
+
             // Two-tap confirm — first tap arms, second tap (within 3s) wipes.
             var startOverArmTimer = null;
             $(document).on('click', '#start-over-btn', function () {
@@ -3824,6 +3902,19 @@
                 }).then(function (state) {
                     if (!imagePickerState) return;     // user navigated away mid-poll
                     console.log('[image-pick] state poll:', state);
+
+                    // Server has no row for our clientId — we were deleted
+                    // by an admin (most likely while sitting on this step).
+                    // Without this branch the poller spins forever applying
+                    // zero candidates and the user is stranded on the same
+                    // image-pick screen even after a refresh.
+                    if (state.status === 'missing') {
+                        console.warn('[image-pick] server reports row missing — wiping local state and reloading as fresh visitor.');
+                        stopImagePickerPolling();
+                        imagePickerState = null;
+                        wipeAllClientStateAndReload();
+                        return;
+                    }
 
                     // User finalized in a prior session (e.g. picked, then
                     // refreshed before the modal closed). Just close out.
@@ -4378,16 +4469,18 @@
                     }, 100 + (index * 50));
                 });
 
-                // Fancy entrance for the band name container
+                // Fancy entrance for the band name container.
+                // translateX(-50%) must be kept on every transform write —
+                // it's what centers the absolutely-positioned container.
                 $('#bandnamecontainer').css({
                     'opacity': '0',
-                    'transform': 'translateY(-10px)'
+                    'transform': 'translateX(-50%) translateY(-10px)'
                 });
 
                 setTimeout(() => {
                     $('#bandnamecontainer').css({
                         'opacity': '1',
-                        'transform': 'translateY(0)',
+                        'transform': 'translateX(-50%) translateY(0)',
                         'transition': 'all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                     });
                 }, 300);

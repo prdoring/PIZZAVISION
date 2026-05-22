@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <title>PIZZAVISION – Admin</title>
 
 <link rel="icon" type="image/x-icon" href="{{ url_for('voting.static', filename='pizza.png') }}">
@@ -211,6 +212,155 @@ h1{
 #admin-toast.visible{opacity:1;transform:translate(-50%,0)}
 #admin-toast.warn{background:linear-gradient(135deg,#FF9800,#F57C00);
     box-shadow:0 10px 24px rgba(0,0,0,.5),0 0 22px rgba(255,152,0,.35)}
+#admin-toast.err{background:linear-gradient(135deg,#d04444,#992d22);
+    box-shadow:0 10px 24px rgba(0,0,0,.5),0 0 22px rgba(208,68,68,.35)}
+
+/* ---- admin confirmation modal ---- */
+.modal-backdrop{
+    position:fixed;inset:0;z-index:2000;
+    background:rgba(0,0,0,.65);backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+    display:flex;align-items:center;justify-content:center;
+    opacity:0;pointer-events:none;
+    transition:opacity .2s ease;
+}
+.modal-backdrop.visible{opacity:1;pointer-events:auto}
+.modal-card{
+    background:linear-gradient(135deg,#1f1f1f,#262626);
+    border:1px solid rgba(255,255,255,.1);
+    border-radius:12px;padding:26px 28px;
+    max-width:460px;width:calc(100% - 40px);
+    box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 30px rgba(76,175,80,.08);
+    transform:translateY(12px) scale(.97);
+    transition:transform .25s ease;
+}
+.modal-backdrop.visible .modal-card{transform:translateY(0) scale(1)}
+.modal-card.destructive{
+    box-shadow:0 20px 60px rgba(0,0,0,.6),0 0 30px rgba(208,68,68,.18);
+    border-color:rgba(208,68,68,.35);
+}
+.modal-title{
+    margin:0 0 10px;font-size:18px;font-weight:800;color:#fff;
+    letter-spacing:.2px;
+}
+.modal-message{
+    margin:0 0 22px;color:#ccc;font-size:14px;line-height:1.5;
+}
+.modal-actions{display:flex;gap:10px;justify-content:flex-end}
+.modal-actions button{
+    font-family:inherit;font-weight:700;font-size:13px;
+    border:none;border-radius:6px;padding:10px 18px;color:#fff;cursor:pointer;
+    transition:background .2s ease, transform .1s ease;
+}
+.modal-actions button:active{transform:translateY(1px)}
+.modal-cancel{background:#3a3a3a}
+.modal-cancel:hover{background:#4a4a4a}
+.modal-confirm{background:#4CAF50}
+.modal-confirm:hover{background:#45a049}
+.modal-card.destructive .modal-confirm{background:#d04444}
+.modal-card.destructive .modal-confirm:hover{background:#a83333}
+.modal-confirm:focus,.modal-cancel:focus{
+    outline:2px solid rgba(255,255,255,.55);outline-offset:2px;
+}
+
+/* ---- mobile / narrow screens ---- */
+@media (max-width:720px){
+    body{background-size:min(455px,88vw)}
+    .wrap{padding:115px 14px 50px;gap:22px}
+    h1{font-size:24px}
+
+    /* password + action bar — full-width, stacked */
+    .bar{gap:10px;flex-direction:column;align-items:stretch}
+    .bar input[type=password],
+    .bar button{width:100%;padding:14px 18px;font-size:14px}
+    .pw{max-width:none}
+
+    /* stage controls — bigger taps, balanced 3-up row */
+    .stage-bar{padding:14px;gap:12px}
+    .stage-buttons{width:100%;gap:8px}
+    .stage-btn{flex:1 1 calc(33.333% - 6px);min-width:0;padding:13px 8px;font-size:13px}
+    .stage-btn.current{outline-offset:1px}
+
+    /* tabs */
+    .tab{padding:12px 16px;font-size:14px}
+
+    /* options list */
+    #optlist li{padding:14px 16px;font-size:14px;gap:10px}
+    #optlist li > span{flex:1;min-width:0;word-break:break-word}
+    #optlist li:hover{transform:none}
+    #optlist button{padding:10px 14px;font-size:13px;flex-shrink:0}
+
+    .users-hint{margin:0;font-size:12px;line-height:1.45}
+
+    /* ---- users table → card-per-row layout ---- */
+    .user-table,
+    .user-table thead,
+    .user-table tbody,
+    .user-table tr,
+    .user-table td{display:block;width:100%}
+    .user-table{background:transparent;border:none;border-radius:0;overflow:visible}
+    .user-table thead{display:none}
+    .user-table tr{
+        background:rgba(30,30,30,.65);
+        border:1px solid rgba(255,255,255,.1);
+        border-radius:12px;
+        margin:0 0 12px;padding:14px 16px;
+    }
+    .user-table tr:hover td{background:transparent}
+    .user-table tr:last-child{margin-bottom:0}
+    .user-table tr:last-child td{border-bottom:1px solid rgba(255,255,255,.05)}
+    .user-table td{
+        padding:9px 0;font-size:13px;
+        border-bottom:1px solid rgba(255,255,255,.05);
+        display:flex;justify-content:space-between;align-items:center;
+        gap:12px;text-align:right;
+    }
+    .user-table td::before{
+        content:"";color:#888;font-size:11px;text-transform:uppercase;
+        letter-spacing:.5px;font-weight:700;flex-shrink:0;text-align:left;
+    }
+    .user-table td:nth-of-type(2)::before{content:"Real name"}
+    .user-table td:nth-of-type(3)::before{content:"Picks"}
+    .user-table td:nth-of-type(4)::before{content:"Created (PT)"}
+    .user-table td:nth-of-type(5)::before{content:"Last vote (PT)"}
+
+    /* name cell — card header, full width, left-aligned */
+    .user-table td:first-child{
+        flex-direction:column;align-items:flex-start;
+        gap:3px;padding:0 0 12px;text-align:left;
+        border-bottom:1px solid rgba(255,255,255,.1);
+    }
+    .user-table td:first-child::before{display:none}
+    .user-name{font-size:16px}
+    .user-cid{font-size:11px;word-break:break-all}
+
+    /* actions cell — stretch buttons across the row */
+    .user-table td:last-child{
+        padding:12px 0 0;border-bottom:none;
+    }
+    .user-table td:last-child::before{display:none}
+    .user-actions{width:100%;gap:8px;justify-content:stretch}
+    .user-actions button{flex:1;padding:11px 12px;font-size:13px}
+
+    /* modal — slightly tighter, full-width buttons */
+    .modal-card{padding:22px 20px;border-radius:14px}
+    .modal-title{font-size:17px}
+    .modal-message{font-size:14px;margin-bottom:18px}
+    .modal-actions{gap:8px}
+    .modal-actions button{flex:1;padding:13px 14px;font-size:14px}
+
+    /* toast — pull up so on-screen keyboard / system bars don't clip it */
+    #admin-toast{
+        left:14px;right:14px;bottom:18px;transform:translate(0,16px);
+        text-align:center;max-width:none;
+    }
+    #admin-toast.visible{transform:translate(0,0)}
+}
+
+@media (max-width:380px){
+    .stage-btn{font-size:12px;padding:12px 6px}
+    h1{font-size:22px}
+}
 </style>
 </head>
 <body>
@@ -224,13 +374,38 @@ h1{
         <input class="pw" type="password" id="pw" placeholder="Admin password" required>
     </div>
 
+    {% set _state_labels = {'pre': 'Pre-voting', 'open': 'Voting OPEN', 'closed': 'Voting CLOSED'} %}
+    <div class="stage-bar">
+        <div class="stage-badge" data-state="{{ voting_state }}">
+            <span class="dot"></span>
+            <span>{{ _state_labels[voting_state] }}</span>
+        </div>
+        <div class="stage-buttons">
+            <button class="stage-btn pre {% if voting_state == 'pre' %}current{% endif %}"
+                    data-state="pre"
+                    {% if voting_state == 'pre' %}disabled{% endif %}>
+                Pre-voting
+            </button>
+            <button class="stage-btn open {% if voting_state == 'open' %}current{% endif %}"
+                    data-state="open"
+                    {% if voting_state == 'open' %}disabled{% endif %}>
+                Start Voting!
+            </button>
+            <button class="stage-btn closed {% if voting_state == 'closed' %}current{% endif %}"
+                    data-state="closed"
+                    {% if voting_state == 'closed' %}disabled{% endif %}>
+                Close Voting
+            </button>
+        </div>
+    </div>
+
     <div class="tabs">
-        <button class="tab active" data-panel="options">Options</button>
-        <button class="tab" data-panel="users">Users <span style="opacity:.6">({{ users|length }})</span></button>
+        <button class="tab" data-panel="options">Options</button>
+        <button class="tab active" data-panel="users">Users <span style="opacity:.6">({{ users|length }})</span></button>
     </div>
 
     <!-- ============== Options panel ============== -->
-    <div class="panel active" id="panel-options">
+    <div class="panel" id="panel-options">
         <ul id="optlist">
             {% for opt in options %}
               <li data-label="{{ opt.label|e }}"><span>{{ opt.label }}</span><button class="rm">✕</button></li>
@@ -242,35 +417,10 @@ h1{
             <button class="clear">Clear vote DB</button>
             <button class="restore">Restore from backup</button>
         </div>
-
-        {% set _state_labels = {'pre': 'Pre-voting', 'open': 'Voting OPEN', 'closed': 'Voting CLOSED'} %}
-        <div class="stage-bar">
-            <div class="stage-badge" data-state="{{ voting_state }}">
-                <span class="dot"></span>
-                <span>{{ _state_labels[voting_state] }}</span>
-            </div>
-            <div class="stage-buttons">
-                <button class="stage-btn pre {% if voting_state == 'pre' %}current{% endif %}"
-                        data-state="pre"
-                        {% if voting_state == 'pre' %}disabled{% endif %}>
-                    Pre-voting
-                </button>
-                <button class="stage-btn open {% if voting_state == 'open' %}current{% endif %}"
-                        data-state="open"
-                        {% if voting_state == 'open' %}disabled{% endif %}>
-                    Start Voting!
-                </button>
-                <button class="stage-btn closed {% if voting_state == 'closed' %}current{% endif %}"
-                        data-state="closed"
-                        {% if voting_state == 'closed' %}disabled{% endif %}>
-                    Close Voting
-                </button>
-            </div>
-        </div>
     </div>
 
     <!-- ============== Users panel ============== -->
-    <div class="panel" id="panel-users">
+    <div class="panel active" id="panel-users">
         <p class="users-hint">
             <strong>Clear Rank</strong> empties their picks but keeps their account.
             <strong>Delete</strong> removes them entirely (test cleanup).
@@ -324,6 +474,18 @@ h1{
     </div>
 </div>
 
+<!-- in-page confirmation modal -->
+<div id="admin-modal" class="modal-backdrop" role="dialog" aria-modal="true" aria-hidden="true">
+    <div class="modal-card">
+        <h3 class="modal-title">Are you sure?</h3>
+        <p class="modal-message"></p>
+        <div class="modal-actions">
+            <button type="button" class="modal-cancel">Cancel</button>
+            <button type="button" class="modal-confirm">Confirm</button>
+        </div>
+    </div>
+</div>
+
 <script>
 /* spotlight follows mouse */
 document.addEventListener("mousemove",e=>{
@@ -348,19 +510,54 @@ $(document).on("click",".rm",function(){
   $(this).closest("li").fadeOut(200,function(){$(this).remove();});
 });
 
-/* helper for AJAX calls. Pass `onSuccess` to skip the default alert+reload
+/* helper for AJAX calls. Pass `onSuccess` to skip the default reload
    and update the DOM in place instead. */
 function adminAction(action, extra={}, onSuccess=null){
   const pw=$("#pw").val();
-  if(!pw){alert("Enter admin password first");return;}
+  if(!pw){
+    adminToast("Enter admin password first","warn");
+    $("#pw").focus();
+    return;
+  }
   $.post({
     url:"{{ url_for('voting.admin_panel') }}",
     data:{password:pw,action:action,...extra},
     success:(resp)=>{
       if(onSuccess){ onSuccess(resp); }
-      else { alert("Success!"); location.reload(); }
+      else { location.reload(); }
     },
-    error:x=>alert("Error: "+x.responseText)
+    error:x=>adminToast("Error: "+(x.responseText || "request failed"),"err")
+  });
+}
+
+/* in-page confirmation modal — returns a Promise<boolean>. Replaces window.confirm. */
+function adminConfirm({title, message, confirmText="Confirm", cancelText="Cancel", destructive=false}={}){
+  return new Promise(resolve=>{
+    const $backdrop = $("#admin-modal");
+    const $card     = $backdrop.find(".modal-card");
+    $card.toggleClass("destructive", !!destructive);
+    $backdrop.find(".modal-title").text(title || "Are you sure?");
+    $backdrop.find(".modal-message").text(message || "");
+    $backdrop.find(".modal-confirm").text(confirmText);
+    $backdrop.find(".modal-cancel").text(cancelText);
+    $backdrop.attr("aria-hidden","false").addClass("visible");
+
+    function cleanup(result){
+      $backdrop.removeClass("visible").attr("aria-hidden","true");
+      $backdrop.find(".modal-confirm").off(".admModal");
+      $backdrop.find(".modal-cancel").off(".admModal");
+      $backdrop.off(".admModal");
+      $(document).off(".admModal");
+      resolve(result);
+    }
+    $backdrop.find(".modal-confirm").on("click.admModal", ()=>cleanup(true));
+    $backdrop.find(".modal-cancel").on("click.admModal", ()=>cleanup(false));
+    $backdrop.on("click.admModal", (e)=>{ if(e.target === $backdrop[0]) cleanup(false); });
+    $(document).on("keydown.admModal", (e)=>{
+      if(e.key === "Escape"){ e.preventDefault(); cleanup(false); }
+      else if(e.key === "Enter"){ e.preventDefault(); cleanup(true); }
+    });
+    setTimeout(()=>$backdrop.find(".modal-confirm").trigger("focus"), 60);
   });
 }
 
@@ -386,16 +583,31 @@ function refreshUserCount(){
 
 /* voting-state transitions */
 const STAGE_CONFIRMS = {
-  pre:    "Reset to pre-voting? Users will see the \"voting hasn't started\" modal.",
-  open:   "Open voting? All clients will see the confetti reveal.",
-  closed: "Finalize votes? This snapshots the current rankings."
+  pre: {
+    title: "Reset to pre-voting?",
+    message: "Users will see the “voting hasn’t started” modal.",
+    confirmText: "Reset",
+    destructive: true
+  },
+  open: {
+    title: "Open voting?",
+    message: "All clients will see the confetti reveal.",
+    confirmText: "Open voting"
+  },
+  closed: {
+    title: "Close voting?",
+    message: "This snapshots the current rankings.",
+    confirmText: "Close voting",
+    destructive: true
+  }
 };
-$(document).on("click", ".stage-btn", function(){
+$(document).on("click", ".stage-btn", async function(){
   const $btn = $(this);
   if($btn.is("[disabled]")) return;
   const state = $btn.data("state");
-  if(!STAGE_CONFIRMS[state]) return;
-  if(!confirm(STAGE_CONFIRMS[state])) return;
+  const cfg = STAGE_CONFIRMS[state];
+  if(!cfg) return;
+  if(!(await adminConfirm(cfg))) return;
   adminAction("set_voting_state", {state});
 });
 
@@ -406,20 +618,37 @@ $(".save").on("click",()=>{
 });
 
 /* clear DB */
-$(".clear").on("click",()=>{
-  if(confirm("Really clear every vote?")) adminAction("clear_db");
+$(".clear").on("click", async ()=>{
+  const ok = await adminConfirm({
+    title: "Clear vote DB?",
+    message: "Every submitted vote will be wiped. You can restore from backup if needed.",
+    confirmText: "Clear DB",
+    destructive: true
+  });
+  if(ok) adminAction("clear_db");
 });
 
 /* restore */
-$(".restore").on("click",()=>{
-  if(confirm("Replace options.json with options_bak.json?")) adminAction("restore_options");
+$(".restore").on("click", async ()=>{
+  const ok = await adminConfirm({
+    title: "Restore options from backup?",
+    message: "Replaces options.json with options_bak.json.",
+    confirmText: "Restore"
+  });
+  if(ok) adminAction("restore_options");
 });
 
 /* per-user actions — update the row in place so you stay on the Users tab */
-$(document).on("click", ".btn-clear-rank", function(){
+$(document).on("click", ".btn-clear-rank", async function(){
   const row = $(this).closest("tr");
   const name = row.data("user-name");
-  if(!confirm(`Clear ${name}'s picks? Their account stays — they can re-rank.`)) return;
+  const ok = await adminConfirm({
+    title: `Clear ${name}'s picks?`,
+    message: "Their account stays — they can re-rank.",
+    confirmText: "Clear picks",
+    destructive: true
+  });
+  if(!ok) return;
   adminAction("clear_user_rank", {client_id: row.data("client-id")}, ()=>{
     // Server zeroed their rank + nulled rank_updated_at. Mirror that here.
     const pill = row.find(".user-rank-count");
@@ -431,10 +660,16 @@ $(document).on("click", ".btn-clear-rank", function(){
   });
 });
 
-$(document).on("click", ".btn-delete-user", function(){
+$(document).on("click", ".btn-delete-user", async function(){
   const row = $(this).closest("tr");
   const name = row.data("user-name");
-  if(!confirm(`Delete ${name} entirely? This removes their entire row from the vote store.`)) return;
+  const ok = await adminConfirm({
+    title: `Delete ${name}?`,
+    message: "This removes their entire row from the vote store.",
+    confirmText: "Delete",
+    destructive: true
+  });
+  if(!ok) return;
   adminAction("delete_user", {client_id: row.data("client-id")}, ()=>{
     row.addClass("row-removing");
     setTimeout(()=>{

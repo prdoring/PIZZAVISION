@@ -53,6 +53,19 @@ function Confirm-Or-Abort {
     }
 }
 
+# Native-command guard. $ErrorActionPreference = "Stop" doesn't trip on
+# native exes in Windows PowerShell 5.1, so we have to check $LASTEXITCODE
+# ourselves after each gcloud call. Without this the script happily prints
+# "Setup complete!" after a failed bucket create.
+function Assert-LastExitCode {
+    param([string]$What)
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host ""
+        Write-Host "FAILED: $What (exit code $LASTEXITCODE)" -ForegroundColor Red
+        exit 1
+    }
+}
+
 
 Write-Host ""
 Write-Host "=========================================" -ForegroundColor Green
@@ -82,6 +95,7 @@ Write-Step "gcloud authenticated as $activeAccount"
 # -------- Step 1: enable the Storage API --------
 Write-Step "Enabling storage.googleapis.com (idempotent)"
 gcloud services enable storage.googleapis.com --project=$PROJECT
+Assert-LastExitCode "enable storage.googleapis.com"
 
 
 # -------- Step 2: create the bucket (if absent) --------
@@ -101,13 +115,15 @@ if ($bucketExists) {
 } else {
     Confirm-Or-Abort "About to create gs://$BUCKET in $REGION."
     Write-Step "Creating bucket gs://$BUCKET"
-    # --public-access-prevention=inherited lets per-object ACLs make the
-    # generated PNGs publicly readable (which is what blob.make_public()
-    # in image_store.py needs).
+    # Don't pass --public-access-prevention -- the default for new buckets
+    # is `inherited` (= per-object ACLs allowed), which is what we want.
+    # Older gcloud builds treat the flag as a boolean and reject the value
+    # form, so dropping it is both correct and portable.
+    # Step 3 disables UBLA separately so per-object make_public() works.
     gcloud storage buckets create "gs://$BUCKET" `
         --location=$REGION `
-        --project=$PROJECT `
-        --public-access-prevention=inherited
+        --project=$PROJECT
+    Assert-LastExitCode "create gs://$BUCKET"
 }
 
 
@@ -118,6 +134,7 @@ Write-Step "Ensuring fine-grained ACLs (Uniform Bucket-Level Access = off)"
 gcloud storage buckets update "gs://$BUCKET" `
     --no-uniform-bucket-level-access `
     --project=$PROJECT
+Assert-LastExitCode "disable UBLA on gs://$BUCKET"
 
 
 # -------- Step 4: detect the Cloud Run service account --------
@@ -161,6 +178,7 @@ gcloud storage buckets add-iam-policy-binding "gs://$BUCKET" `
     --member="serviceAccount:$serviceSA" `
     --role="roles/storage.objectAdmin" `
     --project=$PROJECT | Out-Null
+Assert-LastExitCode "grant storage.objectAdmin on gs://$BUCKET"
 Write-Host "    Binding applied (or already present)."
 
 
