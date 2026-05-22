@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
@@ -149,6 +150,8 @@ h1{
 .user-table tr:hover td{background:rgba(255,255,255,.03)}
 .user-name{font-weight:700}
 .user-cid{color:#888;font-family:monospace;font-size:11px}
+.user-realname{font-weight:600;color:#ddd}
+.user-realname-empty{color:#555}
 .user-rank-count{
     display:inline-block;min-width:24px;text-align:center;
     padding:2px 8px;border-radius:10px;font-weight:700;font-size:12px;
@@ -186,6 +189,14 @@ h1{
     transition:opacity .3s ease, transform .3s ease;
     opacity:0;transform:translateX(-12px);
 }
+/* new row from a live admin_user_upsert — fade in with a green wash */
+@keyframes rowAppear{
+    0%   {background:rgba(76,175,80,.55);opacity:0}
+    40%  {opacity:1}
+    100% {background:transparent;opacity:1}
+}
+.user-table tr.row-new td{animation:rowAppear .55s ease-out}
+.online-dot{transition:background .3s ease, box-shadow .3s ease}
 
 /* admin toast */
 #admin-toast{
@@ -269,6 +280,7 @@ h1{
             <thead>
                 <tr>
                     <th>Name</th>
+                    <th>Real name</th>
                     <th>Picks</th>
                     <th>Created (PT)</th>
                     <th>Last vote (PT)</th>
@@ -286,6 +298,7 @@ h1{
                         </div>
                         <div class="user-cid">{{ u.client_id[:12] }}…</div>
                     </td>
+                    <td class="user-realname">{% if u.first_name %}{{ u.first_name }}{% else %}<span class="user-realname-empty">—</span>{% endif %}</td>
                     <td>
                         <span class="user-rank-count {% if u.rank_count == 0 %}zero{% endif %}">{{ u.rank_count }}</span>
                     </td>
@@ -430,6 +443,176 @@ $(document).on("click", ".btn-delete-user", function(){
     },300);
     adminToast(`${name} deleted`);
   });
+});
+
+/* ============================================================
+   Live updates to the Users tab via SocketIO. Server pushes
+   targeted events; we patch the DOM in place rather than
+   reloading. Idempotent — events that race the local optimistic
+   handlers (clear/delete) safely no-op.
+   ============================================================ */
+const socket = io();
+
+function escapeHtml(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"
+  }[c]));
+}
+
+function onlineDotTitle(online){
+  return online
+    ? "Online — they'll see the change immediately"
+    : "Offline — change applies next time they open the page";
+}
+
+/* Mirrors the Jinja row template — keep these in sync. */
+function buildUserRowHtml(u){
+  const realName = u.first_name
+    ? escapeHtml(u.first_name)
+    : '<span class="user-realname-empty">—</span>';
+  const zeroCls = (u.rank_count === 0) ? "zero" : "";
+  const onCls   = u.online ? "on" : "";
+  const cidShort = (u.client_id || "").slice(0, 12);
+  return (
+    '<tr data-client-id="' + escapeHtml(u.client_id) + '" data-user-name="' + escapeHtml(u.user) + '">' +
+      '<td>' +
+        '<div class="user-name">' +
+          '<span class="online-dot ' + onCls + '" title="' + onlineDotTitle(u.online) + '"></span> ' +
+          escapeHtml(u.user) +
+        '</div>' +
+        '<div class="user-cid">' + escapeHtml(cidShort) + '…</div>' +
+      '</td>' +
+      '<td class="user-realname">' + realName + '</td>' +
+      '<td><span class="user-rank-count ' + zeroCls + '">' + u.rank_count + '</span></td>' +
+      '<td>' + escapeHtml(u.created_at) + '</td>' +
+      '<td>' + escapeHtml(u.rank_updated_at) + '</td>' +
+      '<td><div class="user-actions">' +
+        '<button class="btn-clear-rank">Clear Rank</button>' +
+        '<button class="btn-delete-user">Delete</button>' +
+      '</div></td>' +
+    '</tr>'
+  );
+}
+
+/* Replace the empty-state div with the table skeleton so we can append rows. */
+function ensureUsersTable(){
+  const $empty = $("#panel-users .user-empty");
+  if(!$empty.length) return;
+  $empty.replaceWith(
+    '<table class="user-table">' +
+      '<thead><tr>' +
+        '<th>Name</th><th>Real name</th><th>Picks</th>' +
+        '<th>Created (PT)</th><th>Last vote (PT)</th><th></th>' +
+      '</tr></thead>' +
+      '<tbody></tbody>' +
+    '</table>'
+  );
+}
+
+/* Insert / move a row so the table stays sorted by user name (lowercased) —
+   same order the server-rendered initial table uses. */
+function insertOrMoveRowSorted($row, sortKey){
+  const $tbody = $("#panel-users .user-table tbody");
+  const rows = $tbody.children("tr").toArray();
+  for(const r of rows){
+    if(r === $row[0]) continue;
+    const cmp = String($(r).data("user-name") || "").toLowerCase();
+    if(sortKey < cmp){
+      $(r).before($row);
+      return;
+    }
+  }
+  $tbody.append($row);
+}
+
+function patchUserRow($row, u){
+  /* Online dot + title */
+  const $dot = $row.find(".online-dot");
+  $dot.toggleClass("on", !!u.online);
+  $dot.attr("title", onlineDotTitle(u.online));
+
+  /* Name text — strip and re-set the text node so we don't touch the dot */
+  const $nameDiv = $row.find(".user-name");
+  $nameDiv.contents().filter(function(){ return this.nodeType === 3; }).remove();
+  $nameDiv.append(document.createTextNode(" " + u.user));
+
+  /* CID line */
+  $row.find(".user-cid").text((u.client_id || "").slice(0,12) + "…");
+
+  /* Real name cell */
+  const $rn = $row.find(".user-realname").empty();
+  if(u.first_name){
+    $rn.text(u.first_name);
+  } else {
+    $rn.append('<span class="user-realname-empty">—</span>');
+  }
+
+  /* Picks pill */
+  const $pill = $row.find(".user-rank-count");
+  $pill.text(u.rank_count);
+  $pill.toggleClass("zero", u.rank_count === 0);
+
+  /* Created / Last vote columns are the 4th and 5th <td> (0-indexed 3, 4). */
+  $row.find("> td").eq(3).text(u.created_at);
+  $row.find("> td").eq(4).text(u.rank_updated_at);
+
+  /* Keep the rename-aware confirm dialog labels accurate. */
+  $row.attr("data-user-name", u.user);
+}
+
+socket.on("connect", function(){
+  socket.emit("admin_join", {}, function(resp){
+    /* Reconcile online dots in case voters connected/disconnected between
+       page render and socket connect. */
+    if(!resp || !resp.online_client_ids) return;
+    const onSet = new Set(resp.online_client_ids);
+    $("#panel-users tbody tr").each(function(){
+      const cid = $(this).data("client-id");
+      const isOn = onSet.has(cid);
+      const $dot = $(this).find(".online-dot");
+      $dot.toggleClass("on", isOn);
+      $dot.attr("title", onlineDotTitle(isOn));
+    });
+  });
+});
+
+socket.on("admin_user_upsert", function(u){
+  if(!u || !u.client_id) return;
+  ensureUsersTable();
+  const $existing = $('#panel-users tr[data-client-id="' + u.client_id.replace(/"/g,'\\"') + '"]');
+  const sortKey = String(u.user || "").toLowerCase();
+  if($existing.length){
+    patchUserRow($existing, u);
+    /* If a rename moved them in sort order, slide the row to the new spot. */
+    insertOrMoveRowSorted($existing, sortKey);
+    $existing.addClass("row-flash");
+    setTimeout(()=>$existing.removeClass("row-flash"), 900);
+  } else {
+    const $row = $(buildUserRowHtml(u)).addClass("row-new");
+    insertOrMoveRowSorted($row, sortKey);
+    setTimeout(()=>$row.removeClass("row-new"), 600);
+    refreshUserCount();
+  }
+});
+
+socket.on("admin_user_online", function(d){
+  if(!d || !d.client_id) return;
+  const $row = $('#panel-users tr[data-client-id="' + d.client_id.replace(/"/g,'\\"') + '"]');
+  if(!$row.length) return;
+  const $dot = $row.find(".online-dot");
+  $dot.toggleClass("on", !!d.online);
+  $dot.attr("title", onlineDotTitle(d.online));
+});
+
+socket.on("admin_user_removed", function(d){
+  if(!d || !d.client_id) return;
+  const $row = $('#panel-users tr[data-client-id="' + d.client_id.replace(/"/g,'\\"') + '"]');
+  if(!$row.length) return; /* already gone via local optimistic delete */
+  $row.addClass("row-removing");
+  setTimeout(()=>{
+    $row.remove();
+    refreshUserCount();
+  }, 300);
 });
 </script>
 </body>

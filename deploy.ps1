@@ -62,9 +62,13 @@ function Read-EnvFile {
 
 function Get-DeployEnvVars {
     # Build the comma-joined string for `gcloud run deploy --set-env-vars`.
-    # Harvests OPENAI_API_KEY from the local .env so we don't have to maintain
-    # it separately in Secret Manager. Fails loudly if missing -- a deploy
-    # without the key would silently break the onboarding name generator.
+    # Harvests keys from the local .env so we don't have to maintain them
+    # separately in Secret Manager.
+    #
+    # Hard-required: OPENAI_API_KEY (onboarding name generator breaks without it).
+    # Soft-optional: GEMINI_API_KEY and PV_GCS_BUCKET (band-image feature
+    # degrades to the skip path if either is missing; rest of the app still
+    # works). Warn but don't abort if those two aren't set yet.
     $envFile = Read-EnvFile ".env"
     if (-not $envFile.ContainsKey("OPENAI_API_KEY") -or -not $envFile["OPENAI_API_KEY"]) {
         Write-Host ""
@@ -75,7 +79,24 @@ function Get-DeployEnvVars {
         exit 1
     }
     $key = $envFile["OPENAI_API_KEY"]
-    return "GOOGLE_CLOUD_PROJECT=$PROJECT,OPENAI_API_KEY=$key"
+    $pairs = @(
+        "GOOGLE_CLOUD_PROJECT=$PROJECT",
+        "OPENAI_API_KEY=$key"
+    )
+
+    if ($envFile.ContainsKey("GEMINI_API_KEY") -and $envFile["GEMINI_API_KEY"]) {
+        $pairs += "GEMINI_API_KEY=$($envFile['GEMINI_API_KEY'])"
+    } else {
+        Write-Host "   (warn) GEMINI_API_KEY not in .env -- band-image feature will fall back to skip."
+    }
+
+    if ($envFile.ContainsKey("PV_GCS_BUCKET") -and $envFile["PV_GCS_BUCKET"]) {
+        $pairs += "PV_GCS_BUCKET=$($envFile['PV_GCS_BUCKET'])"
+    } else {
+        Write-Host "   (warn) PV_GCS_BUCKET not in .env -- generated images would land in container fs (lost on restart). Run .\setup-image-bucket.ps1."
+    }
+
+    return ($pairs -join ',')
 }
 
 function Assert-SubGameStillServes {

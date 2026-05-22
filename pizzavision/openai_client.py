@@ -500,3 +500,117 @@ def suggest_answer(field: str, context: dict, anchor: str = "") -> str:
         raise ValueError("empty suggestion")
 
     return _truncate_clean(text, _FIELD_MAXLEN[field])
+
+
+# ---------------------------------------------------------------
+# Image prompt — narrates a Nano Banana Pro prompt for the user's act
+# ---------------------------------------------------------------
+
+_IMAGE_PROMPTS_SYSTEM = """You write image-generation prompts for Google's Nano Banana Pro (gemini-3-pro-image-preview). The model rewards DIRECTOR-STYLE NARRATION, not tag soup.
+
+Produce THREE DISTINCT prompts for press-style stills of the SAME fictional Eurovision act. Each prompt is a separate paragraph, 80-150 words, plain prose. The user will pick one as their band photo — give them three genuinely different options to choose from.
+
+VARY AGGRESSIVELY across the three prompts. Each should differ on at LEAST three of these axes:
+- Camera framing — one wide establishing shot of the full stage; one medium 3/4 portrait of the performer; one tight close-up or low-angle hero shot.
+- Lighting — one cool LED palette (icy blues, purples, cyan); one warm gel palette (amber, magenta, oranges); one high-contrast cinematic with hard backlight / rim light / haze.
+- Performance moment — pick three different beats from {entrance, peak chorus drop, quiet bridge, costume-change reveal, key change, final tableau, surprise pyro burst}.
+- Composition — one centered and symmetrical; one rule-of-thirds with negative space; one extreme angle (low looking up, or high looking down).
+- Energy — one explosive peak, one intimate restrained, one theatrical/staged tableau.
+- Costume/persona — three distinctly different costume or styling choices that still feel like the same act (e.g. opening outfit vs encore outfit vs music-video-style alt).
+
+ANCHOR consistency across all three:
+- Same act identity, same song, same genre.
+- Same performer gender (see GENDER rules below).
+- All three should clearly read as the SAME band, just photographed in three very different ways.
+
+GENDER:
+- Use the performer's FIRST NAME provided to infer their likely gender (e.g. "Sarah" → female, "Marcus" → male).
+- Ambiguous names ("Alex", "Sam", "Jordan", "Robin") → use gender-neutral framing (avoid he/she pronouns, focus on the act's energy and outfit instead).
+- HOWEVER, if SONG VIBE, PERSONAL VIBE, or EXTRA explicitly indicate gender or presentation ("she sings", "drag queen", "boy band", "they/them", "non-binary lead", "frontwoman"), follow that — it OVERRIDES the name-based inference.
+- The same gender choice applies across all 3 prompts (consistency).
+
+STYLE RULES (apply to every prompt):
+- Plain prose, single paragraph, 80-150 words.
+- Narrate like a director: specify camera/lens feel, lighting colour and direction, exact action in this moment, look of LED backdrop or set pieces.
+- ONE concrete costume detail and ONE production detail per prompt (do not list options inside the prompt).
+- The act is FICTIONAL — do NOT name any real Eurovision artist, celebrity, country flag, or trademarked brand.
+- Avoid Eurovision-camp stereotypes: no sparkly diva, glitter, rainbow, unicorn, disco-X, fabulous, sequin-X.
+- Cinematic, photoreal, 16:9 widescreen feel.
+
+Output strict JSON ONLY: {"prompts": ["...", "...", "..."]}
+Three strings. No commentary, no markdown, no preamble."""
+
+
+def generate_image_prompts(
+    band_name: str,
+    first_name: str,
+    song_title: str,
+    song_vibe: str,
+    personal_vibe: str,
+    extra: str,
+) -> list[str]:
+    """Generate THREE distinct Nano Banana Pro image prompts for the user's act.
+
+    Returns a list of exactly 3 prompt strings, each 80-150 words. The
+    three are deliberately varied across framing, lighting, performance
+    moment, and energy so the user has three genuinely different photos
+    to pick from -- not three near-identical shots.
+
+    Gender handling: the performer's real first_name is fed in so the LLM
+    can infer likely gender for the imagery. The instructions explicitly
+    require the LLM to defer to song_vibe / personal_vibe / extra if any
+    of them state gender directly ("she", "he", "non-binary",
+    "drag queen", "boy band", etc.) -- the first_name is a fallback,
+    not an override.
+
+    Raises on missing key, timeout, malformed JSON, or wrong count.
+    """
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY not set")
+
+    from openai import OpenAI
+
+    client = OpenAI(api_key=api_key, timeout=20.0)
+
+    # Fresh nonce per call so two near-identical onboarding answers don't
+    # converge on the same three prompts.
+    variation_seed = secrets.token_hex(4)
+
+    user_msg = (
+        f"Band name: {band_name or '(unnamed)'}\n"
+        f"Performer's first name (for gender inference only): {first_name or '(unknown)'}\n"
+        f"Song title: {song_title or '(unknown)'}\n"
+        f"Song vibe: {song_vibe or '(unspecified)'}\n"
+        f"Performer's personal vibe: {personal_vibe or '(unspecified)'}\n"
+        f"Anything else: {extra or '(none)'}\n\n"
+        f"Variation seed (use only as entropy to diverge from prior runs): {variation_seed}\n\n"
+        "Now write the three distinct image prompts as JSON."
+    )
+
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        temperature=1.0,
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content": _IMAGE_PROMPTS_SYSTEM},
+            {"role": "user", "content": user_msg},
+        ],
+    )
+
+    raw = (resp.choices[0].message.content or "").strip()
+    data = json.loads(raw)
+    prompts = data.get("prompts")
+    if not isinstance(prompts, list) or len(prompts) != 3:
+        raise ValueError(f"expected 3 prompts, got: {prompts!r}")
+
+    cleaned: list[str] = []
+    for p in prompts:
+        if not isinstance(p, str):
+            raise ValueError(f"non-string prompt: {p!r}")
+        s = p.strip().strip('"').strip("'").strip("*").strip("_").strip()
+        s = " ".join(s.split())  # collapse internal whitespace/newlines
+        if not s:
+            raise ValueError("empty prompt in batch")
+        cleaned.append(s)
+    return cleaned

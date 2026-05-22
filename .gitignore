@@ -1,3 +1,5 @@
 .env
 pizzavision/__pycache__/
 __pycache__/
+pizzavision/static/generated/*
+!pizzavision/static/generated/.gitkeep

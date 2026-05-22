@@ -10,7 +10,7 @@
     <!-- Google Fonts import for sleeker typography -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap"
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Montserrat:wght@400;500;600;700;800&display=swap"
         rel="stylesheet">
 
     <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
@@ -312,91 +312,35 @@
         }
 
         #bandname {
+            font-family: 'Bebas Neue', 'Anton', 'Impact', sans-serif;
             text-align: center;
-            font-size: clamp(10px, 2.2vw, 14px);
-            /* Responsive font size */
-            font-weight: 800;
-            animation: rainbow 8s linear infinite, textShadowRainbow 8s linear infinite;
-            letter-spacing: clamp(0.5px, 0vw, 1.5px);
-            /* Responsive letter spacing */
+            font-size: clamp(14px, 4vw, 19px);
+            font-weight: 400;
+            line-height: 1;
+            animation: rainbow 7s linear infinite, textShadowRainbow 7s linear infinite;
+            letter-spacing: clamp(1px, 0.4vw, 2px);
             text-transform: uppercase;
             transition: all 0.5s ease;
-            text-wrap: nowrap;
-            padding: 0 5px;
-            padding-bottom: 3px;
+            white-space: nowrap;
             position: relative;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 60vw;
-            /* Limit maximum width */
+            max-width: 70vw;
         }
 
+        /* Stage-palette cycle: magenta → purple → cyan → purple → magenta */
         @keyframes rainbow {
-            0% {
-                color: #ff0088;
-            }
-
-            14% {
-                color: #ff5500;
-            }
-
-            28% {
-                color: #ffcc00;
-            }
-
-            42% {
-                color: #22cc88;
-            }
-
-            56% {
-                color: #00ccff;
-            }
-
-            70% {
-                color: #8855ff;
-            }
-
-            85% {
-                color: #ff00dd;
-            }
-
-            100% {
-                color: #ff0088;
-            }
+            0%   { color: #ff2bd6; }
+            33%  { color: #9b4dff; }
+            66%  { color: #00e0ff; }
+            100% { color: #ff2bd6; }
         }
 
         @keyframes textShadowRainbow {
-            0% {
-                text-shadow: 0 0 8px rgba(255, 0, 136, 0.7);
-            }
-
-            14% {
-                text-shadow: 0 0 8px rgba(255, 85, 0, 0.7);
-            }
-
-            28% {
-                text-shadow: 0 0 8px rgba(255, 204, 0, 0.7);
-            }
-
-            42% {
-                text-shadow: 0 0 8px rgba(34, 204, 136, 0.7);
-            }
-
-            56% {
-                text-shadow: 0 0 8px rgba(0, 204, 255, 0.7);
-            }
-
-            70% {
-                text-shadow: 0 0 8px rgba(136, 85, 255, 0.7);
-            }
-
-            85% {
-                text-shadow: 0 0 8px rgba(255, 0, 221, 0.7);
-            }
-
-            100% {
-                text-shadow: 0 0 8px rgba(255, 0, 136, 0.7);
-            }
+            0%   { text-shadow: 0 0 12px rgba(255, 43, 214, 0.75); }
+            33%  { text-shadow: 0 0 12px rgba(155, 77, 255, 0.7);  }
+            66%  { text-shadow: 0 0 12px rgba(0, 224, 255, 0.75);  }
+            100% { text-shadow: 0 0 12px rgba(255, 43, 214, 0.75); }
         }
 
         /* Name change flash animation */
@@ -463,82 +407,39 @@
             }
         }
 
-        /* Band name styling */
-        #bandnamelabel {
-            text-align: right;
-            font-size: clamp(8px, 2.2vw, 12px);
-            /* Responsive font size */
-            font-weight: 700;
-            margin-bottom: 5px;
-            text-transform: uppercase;
-            transition: all 0.3s ease;
-            padding-right: 5px;
-            padding-top: 9px;
-            padding-bottom:3px;
-            white-space: nowrap;
-            color: rgba(255, 255, 255, 0.7);
-            letter-spacing: 0.5px;
-        }
-
-        /* Eurovision star emojis around the band name */
-        #bandname::after,
-        #bandname::before {
-            font-size: clamp(14px, 3vw, 20px);
-            /* Responsive size for stars */
-            filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.7));
-            transition: all 1s ease;
-        }
-
-        #bandname::after {
-            content: "✨";
-            margin-left: clamp(5px, 1vw, 10px);
-            /* Responsive margin */
-            animation: rainbow 10s linear infinite;
-        }
-
-        #bandname::before {
-            content: "✨";
-            margin-right: clamp(5px, 1vw, 10px);
-            /* Responsive margin */
-            animation: rainbow 10s linear infinite reverse;
-        }
-
-        #bandname:hover::after,
-        #bandname:hover::before {
-            transform: scale(1.2) rotate(5deg);
-        }
-
         /* Updated centered band name container */
         #bandnamecontainer {
-            text-align: center;
             position: absolute;
             display: flex;
-            flex-direction: row;
-            justify-content: center;
             align-items: center;
-            flex-wrap: nowrap;
+            justify-content: center;
             top: 0;
+            left: 50%;
             transform: translateX(-50%);
-            /* Center horizontally */
             width: fit-content;
             max-width: 90vw;
-            /* Limit width on small screens */
-            padding: 2px 12px;
-            background: rgba(25, 25, 25, 0.5);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 30px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 5px 16px 4px;
+            background: rgba(20, 18, 38, 0.6);
+            backdrop-filter: blur(10px) saturate(1.35);
+            -webkit-backdrop-filter: blur(10px) saturate(1.35);
+            border-radius: 12px;
+            border: 1px solid rgba(0, 224, 255, 0.18);
+            /* 2px inset stripe on the left edge — same stage-light slot motif
+               as the sortable rows below. */
+            box-shadow: inset 2px 0 0 rgba(0, 224, 255, 0.55),
+                0 4px 14px rgba(0, 0, 0, 0.3);
             margin-top: 1px;
             z-index: 10;
-            /* Ensure it's above other content */
+            transition: box-shadow 0.4s ease, border-color 0.4s ease, transform 0.4s ease;
         }
 
         #bandnamecontainer:hover {
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.15);
             transform: translateX(-50%) translateY(-2px);
-            /* Keep centered while raising */
+            border-color: rgba(255, 43, 214, 0.35);
+            box-shadow: inset 2px 0 0 rgba(255, 43, 214, 0.8),
+                0 8px 22px rgba(0, 0, 0, 0.32),
+                0 0 22px rgba(255, 43, 214, 0.25),
+                0 0 38px rgba(0, 224, 255, 0.12);
         }
 
         /* Add a hint of depth with a background element */
@@ -621,24 +522,14 @@
         /* Extra adjustments for very small screens */
         @media screen and (max-width: 400px) {
             #bandnamecontainer {
-                padding: 0px 10px;
-            }
-
-            #bandnamelabel {
-                padding-top: 6px;
+                padding: 4px 12px 3px;
             }
         }
 
         /* For extremely small screens */
         @media screen and (max-width: 280px) {
             #bandnamecontainer {
-                padding: 4px 8px;
-            }
-
-            #bandname::before,
-            #bandname::after {
-                font-size: 12px;
-                margin: 0 2px;
+                padding: 3px 10px 2px;
             }
         }
 
@@ -996,11 +887,6 @@
             overscroll-behavior: contain;
             touch-action: none;
         }
-        /* Hide the fixed PV header logo while onboarding is open — it would
-           otherwise overlap the modal content at the top of the viewport. */
-        body.onboarding-active .pv-logo {
-            display: none;
-        }
         /* Re-enable touch inside the modal itself (the body rule above
            would otherwise block scrolling within the overlay too). */
         body.onboarding-active #onboarding-overlay {
@@ -1031,7 +917,7 @@
             min-height: 100vh;            /* fallback for older browsers */
             min-height: 100dvh;           /* dynamic viewport — shrinks with keyboard, grows when it's dismissed */
             padding: 16px 18px;
-            padding-top: max(16px, env(safe-area-inset-top));
+            padding-top: calc(150px + env(safe-area-inset-top));
             padding-bottom: max(16px, env(safe-area-inset-bottom));
             display: flex;
             flex-direction: column;
@@ -1047,6 +933,7 @@
                             0 0 0 1px rgba(255, 255, 255, 0.08);
                 background: rgba(20, 8, 35, 0.92);
                 padding: 32px 32px;
+                margin-top: calc(140px + 5vh);
             }
         }
 
@@ -1467,6 +1354,138 @@
             font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         }
 
+        /* ---------- Image pick step — hero + thumb strip ---------- */
+        .image-pick-body {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .image-hero {
+            position: relative;
+            width: 100%;
+            aspect-ratio: 16 / 9;
+            background: #0a0a0a;
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: 0 12px 28px rgba(0, 0, 0, 0.45);
+        }
+        .image-hero img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .image-hero img.is-visible {
+            opacity: 1;
+        }
+        .image-hero.is-loading::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.04) 0%,
+                rgba(255, 215, 0, 0.08) 50%,
+                rgba(255, 255, 255, 0.04) 100%
+            );
+            background-size: 200% 100%;
+            animation: image-shimmer 1.4s ease-in-out infinite;
+        }
+        @keyframes image-shimmer {
+            0%   { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+        }
+        .image-thumbs {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+        }
+        .image-thumb {
+            position: relative;
+            aspect-ratio: 16 / 9;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            background: #0a0a0a;
+            padding: 0;
+            margin: 0;
+            cursor: pointer;
+            overflow: hidden;
+            appearance: none;
+            -webkit-appearance: none;
+            -webkit-tap-highlight-color: transparent;
+            transition: border-color 0.15s ease, transform 0.15s ease, opacity 0.15s ease;
+        }
+        .image-thumb img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-thumb.is-pending,
+        .image-thumb.is-failed {
+            cursor: default;
+        }
+        .image-thumb.is-pending::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.05) 0%,
+                rgba(255, 215, 0, 0.10) 50%,
+                rgba(255, 255, 255, 0.05) 100%
+            );
+            background-size: 200% 100%;
+            animation: image-shimmer 1.4s ease-in-out infinite;
+        }
+        .image-thumb.is-failed {
+            opacity: 0.4;
+            background:
+                repeating-linear-gradient(
+                    45deg,
+                    rgba(255, 80, 80, 0.10) 0,
+                    rgba(255, 80, 80, 0.10) 6px,
+                    rgba(0, 0, 0, 0) 6px,
+                    rgba(0, 0, 0, 0) 12px
+                ),
+                #0a0a0a;
+        }
+        .image-thumb.is-failed::after {
+            content: '⚠';
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: rgba(255, 200, 200, 0.85);
+            font-size: 22px;
+        }
+        .image-thumb.is-active {
+            border-color: rgba(255, 215, 0, 0.9);
+            box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.5), 0 6px 14px rgba(255, 79, 175, 0.3);
+        }
+        .image-thumb:not(.is-pending):not(.is-failed):not(.is-active):active {
+            transform: scale(0.97);
+        }
+        #onboarding-overlay .image-picker-error {
+            margin: 4px 0 0;
+            padding: 8px 12px;
+            border-radius: 10px;
+            background: rgba(255, 90, 90, 0.12);
+            border: 1px solid rgba(255, 130, 130, 0.4);
+            color: #ffd0d0;
+            font-size: 12px;
+            line-height: 1.4;
+            text-align: center;
+        }
+        #onboarding-overlay .image-picker-error[hidden] {
+            display: none;
+        }
+
         /* ---------- 3-state voting lifecycle overlays ---------- */
         .pv-state-overlay {
             position: fixed;
@@ -1753,7 +1772,23 @@
                 <span class="dot"></span>
                 <span class="dot"></span>
                 <span class="dot"></span>
+                <span class="dot"></span>
             </div>
+
+            <section class="onboarding-step" data-step="first_name">
+                <header class="onboarding-header">
+                    <h1 class="onboarding-heading">What's your first name?</h1>
+                    <p class="onboarding-sub">Just for us — your stage name comes next.</p>
+                </header>
+                <div class="onboarding-field">
+                    <input type="text" class="onboarding-input" data-field="first_name"
+                           autocapitalize="words" autocomplete="given-name" enterkeyhint="next" maxlength="40"
+                           placeholder="e.g. Alex">
+                </div>
+                <footer class="onboarding-actions">
+                    <button type="button" class="onboarding-btn primary" data-next disabled>Next →</button>
+                </footer>
+            </section>
 
             <section class="onboarding-step" data-step="song">
                 <header class="onboarding-header">
@@ -1859,6 +1894,27 @@
                     <button type="button" class="onboarding-btn ghost-quiet" id="start-over-btn">Start over</button>
                 </footer>
             </section>
+
+            <section class="onboarding-step" data-step="images">
+                <header class="onboarding-header">
+                    <h1 class="onboarding-heading">Pick your band photo</h1>
+                    <p class="onboarding-sub">Tap a thumb to preview. Pick when you're ready.</p>
+                </header>
+                <div class="onboarding-field image-pick-body">
+                    <div class="image-hero is-loading" id="image-hero">
+                        <img id="image-hero-img" alt="" />
+                    </div>
+                    <div class="image-thumbs" id="image-thumbs">
+                        <button type="button" class="image-thumb is-pending" data-thumb-idx="0" aria-label="Photo 1" disabled></button>
+                        <button type="button" class="image-thumb is-pending" data-thumb-idx="1" aria-label="Photo 2" disabled></button>
+                        <button type="button" class="image-thumb is-pending" data-thumb-idx="2" aria-label="Photo 3" disabled></button>
+                    </div>
+                    <div id="image-picker-error" class="image-picker-error" hidden></div>
+                </div>
+                <footer class="onboarding-actions">
+                    <button type="button" class="onboarding-btn primary" id="pick-image-btn" disabled>Pick this</button>
+                </footer>
+            </section>
         </div>
     </div>
 
@@ -1906,7 +1962,6 @@
     <div class="container">
         <br /><br /><br /><br /><br />
         <div id="bandnamecontainer">
-            <div id="bandnamelabel">Band Name</div>
             <div id="bandname"></div>
         </div>
 
@@ -2364,11 +2419,51 @@
                 });
             }
 
+            // Fire-and-forget sid registration. Just tells the server "this
+            // sid belongs to this client_id" so _connected_sids picks us up
+            // and the admin's online dot turns green. No callback — we don't
+            // want a server `{reset: true}` response to reload the page mid-
+            // onboarding (which would wipe localStorage progress).
+            //
+            // joinRoom() does the same emit plus UI setup (band name, rank
+            // list) — use that on initial load for fully-onboarded voters.
+            function registerSid() {
+                if (clientId && savedName) {
+                    socket.emit('joined', { clientId: clientId, userName: savedName });
+                }
+            }
+
+            // Re-register on socket reconnect (server restart, network blip,
+            // laptop sleep, etc). Without this, the new post-reconnect sid
+            // is never added to _connected_sids and the admin page sees us
+            // as offline until the user manually refreshes.
+            //
+            // We track explicit disconnects rather than a "first connect"
+            // flag because `connect` can fire before $(document).ready —
+            // meaning our handler can miss the initial connect entirely.
+            var _needsRejoin = false;
+            socket.on('disconnect', function () { _needsRejoin = true; });
+            socket.on('connect', function () {
+                if (_needsRejoin) {
+                    _needsRejoin = false;
+                    registerSid();
+                }
+            });
+
             // Onboarding state machine constants — declared here so they're
             // initialized before startOnboarding() may be called below.
-            var ONBOARDING_STEPS = ['song', 'song_vibe', 'personal_vibe', 'extra', 'generating', 'pick'];
-            var ONBOARDING_FIELDS = ['song_title', 'song_vibe', 'personal_vibe', 'extra'];
+            var ONBOARDING_STEPS = ['first_name', 'song', 'song_vibe', 'personal_vibe', 'extra', 'generating', 'pick', 'images'];
+            var ONBOARDING_FIELDS = ['first_name', 'song_title', 'song_vibe', 'personal_vibe', 'extra'];
             var generatingCopyTimer = null;
+            // Same hoisting reason as the constants above: startOnboarding()
+            // can fire from the page-load conditional immediately below
+            // (when resuming the 'images' step after a refresh) and call
+            // resetImagePicker, which writes to imagePickerState. If we
+            // initialized these later in source order, that later `var
+            // ... = null` line would overwrite the in-progress state and
+            // the polling loop would early-return forever.
+            var imagePickerState = null;
+            var imagePickerPollId = null;
 
             if (window.PV_VOTING_STATE === 'closed' && !savedName) {
                 // Spectator visit: voting is over and this browser never
@@ -2377,6 +2472,12 @@
                 // closed. The CSS guards already render the spectator
                 // copy of the locked overlay; nothing else to wire up.
             } else if (!savedName || localStorage.getItem('pv_onboarding_state')) {
+                // Mid-onboarding (or first visit). If they already picked
+                // a band name in a prior session, register the sid up front
+                // so the admin sees them as online while they finish the
+                // flow — otherwise resumed-onboarding voters look offline
+                // in the admin Users tab until they fully complete.
+                registerSid();
                 startOnboarding();
             } else {
                 joinRoom(savedName);
@@ -2671,13 +2772,12 @@
             }
 
             function renderProgress(step) {
-                // 4 dots; for name=0, eurovision=1, animal=2, food=3.
-                // For generating/pick, all 4 dots = done.
+                // One dot per ONBOARDING_FIELD. For generating/pick, all dots = done.
                 var stepIndex = ONBOARDING_FIELDS.indexOf(getFieldForStep(step));
                 var $dots = $('#onboarding-progress .dot');
                 $dots.removeClass('active done');
                 if (stepIndex >= 0) {
-                    for (var i = 0; i < 4; i++) {
+                    for (var i = 0; i < ONBOARDING_FIELDS.length; i++) {
                         if (i < stepIndex) $dots.eq(i).addClass('done');
                         else if (i === stepIndex) $dots.eq(i).addClass('active');
                     }
@@ -2687,6 +2787,7 @@
             }
 
             function getFieldForStep(step) {
+                if (step === 'first_name') return 'first_name';
                 if (step === 'song') return 'song_title';
                 if (step === 'song_vibe') return 'song_vibe';
                 if (step === 'personal_vibe') return 'personal_vibe';
@@ -2954,13 +3055,34 @@
 
             function pickName(name) {
                 var answers = loadAnswers();
-                localStorage.setItem('userName', name);
-                clearOnboardingLS();
+                // Stash the picked band name in a TEMPORARY LS key. We do
+                // NOT set localStorage.userName here — that gate flips
+                // only after the user picks their band photo in
+                // finishOnboarding(). Otherwise a refresh mid-image-pick
+                // would treat them as a returning fully-onboarded user
+                // and skip the image step entirely.
+                localStorage.setItem('pv_pending_band_name', name);
                 socket.emit('onboarding_complete', {
                     clientId: clientId,
                     userName: name,
                     answers: answers
                 });
+                resetImagePicker();
+                setStep('images');
+            }
+
+            // Final commit — close the modal and hand control to the
+            // post-onboarding UI. Called only after the user picks their
+            // band photo (or the server reports the row was already
+            // finalized in a previous session).
+            function finishOnboarding() {
+                stopImagePickerPolling();
+                var name = localStorage.getItem('pv_pending_band_name')
+                        || localStorage.getItem('userName')
+                        || '';
+                if (name) localStorage.setItem('userName', name);
+                clearOnboardingLS();
+                localStorage.removeItem('pv_pending_band_name');
                 $('#onboarding-overlay').removeClass('visible').attr('aria-hidden', 'true');
                 setTimeout(function () { $('#onboarding-overlay').css('display', 'none'); }, 300);
                 document.documentElement.classList.remove('onboarding-active');
@@ -2970,7 +3092,7 @@
                 // hidden by the .pv-no-band CSS rules.
                 document.documentElement.classList.remove('pv-no-band');
                 document.documentElement.classList.add('pv-has-band');
-                joinRoom(name);
+                if (name) joinRoom(name);
                 // If voting hasn't started yet, surface the blocking modal
                 // immediately after the user finishes onboarding.
                 if (window.PV_VOTING_STATE === 'pre') {
@@ -2979,11 +3101,16 @@
             }
 
             function startOnboarding() {
+                console.log('[onboarding] startOnboarding entered. pv_onboarding_state=',
+                    JSON.stringify(localStorage.getItem('pv_onboarding_state')),
+                    'userName=', JSON.stringify(localStorage.getItem('userName')),
+                    'pv_pending_band_name=', JSON.stringify(localStorage.getItem('pv_pending_band_name')),
+                    'clientId=', clientId);
                 $('#onboarding-overlay').css('display', '').addClass('visible').attr('aria-hidden', 'false');
                 document.documentElement.classList.add('onboarding-active');
                 document.body.classList.add('onboarding-active');
                 var step = localStorage.getItem('pv_onboarding_state');
-                if (!step || ONBOARDING_STEPS.indexOf(step) === -1) step = 'song';
+                if (!step || ONBOARDING_STEPS.indexOf(step) === -1) step = 'first_name';
                 // If we somehow land on 'generating' from a resume, send them
                 // back to the last input step so they can re-submit.
                 if (step === 'generating') step = 'extra';
@@ -2991,6 +3118,14 @@
                 if (step === 'pick' && !loadOptions()) {
                     requestNames();
                     return;
+                }
+                // Resuming on the image-pick step (e.g. user refreshed
+                // mid-flow): kick off the polling loop, which will pull
+                // whatever candidates the server has already produced
+                // and render them.
+                if (step === 'images') {
+                    console.log('[onboarding] resuming at images step; calling resetImagePicker');
+                    resetImagePicker();
                 }
                 setStep(step);
             }
@@ -3053,7 +3188,7 @@
                     startOverArmTimer = null;
                     $btn.removeClass('is-armed').text('Start over');
                     clearOnboardingLS();
-                    setStep('song');
+                    setStep('first_name');
                     return;
                 }
                 $btn.addClass('is-armed').text('Tap again to start over');
@@ -3151,6 +3286,273 @@
                 }).then(function () {
                     $dice.prop('disabled', false).removeClass('loading');
                 });
+            });
+
+            // --------------------------------------------------------------
+            // Image-pick step — hero + thumbs UX
+            // --------------------------------------------------------------
+            //
+            // After the user picks a band name, the server fires three
+            // parallel Nano Banana Pro calls. Each one streams back via a
+            // socket event; this state machine renders the picker as the
+            // candidates land.
+            //
+            // - First image to land auto-promotes to hero so the user can
+            //   start browsing immediately (no need to wait for all 3).
+            // - Tapping a ready thumb swaps the hero. The Pick button always
+            //   commits whatever is currently in the hero slot.
+            // - If a slot fails, its thumb becomes disabled with a warning
+            //   glyph. If all 3 fail (or 60s elapse with zero successes),
+            //   the Skip button appears so onboarding can still complete.
+
+            // (imagePickerState + imagePickerPollId are hoisted to the top
+            // of this script alongside ONBOARDING_STEPS so startOnboarding()
+            // can safely populate them on a refresh-resume before this code
+            // would otherwise reach the reinitialization.)
+
+            function _emptyImagePickerState() {
+                return {
+                    hero_idx: null,
+                    candidates: { 0: { state: 'pending', url: null },
+                                  1: { state: 'pending', url: null },
+                                  2: { state: 'pending', url: null } },
+                    allFailed: false
+                };
+            }
+
+            // Called whenever the client lands on the images step --
+            // both fresh from pickName, and on resume after refresh.
+            // The image-pick step uses HTTP polling rather than socket
+            // emits for delivery -- the nested-background-task socket
+            // path proved unreliable in this Flask-SocketIO + eventlet
+            // combo. Sockets remain authoritative for everything else
+            // (votes, name changes, admin events, the final
+            // band_image_finalized ack).
+            function resetImagePicker() {
+                console.log('[image-pick] resetImagePicker called, clientId=', clientId);
+                imagePickerState = _emptyImagePickerState();
+                renderImagePicker();
+                stopImagePickerPolling();
+                if (!clientId) {
+                    console.warn('[image-pick] no clientId; cannot poll state');
+                    return;
+                }
+                pollImageState();           // immediate first call
+                imagePickerPollId = setInterval(pollImageState, 2000);
+            }
+
+            function stopImagePickerPolling() {
+                if (imagePickerPollId) {
+                    clearInterval(imagePickerPollId);
+                    imagePickerPollId = null;
+                }
+            }
+
+            function pollImageState() {
+                if (!clientId || !imagePickerState) {
+                    console.log('[image-pick] pollImageState early-return; stopping poll. clientId=', clientId, 'state present=', !!imagePickerState);
+                    stopImagePickerPolling();
+                    return;
+                }
+                var url = 'api/image-state?clientId=' + encodeURIComponent(clientId);
+                console.log('[image-pick] GET', url);
+                fetch(url, {
+                    headers: { 'Accept': 'application/json' }
+                }).then(function (r) {
+                    if (!r.ok) throw new Error('http_' + r.status);
+                    return r.json();
+                }).then(function (state) {
+                    if (!imagePickerState) return;     // user navigated away mid-poll
+                    console.log('[image-pick] state poll:', state);
+
+                    // User finalized in a prior session (e.g. picked, then
+                    // refreshed before the modal closed). Just close out.
+                    if (state.status === 'ready' && state.chosen_url) {
+                        stopImagePickerPolling();
+                        imagePickerState = null;
+                        finishOnboarding();
+                        return;
+                    }
+
+                    // Apply landed candidates.
+                    (state.candidates || []).forEach(function (c) {
+                        if (typeof c.idx === 'number' && c.url) {
+                            handleCandidateReady(c.idx, c.url);
+                        }
+                    });
+                    // Apply per-slot failures.
+                    var errs = state.errors || {};
+                    Object.keys(errs).forEach(function (k) {
+                        var idx = parseInt(k, 10);
+                        if (!isNaN(idx)) handleCandidateFailed(idx);
+                    });
+
+                    // Hard prompt-gen failure -- no point polling further.
+                    if (state.status === 'failed' && !(state.candidates || []).length) {
+                        stopImagePickerPolling();
+                        showImagePickerHardError('Image generation unavailable. Please refresh to try again.');
+                        return;
+                    }
+
+                    // Stop polling once every slot is decided (ready or
+                    // failed). Saves needless requests while the user is
+                    // browsing the candidates.
+                    var allDecided = true;
+                    for (var k2 in imagePickerState.candidates) {
+                        var s = imagePickerState.candidates[k2].state;
+                        if (s !== 'ready' && s !== 'failed') { allDecided = false; break; }
+                    }
+                    if (allDecided) stopImagePickerPolling();
+                }).catch(function (err) {
+                    console.warn('[image-pick] state poll failed:', err);
+                    // Keep the interval running -- transient network blips
+                    // recover on the next tick.
+                });
+            }
+
+            function renderImagePicker() {
+                if (!imagePickerState) return;
+                var heroIdx = imagePickerState.hero_idx;
+                var $heroWrap = $('#image-hero');
+                var $heroImg = $('#image-hero-img');
+                if (heroIdx !== null && imagePickerState.candidates[heroIdx].state === 'ready') {
+                    var url = imagePickerState.candidates[heroIdx].url;
+                    if ($heroImg.attr('src') !== url) {
+                        $heroImg.removeClass('is-visible');
+                        $heroImg.one('load', function () {
+                            $heroImg.addClass('is-visible');
+                        });
+                        $heroImg.one('error', function () {
+                            console.warn('[image-pick] hero <img> failed to load:', url);
+                        });
+                        $heroImg.attr('src', url);
+                    } else {
+                        $heroImg.addClass('is-visible');
+                    }
+                    $heroWrap.removeClass('is-loading');
+                } else {
+                    $heroImg.removeClass('is-visible').removeAttr('src');
+                    $heroWrap.addClass('is-loading');
+                }
+
+                $('.image-thumb').each(function () {
+                    var $thumb = $(this);
+                    var idx = parseInt($thumb.attr('data-thumb-idx'), 10);
+                    var cand = imagePickerState.candidates[idx];
+                    $thumb.removeClass('is-pending is-ready is-failed is-active');
+                    $thumb.empty();
+                    if (cand.state === 'ready') {
+                        $thumb.addClass('is-ready').prop('disabled', false);
+                        $thumb.append($('<img>').attr('src', cand.url).attr('alt', 'Photo ' + (idx + 1)));
+                        if (idx === heroIdx) $thumb.addClass('is-active');
+                    } else if (cand.state === 'failed') {
+                        $thumb.addClass('is-failed').prop('disabled', true);
+                    } else {
+                        $thumb.addClass('is-pending').prop('disabled', true);
+                    }
+                });
+
+                $('#pick-image-btn').prop('disabled', heroIdx === null);
+
+                if (imagePickerState.allFailed) {
+                    showImagePickerHardError("Couldn't generate any photos. Please refresh to try again.");
+                }
+            }
+
+            function showImagePickerHardError(msg) {
+                $('#image-picker-error').text(msg).removeAttr('hidden');
+            }
+
+            function handleCandidateReady(idx, url) {
+                if (!imagePickerState) return;
+                var slot = imagePickerState.candidates[idx];
+                if (!slot) return;
+                if (slot.state === 'ready' && slot.url === url) return;  // idempotent
+                slot.state = 'ready';
+                slot.url = url;
+                // First to arrive auto-promotes to hero so the user can pick
+                // immediately. Later arrivals do NOT disturb the hero — they
+                // just fill their thumb.
+                if (imagePickerState.hero_idx === null) {
+                    imagePickerState.hero_idx = idx;
+                }
+                renderImagePicker();
+            }
+
+            function handleCandidateFailed(idx) {
+                if (!imagePickerState) return;
+                var slot = imagePickerState.candidates[idx];
+                if (!slot) return;
+                if (slot.state === 'ready') return;  // ready beats failed
+                slot.state = 'failed';
+                var allFailed = true;
+                for (var k in imagePickerState.candidates) {
+                    if (imagePickerState.candidates[k].state !== 'failed') {
+                        allFailed = false;
+                        break;
+                    }
+                }
+                imagePickerState.allFailed = allFailed;
+                renderImagePicker();
+            }
+
+            $(document).on('click', '.image-thumb.is-ready', function () {
+                var idx = parseInt($(this).attr('data-thumb-idx'), 10);
+                if (!imagePickerState) return;
+                imagePickerState.hero_idx = idx;
+                renderImagePicker();
+            });
+
+            $(document).on('click', '#pick-image-btn', function () {
+                if (!imagePickerState) return;
+                var heroIdx = imagePickerState.hero_idx;
+                if (heroIdx === null) return;
+                $('#pick-image-btn').prop('disabled', true).text('Saving…');
+                socket.emit('pick_band_image', {
+                    clientId: clientId,
+                    chosenIdx: heroIdx
+                });
+                // Restart polling so we still discover the 'ready' status
+                // even if band_image_finalized socket emit doesn't reach
+                // this connection (e.g. SID changed after a refresh). The
+                // poll's status==='ready' && chosen_url branch will fire
+                // finishOnboarding() the same way the socket event would.
+                stopImagePickerPolling();
+                imagePickerPollId = setInterval(pollImageState, 1000);
+            });
+
+            // Server-side image pipeline socket listeners.
+            socket.on('band_images_starting', function (data) {
+                console.log('[image-pick] band_images_starting:', data);
+            });
+
+            socket.on('band_image_candidate_ready', function (data) {
+                console.log('[image-pick] band_image_candidate_ready:', data);
+                if (!data || typeof data.idx !== 'number' || !data.url) return;
+                handleCandidateReady(data.idx, data.url);
+            });
+
+            socket.on('band_image_candidate_failed', function (data) {
+                console.log('[image-pick] band_image_candidate_failed:', data);
+                if (!data || typeof data.idx !== 'number') return;
+                handleCandidateFailed(data.idx);
+            });
+
+            socket.on('band_images_failed', function (data) {
+                console.warn('[image-pick] band_images_failed:', data);
+                if (imagePickerState) {
+                    handleCandidateFailed(0);
+                    handleCandidateFailed(1);
+                    handleCandidateFailed(2);
+                }
+                var msg = (data && data.error) ? String(data.error).slice(0, 200) : 'Image generation unavailable.';
+                showImagePickerHardError("Couldn't generate photos: " + msg + ' — please refresh to try again.');
+            });
+
+            socket.on('band_image_finalized', function (data) {
+                console.log('[image-pick] band_image_finalized:', data);
+                imagePickerState = null;
+                finishOnboarding();
             });
 
             // Stage-themed points styling: walk along the stage-light hue arc
