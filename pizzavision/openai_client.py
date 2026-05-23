@@ -16,19 +16,18 @@ import re
 import secrets
 
 
-_FINALISTS_PATH = os.path.join(os.path.dirname(__file__), "options.json")
-
-
 def _load_finalists() -> list[dict]:
-    """Load the current year's finalist entries from options.json.
+    """Load the current year's finalist entries via config_store.
+
+    Goes through config_store so admin reorders/removals (persisted in
+    Firestore on prod) are reflected in the AI prompt examples too.
 
     Returns an empty list on any failure — callers treat that as "no fresh
     examples available" and fall back to the static prompt examples.
     """
     try:
-        with open(_FINALISTS_PATH, encoding="utf-8") as f:
-            data = json.load(f)
-        opts = data.get("options")
+        from .config_store import get_config_store
+        opts = get_config_store().load().get("options")
         return [o for o in opts if isinstance(o, dict)] if isinstance(opts, list) else []
     except Exception:
         return []

@@ -1,9 +1,7 @@
-import json
 import unicodedata
 import re
 from collections import defaultdict
 from datetime import datetime, timezone
-from pathlib import Path
 from typing import List
 
 import os
@@ -21,59 +19,36 @@ def get_file_path(filename):
     root_path = os.path.join(os.getcwd(), filename)
     return root_path
 
-def load_options(filename="pizzavision/options.json") -> List[str]:
-    """Return the list of entry labels, no matter which JSON version is saved."""
-    path = get_file_path(filename)
-    with open(path, encoding="utf-8") as f:
-        data = json.load(f)
-
-    raw_options = data.get("options", [])
-
-    # New structure → list of dicts
-    if raw_options and isinstance(raw_options[0], dict):
-        return [item["label"] for item in raw_options]
-
-    # Old structure → list of strings
-    return raw_options
-
-def load_vote_options(filename="pizzavision/options.json"):
-    path = get_file_path(filename)
-    with open(path, 'r') as json_file:
-        data = json.load(json_file)
-    return data['votes']
-
-
-def load_options(path: str | Path = "pizzavision/options.json") -> List[str]:
-    """Return the list of entry labels, no matter which JSON version is saved."""
-    with open(path, encoding="utf-8") as f:
-        data = json.load(f)
-
-    raw_options = data.get("options", [])
-
-    # New structure → list of dicts
-    if raw_options and isinstance(raw_options[0], dict):
-        return [item["label"] for item in raw_options]
-
-    # Old structure → list of strings
-    return raw_options
-
-def load_vote_options():
-    with open('pizzavision/options.json', 'r') as json_file:
-        data = json.load(json_file)
-    return data['votes']
-
 VOTING_STATES = ("pre", "open", "closed")
 
 
-def load_voting_state():
-    """Read the current voting lifecycle state from options.json.
+def _load_config() -> dict:
+    # Lazy import: config_store imports from this module, so importing it
+    # at module load time would create a circular import.
+    from .config_store import get_config_store
+    return get_config_store().load()
 
-    Returns one of: "pre" | "open" | "closed". Tolerates a missing field
-    (treats as pre — fresh contest) and the legacy boolean `locked` key
-    (False -> "open", True -> "closed").
+
+def load_options() -> List[str]:
+    """Return the list of entry labels, no matter which JSON version is saved."""
+    raw_options = _load_config().get("options", [])
+    if raw_options and isinstance(raw_options[0], dict):
+        return [item["label"] for item in raw_options]
+    # Old structure → list of strings
+    return raw_options
+
+
+def load_vote_options():
+    return _load_config()["votes"]
+
+
+def load_voting_state():
+    """Return the current voting lifecycle state: 'pre' | 'open' | 'closed'.
+
+    Tolerates a missing field (treats as pre — fresh contest) and the legacy
+    boolean `locked` key (False -> "open", True -> "closed").
     """
-    with open('pizzavision/options.json', 'r') as json_file:
-        data = json.load(json_file)
+    data = _load_config()
     state = data.get('voting_state')
     if state in VOTING_STATES:
         return state

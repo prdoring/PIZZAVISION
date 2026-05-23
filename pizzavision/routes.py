@@ -54,6 +54,7 @@ from .utils import (
     VOTING_STATES,
 )
 from .vote_store import get_vote_store
+from .config_store import get_config_store
 
 
 def _user_admin_payload(row, online_ids):
@@ -474,8 +475,7 @@ def roast_votes():
     if not rank:
         return jsonify(error='empty ballot', error_code='empty_ballot'), 404
 
-    with open(OPTIONS_FILE, 'r', encoding='utf-8') as fh:
-        options_data = json.load(fh)
+    options_data = get_config_store().load()
     by_label = {o['label']: o for o in options_data.get('options', [])}
     picks_with_meta = []
     for lbl in rank:
@@ -526,8 +526,7 @@ def results():
 
 def _load_awards():
     """Shared award-loading logic used by both the JSON API and the HTML view."""
-    with open('pizzavision/options.json', 'r', encoding='utf-8') as json_file:
-        options_data = json.load(json_file)
+    options_data = get_config_store().load()
 
     calculated_awards = calculate_awards(vote_store, options_data)
 
@@ -651,20 +650,17 @@ def guess_who():
     return render_template('guess_who.html', bands=bands)
 
 
-OPTIONS_FILE = os.path.join("pizzavision", "options.json")
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "changeme")
 BACKUP_FILE = os.path.join("pizzavision", "options_bak.json")
 DB_FILE = os.path.join("pizzavision", "db.json")
 
 
 def _load_options():
-    with open(OPTIONS_FILE, "r", encoding="utf-8") as fh:
-        return json.load(fh)
+    return get_config_store().load()
 
 
 def _save_options(data):
-    with open(OPTIONS_FILE, "w", encoding="utf-8") as fh:
-        json.dump(data, fh, indent=4, ensure_ascii=False)
+    get_config_store().save(data)
 
 
 @voting_bp.route("/admin", methods=["GET", "POST"])
