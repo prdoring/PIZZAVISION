@@ -2672,15 +2672,90 @@
             });
         }
 
+        // Default trio that the plasma shader uses when no crown is active.
+        // Matches the previous huePhase 0.83 + hueSpread 0.32 visual.
+        window.PV_DEFAULT_STAGE_HUES = [0.67, 0.83, 0.99];
+
+        // Country → flag hues (1-3 chromatic hues per flag, padded to 3 by
+        // sandwiching: bicolor becomes [a, b, a] so the beam fan reads as
+        // a tricolor pattern). White and black are skipped — the shader's
+        // hot white core at the focus covers the "white" beat for free, and
+        // pure black can't be expressed as a hue. Duplicate hues mean a
+        // monochrome glow (e.g. Denmark all-red).
+        window.PV_FLAG_HUES = {
+            'Albania':        [0.00, 0.00, 0.00],
+            'Armenia':        [0.00, 0.65, 0.07],
+            'Australia':      [0.65, 0.00, 0.65],
+            'Austria':        [0.00, 0.00, 0.00],
+            'Azerbaijan':     [0.60, 0.00, 0.33],
+            'Belgium':        [0.15, 0.00, 0.15],
+            'Bulgaria':       [0.33, 0.00, 0.33],
+            'Croatia':        [0.00, 0.65, 0.00],
+            'Cyprus':         [0.07, 0.33, 0.07],
+            'Czechia':        [0.65, 0.00, 0.65],
+            'Denmark':        [0.00, 0.00, 0.00],
+            'Estonia':        [0.60, 0.60, 0.60],
+            'Finland':        [0.60, 0.60, 0.60],
+            'France':         [0.60, 0.00, 0.60],
+            'Georgia':        [0.00, 0.00, 0.00],
+            'Germany':        [0.00, 0.15, 0.00],
+            'Greece':         [0.60, 0.60, 0.60],
+            'Iceland':        [0.65, 0.00, 0.65],
+            'Ireland':        [0.33, 0.07, 0.33],
+            'Israel':         [0.60, 0.60, 0.60],
+            'Italy':          [0.33, 0.00, 0.33],
+            'Latvia':         [0.97, 0.97, 0.97],
+            'Lithuania':      [0.15, 0.33, 0.00],
+            'Luxembourg':     [0.00, 0.50, 0.00],
+            'Malta':          [0.00, 0.00, 0.00],
+            'Moldova':        [0.60, 0.15, 0.00],
+            'Montenegro':     [0.00, 0.15, 0.00],
+            'Netherlands':    [0.00, 0.60, 0.00],
+            'Norway':         [0.00, 0.60, 0.00],
+            'Poland':         [0.00, 0.00, 0.00],
+            'Portugal':       [0.33, 0.00, 0.33],
+            'Romania':        [0.60, 0.15, 0.00],
+            'San Marino':     [0.55, 0.55, 0.55],
+            'Serbia':         [0.00, 0.60, 0.00],
+            'Slovenia':       [0.60, 0.00, 0.60],
+            'Spain':          [0.00, 0.15, 0.00],
+            'Sweden':         [0.60, 0.15, 0.60],
+            'Switzerland':    [0.00, 0.00, 0.00],
+            'Ukraine':        [0.60, 0.15, 0.60],
+            'United Kingdom': [0.60, 0.00, 0.60],
+        };
+
+        function pvExtractCountry(label) {
+            if (!label) return null;
+            var i = label.indexOf(':');
+            return i > 0 ? label.substring(0, i).trim() : null;
+        }
+
         // Podium fanfares: fired when the user actively drags a song into
-        // a top-3 slot. Crown (#1) is a full lightning fan over the stage;
-        // silver and bronze are progressively toned-down acknowledgments.
+        // a top-3 slot. Crown (#1) is a full lightning fan over the stage,
+        // and on the flash the stage hues sweep to the country's flag colors
+        // before easing back to default over ~7s. Silver and bronze are
+        // progressively toned-down acknowledgments without color sweeps.
         // Only the actively-dragged song fires anything — songs that get
         // passively bumped down by a higher-rank drop don't trigger their
         // own podium effect.
-        window.pvCrownFanfare = function () {
+        window.pvCrownFanfare = function (songLabel) {
             if (!window.PlasmaShader) return;
             var UP = Math.PI * 0.5;
+
+            // Stage-hue sweep: 200ms snap to flag colors (covered by the
+            // bgFlash so the change reads as the flash painting them in),
+            // 1.5s explicit hold so they actually land and read as flag
+            // colors, then 6s smooth ease-out back to the drifting default.
+            // The shader doesn't drift these — JS computes drift on top of
+            // the base trio so flag colors render literally during the hold
+            // and the ease-out lands exactly where default would have been.
+            var country = pvExtractCountry(songLabel);
+            var flagHues = country ? window.PV_FLAG_HUES[country] : null;
+            if (flagHues) {
+                window.PlasmaShader.setFlagHues(flagHues, 200, 1500, 6000);
+            }
+
             window.PlasmaShader.triggerBgFlash();
             window.PlasmaShader.triggerBolt(UP);
             setTimeout(function () { window.PlasmaShader.triggerBolt(UP - 0.55); }, 90);
@@ -2715,6 +2790,98 @@
                 window.PlasmaShader.triggerTrace();
             }
         };
+
+        // Plasma effects for the onboarding flow. Toned down vs. voting
+        // fanfares — the user is reading/typing here, not watching the
+        // stage. The shader's ambient hue drift already evolves the
+        // colors over ~55s, so step transitions just punctuate with a
+        // quiet trace rather than re-painting the baseline.
+        window.pvOnboardingStepEffect = function (fromStep, toStep) {
+            if (!window.PlasmaShader) return;
+            if (fromStep && fromStep !== toStep) {
+                window.PlasmaShader.triggerTrace(Math.PI * 0.5);
+            }
+        };
+
+        // Dice button: "AI is reaching out" trace on send, gentle pulse
+        // when the suggestion lands in the field.
+        window.pvOnboardingDiceSent = function () {
+            if (!window.PlasmaShader) return;
+            window.PlasmaShader.triggerTrace();
+        };
+        window.pvOnboardingDiceLanded = function () {
+            if (!window.PlasmaShader) return;
+            window.PlasmaShader.triggerPulse(Math.PI * 0.5);
+        };
+
+        // "Name my performer" kickoff — bigger than a step transition,
+        // smaller than crown. The setStep('generating') that follows
+        // will add its own trace + hue shift on top of this.
+        window.pvOnboardingGenerateKick = function () {
+            if (!window.PlasmaShader) return;
+            var UP = Math.PI * 0.5;
+            window.PlasmaShader.triggerBolt(UP);
+            setTimeout(function () { window.PlasmaShader.triggerPulse(UP); }, 120);
+        };
+
+        // Names land on the pick step — three staggered bolts at slightly
+        // fanned angles so each card feels like it got struck in.
+        window.pvOnboardingNamesAppear = function () {
+            if (!window.PlasmaShader) return;
+            var UP = Math.PI * 0.5;
+            var angles = [UP - 0.4, UP, UP + 0.4];
+            angles.forEach(function (a, i) {
+                setTimeout(function () { window.PlasmaShader.triggerBolt(a); }, i * 70);
+            });
+        };
+
+        // Tap a name card — quietest tier. Its own helper so we can tone
+        // or disable just this one easily without touching the rest.
+        window.pvOnboardingNameTap = function () {
+            if (!window.PlasmaShader) return;
+            window.PlasmaShader.triggerTrace();
+        };
+
+        // Reroll (names or images) — flash + brief random-trio hue sweep
+        // that fades back to the drifting default on its own. Sells the
+        // shuffle. setFlagHues handles the full lifecycle for us.
+        window.pvOnboardingReroll = function () {
+            if (!window.PlasmaShader) return;
+            window.PlasmaShader.triggerBgFlash();
+            var jitter = [Math.random(), Math.random(), Math.random()];
+            window.PlasmaShader.setFlagHues(jitter, 250, 350, 1200);
+        };
+
+        // "Pick this" on a name — silver-tier acknowledgment. The setStep
+        // transition to 'images' adds its own trace, so we just add a
+        // pulse here for a bit more energy than a plain step advance.
+        window.pvOnboardingNamePicked = function () {
+            if (!window.PlasmaShader) return;
+            window.PlasmaShader.triggerPulse(Math.PI * 0.5);
+        };
+
+        // Each band photo streams in — gentle pulse per arrival so the
+        // wait has a heartbeat. Suppressed during the prefetch replay
+        // (see resetImagePicker) so all-prefetched arrivals don't fire
+        // a flurry of pulses at step entry.
+        window.pvOnboardingImageArrived = function () {
+            if (!window.PlasmaShader) return;
+            window.PlasmaShader.triggerPulse(Math.PI * 0.5);
+        };
+
+        // "Pick this" on the photo — final commit of onboarding. Crown-
+        // tier fanfare. No flag-hue sweep (the user hasn't picked a
+        // country yet, and onboarding closes immediately after).
+        window.pvOnboardingImagePicked = function () {
+            if (!window.PlasmaShader) return;
+            var UP = Math.PI * 0.5;
+            window.PlasmaShader.triggerBgFlash();
+            window.PlasmaShader.triggerBolt(UP);
+            setTimeout(function () { window.PlasmaShader.triggerBolt(UP - 0.55); }, 90);
+            setTimeout(function () { window.PlasmaShader.triggerBolt(UP + 0.55); }, 170);
+            setTimeout(function () { window.PlasmaShader.triggerPulse(UP); }, 240);
+        };
+
         $(document).ready(function () {
             var list = $(".sortable-list");
 
@@ -2752,7 +2919,7 @@
                     var startIdx = ui.item.data('pvStartIdx');
                     if (typeof startIdx === 'number') {
                         if (endIdx === 0 && startIdx !== 0) {
-                            window.pvCrownFanfare();
+                            window.pvCrownFanfare(ui.item.text().trim());
                         } else if (endIdx === 1 && startIdx !== 1) {
                             window.pvSilverFanfare();
                         } else if (endIdx === 2 && startIdx !== 2) {
@@ -3467,10 +3634,12 @@
             }
 
             function setStep(step) {
+                var prevStep = localStorage.getItem('pv_onboarding_state');
                 localStorage.setItem('pv_onboarding_state', step);
                 $('.onboarding-step').removeClass('active');
                 var $step = $('.onboarding-step[data-step="' + step + '"]').addClass('active');
                 renderProgress(step);
+                if (window.pvOnboardingStepEffect) window.pvOnboardingStepEffect(prevStep, step);
 
                 if (step === 'generating') {
                     startGeneratingCopyCycle();
@@ -3540,11 +3709,13 @@
             var selectedName = null;
 
             function setSelectedName(name) {
+                var changed = (name !== selectedName);
                 selectedName = name;
                 $('.name-option-wrap').each(function () {
                     $(this).toggleClass('is-selected', $(this).attr('data-name') === name);
                 });
                 $('#pick-name-btn').prop('disabled', !name);
+                if (changed && name && window.pvOnboardingNameTap) window.pvOnboardingNameTap();
             }
 
             function renderNameOptions() {
@@ -3728,6 +3899,7 @@
                 if (!pinnedName) {
                     saveOptions(freshNames.slice(0, 3));
                     setStep('pick');
+                    if (window.pvOnboardingNamesAppear) window.pvOnboardingNamesAppear();
                     return;
                 }
                 var currentOpts = loadOptions() || [];
@@ -3748,6 +3920,7 @@
                 $('#reroll-btn').prop('disabled', false);
                 // Re-render in place — we're already on the pick step.
                 renderNameOptions();
+                if (window.pvOnboardingNamesAppear) window.pvOnboardingNamesAppear();
             }
 
             function pickName(name) {
@@ -3877,11 +4050,21 @@
             });
 
             $(document).on('click', '#onboarding-overlay .onboarding-btn[data-generate]', function () {
+                if (window.pvOnboardingGenerateKick) window.pvOnboardingGenerateKick();
                 requestNames();
             });
 
             $(document).on('click', '#reroll-btn', function () {
-                requestNames({ pinned: loadPinned() });
+                var pinned = loadPinned();
+                if (pinned) {
+                    // Partial reroll stays on the pick step — full effect.
+                    if (window.pvOnboardingReroll) window.pvOnboardingReroll();
+                } else if (window.PlasmaShader) {
+                    // Full reroll — setStep('generating') will handle the
+                    // hue shift, so just punctuate with a flash here.
+                    window.PlasmaShader.triggerBgFlash();
+                }
+                requestNames({ pinned: pinned });
             });
 
             $(document).on('click', '#pick-name-btn', function () {
@@ -3889,6 +4072,7 @@
                 // Lock the button immediately so a double-tap can't fire
                 // pickName twice before the step transitions.
                 $('#pick-name-btn').prop('disabled', true);
+                if (window.pvOnboardingNamePicked) window.pvOnboardingNamePicked();
                 pickName(selectedName);
             });
 
@@ -3950,6 +4134,7 @@
                 }
 
                 $dice.prop('disabled', true).addClass('loading');
+                if (window.pvOnboardingDiceSent) window.pvOnboardingDiceSent();
 
                 var controller = new AbortController();
                 var timeoutId = setTimeout(function () { controller.abort(); }, 10000);
@@ -3983,6 +4168,7 @@
                     pristineDiceValues[field] = data.answer;
                     $input.val(data.answer).trigger('input');
                     $input.trigger('focus');
+                    if (window.pvOnboardingDiceLanded) window.pvOnboardingDiceLanded();
                 }).catch(function (err) {
                     clearTimeout(timeoutId);
                     var label = (err && err.message) || 'unknown';
@@ -4087,7 +4273,7 @@
                 Object.keys(prefetchedCandidates).forEach(function (k) {
                     var idx = parseInt(k, 10);
                     var url = prefetchedCandidates[k];
-                    if (!isNaN(idx) && url) handleCandidateReady(idx, url);
+                    if (!isNaN(idx) && url) handleCandidateReady(idx, url, true);
                 });
                 renderImagePicker();
                 stopImagePickerPolling();
@@ -4292,7 +4478,7 @@
                 $('#image-picker-error').text(msg).removeAttr('hidden');
             }
 
-            function handleCandidateReady(idx, url) {
+            function handleCandidateReady(idx, url, suppressEffect) {
                 if (!imagePickerState) return;
                 var slot = imagePickerState.candidates[idx];
                 if (!slot) return;
@@ -4304,6 +4490,12 @@
                 // just fill their thumb.
                 if (imagePickerState.hero_idx === null) {
                     imagePickerState.hero_idx = idx;
+                }
+                // Heartbeat pulse on live arrivals. Suppressed during the
+                // prefetch replay in resetImagePicker so all-prefetched
+                // step entry doesn't fire a flurry of pulses.
+                if (!suppressEffect && window.pvOnboardingImageArrived) {
+                    window.pvOnboardingImageArrived();
                 }
                 renderImagePicker();
             }
@@ -4337,6 +4529,7 @@
                 var heroIdx = imagePickerState.hero_idx;
                 if (heroIdx === null) return;
                 $('#pick-image-btn').prop('disabled', true).text('Saving…');
+                if (window.pvOnboardingImagePicked) window.pvOnboardingImagePicked();
                 socket.emit('pick_band_image', {
                     clientId: clientId,
                     chosenIdx: heroIdx
@@ -4379,6 +4572,7 @@
             $(document).on('click', '#reroll-images-btn', function () {
                 if (!imagePickerState) return;
                 if ($(this).prop('disabled')) return;
+                if (window.pvOnboardingReroll) window.pvOnboardingReroll();
                 var pinned = imagePickerState.pinned_idx;  // null = roll all 3
                 Object.keys(imagePickerState.candidates).forEach(function (k) {
                     var ki = parseInt(k, 10);

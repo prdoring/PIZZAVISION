@@ -78,9 +78,10 @@
     "uniform float u_beam_sweep_freq;",
     "uniform float u_beam_strength;",
     "uniform float u_cone_softness;",
-    "uniform float u_hue_phase;",
+    "uniform float u_stage_hue_0;",
+    "uniform float u_stage_hue_1;",
+    "uniform float u_stage_hue_2;",
     "uniform float u_hue_speed;",
-    "uniform float u_hue_spread;",
     "",
     "vec3 hsv2rgb(vec3 c) {",
     "  vec4 K = vec4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);",
@@ -263,14 +264,27 @@
     "  float isLight = smoothstep(0.42, 0.92, bgLuma);",
     "  vec3 base = mix(u_bg_color, vec3(1.0) - u_bg_color, isLight);",
     "",
-    // Per-pixel hue: a base phase, plus continuous time drift, plus a spread
-    // across the beam fan so neighboring beams glow slightly different colors.
-    // n (the plasma noise) gets folded in to keep the in-cone color feeling
-    // organic instead of geometrically banded.
-    "  float hue = u_hue_phase",
-    "            + u_time * u_hue_speed",
-    "            + (beamU - 0.5) * u_hue_spread",
-    "            + n * 0.08;",
+    // Per-pixel hue: three stage hues distributed across the beam fan via
+    // piecewise mix across beamU. 0→0.5 lerps h0↔h1, 0.5→1 lerps h1↔h2,
+    // both using shortest path around the wheel so e.g. blue→red goes the
+    // short way through magenta instead of muddying through green. The
+    // continuous wheel drift is computed JS-side and baked into the stage
+    // hue uniforms each frame — putting it in the shader would corrupt
+    // crown overrides (flag colors would rotate with the wheel and stop
+    // rendering as the actual flag). Plasma noise n folds in to keep the
+    // in-cone color feeling organic instead of geometrically banded.
+    "  float h0 = u_stage_hue_0;",
+    "  float h1 = u_stage_hue_1;",
+    "  float h2 = u_stage_hue_2;",
+    "  float hue;",
+    "  if (beamU < 0.5) {",
+    "    float d = mod(h1 - h0 + 0.5, 1.0) - 0.5;",
+    "    hue = h0 + d * beamU * 2.0;",
+    "  } else {",
+    "    float d = mod(h2 - h1 + 0.5, 1.0) - 0.5;",
+    "    hue = h1 + d * (beamU - 0.5) * 2.0;",
+    "  }",
+    "  hue += n * 0.08;",
     "  vec3 hueColor = hsv2rgb(vec3(hue, 0.85, 1.0));",
     "",
     // Boosted hue version for the trigger contributions so bolts/pulses/traces
@@ -339,9 +353,13 @@
     beamSweepFreq: 0.12,    // sweep oscillation rate (Hz-ish)
     beamStrength: 0.55,     // how strongly beams stand out from between
     coneSoftness: 0.35,     // upper-hemisphere edge softness (radians-ish)
-    huePhase: 0.83,         // starting hue (~magenta)
+    // Three stage hues distributed across the beam fan via piecewise mix
+    // across beamU. Default trio is evenly spaced 0.16 apart so the fan
+    // spans 0.32 of the wheel (matching the previous hueSpread). All three
+    // drift together via hueSpeed. Crown fanfare overrides these
+    // temporarily to flag colors via setStageHuesAnimated().
+    stageHues: [0.67, 0.83, 0.99],
     hueSpeed: 0.018,        // continuous drift (full wheel in ~55s)
-    hueSpread: 0.32,        // hue variation across the fan
   };
 
   // u_color_a/b are no longer used by the main plasma color path (HSV-driven
@@ -357,6 +375,76 @@
   var pulses = [];
   var bolts = [];
   var bgFlashStart = -1;
+
+  // Hue lifecycle state. The shader does NOT add drift — JS computes the
+  // current hues each frame, including wheel drift in default mode. This
+  // lets crown overrides render flag colors literally (drift would
+  // otherwise rotate them off the actual flag).
+  //
+  // When inactive (flagCrown === null): stage hues = default base + drift.
+  // When active: lifecycle is fadeIn → hold → fadeOut → null. Restarting
+  // a crown mid-flight captures the currently-interpolated value as the
+  // new sweepInSource so there's no pop.
+  var hueEpochMs = -1;
+  var flagCrown = null;
+
+  function smoothstep01(t) {
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    return t * t * (3 - 2 * t);
+  }
+
+  function lerpHue(a, b, t) {
+    var diff = ((b - a + 0.5) % 1 + 1) % 1 - 0.5;
+    return a + diff * t;
+  }
+
+  function getDefaultHues(nowMs) {
+    if (hueEpochMs < 0) hueEpochMs = nowMs;
+    var drift = (nowMs - hueEpochMs) * 0.001 * PARAMS.hueSpeed;
+    return [
+      PARAMS.stageHues[0] + drift,
+      PARAMS.stageHues[1] + drift,
+      PARAMS.stageHues[2] + drift,
+    ];
+  }
+
+  function currentStageHues(nowMs) {
+    if (!flagCrown) return getDefaultHues(nowMs);
+
+    var elapsed = nowMs - flagCrown.startMs;
+    var fadeIn = flagCrown.fadeIn;
+    var hold = flagCrown.hold;
+    var fadeOut = flagCrown.fadeOut;
+    var flag = flagCrown.flagHues;
+
+    if (elapsed < fadeIn) {
+      var e = smoothstep01(elapsed / fadeIn);
+      var src = flagCrown.sweepInSource;
+      return [
+        lerpHue(src[0], flag[0], e),
+        lerpHue(src[1], flag[1], e),
+        lerpHue(src[2], flag[2], e),
+      ];
+    }
+    if (elapsed < fadeIn + hold) {
+      return flag.slice();
+    }
+    if (elapsed < fadeIn + hold + fadeOut) {
+      var e2 = smoothstep01((elapsed - fadeIn - hold) / fadeOut);
+      // Moving target — re-evaluated each frame so when the sweep
+      // completes we land exactly where default would have been, with
+      // no phase discontinuity.
+      var tgt = getDefaultHues(nowMs);
+      return [
+        lerpHue(flag[0], tgt[0], e2),
+        lerpHue(flag[1], tgt[1], e2),
+        lerpHue(flag[2], tgt[2], e2),
+      ];
+    }
+    flagCrown = null;
+    return getDefaultHues(nowMs);
+  }
 
   function pickVisibleAngle() {
     // Bias hard toward straight-up. Focus sits at y=-0.55 (below the
@@ -522,9 +610,10 @@
       beamSweepFreq: u("u_beam_sweep_freq"),
       beamStrength: u("u_beam_strength"),
       coneSoftness: u("u_cone_softness"),
-      huePhase: u("u_hue_phase"),
+      stageHue0: u("u_stage_hue_0"),
+      stageHue1: u("u_stage_hue_1"),
+      stageHue2: u("u_stage_hue_2"),
       hueSpeed: u("u_hue_speed"),
-      hueSpread: u("u_hue_spread"),
     };
 
     var traceABuf = new Float32Array(MAX_TRACES);
@@ -606,9 +695,11 @@
       gl.uniform1f(locs.beamSweepFreq, PARAMS.beamSweepFreq);
       gl.uniform1f(locs.beamStrength, PARAMS.beamStrength);
       gl.uniform1f(locs.coneSoftness, PARAMS.coneSoftness);
-      gl.uniform1f(locs.huePhase, PARAMS.huePhase);
+      var stage = currentStageHues(wallMs);
+      gl.uniform1f(locs.stageHue0, stage[0]);
+      gl.uniform1f(locs.stageHue1, stage[1]);
+      gl.uniform1f(locs.stageHue2, stage[2]);
       gl.uniform1f(locs.hueSpeed, PARAMS.hueSpeed);
-      gl.uniform1f(locs.hueSpread, PARAMS.hueSpread);
 
       var now = performance.now() / 1000;
 
@@ -737,6 +828,19 @@
         if (c.b) COLORS.b = c.b;
         if (c.bg) COLORS.bg = c.bg;
       },
+      setFlagHues: function (hues, fadeInMs, holdMs, fadeOutMs) {
+        if (!hues || hues.length < 3) return;
+        var nowMs = performance.now();
+        var prev = currentStageHues(nowMs);
+        flagCrown = {
+          startMs: nowMs,
+          fadeIn: Math.max(1, fadeInMs || 200),
+          hold: Math.max(0, holdMs || 0),
+          fadeOut: Math.max(1, fadeOutMs || 7000),
+          flagHues: [hues[0], hues[1], hues[2]],
+          sweepInSource: prev,
+        };
+      },
     };
   }
 
@@ -749,6 +853,7 @@
       triggerBgFlash: noop,
       setFocus: noop,
       setColors: noop,
+      setFlagHues: noop,
     };
   }
 
