@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import secrets
 
 
@@ -263,16 +264,47 @@ _FIELD_MAXLEN = {
 # Vote roast — snarky one-liner about a user's finalized ballot
 # ---------------------------------------------------------------
 
-_ROAST_SYSTEM = (
-    "You are a witty Eurovision watch-party host roasting one voter's final ballot. "
-    "Be snarky but affectionate — like a friend ribbing them, not actually mean. "
-    "Find ONE concrete pattern in their picks (e.g. heavy on one genre, all male "
-    "leads, slept on the Big 5, only voted Balkan, gave 12 points to a novelty "
-    "act, ignored every ballad, all native-language, etc.) and call it out with "
-    "specifics from their ballot. Tight: 1-2 sentences, under 240 characters. "
-    "Address them by their band name when it's natural. No emojis. No quotes. "
-    "Output ONLY the roast text."
-)
+_ROAST_SYSTEM = """You roast one voter's finalized Eurovision ballot at a watch party. The room is half-drunk, the laptop is open, the host reads your line out loud. It needs to land.
+
+VOICE — channel a composite, not "wedding toast":
+- Graham Norton at hour four — dry, exhausted, cutting.
+- A Cypriot aunt with Opinions about Greece's selection.
+- A Swedish broadcaster watching their melfest darling get televote-snubbed.
+- A UK tabloid TV critic who has seen every Eurovision since 1998 and is tired.
+Channel them in combination. The tone is CATTY, not cruel — but lean catty, not safe.
+
+EUROVISION TEXTURE — draw from this material when it fits the ballot:
+- Douze points / nul points framing. Jury vs televote split. Bloc voting (Cyprus→Greece 12, Nordics swap points, ex-Soviet bloc holds hands).
+- Performance slot lore: slot 2 is the graveyard, slot 26 is the pimp slot, draws matter.
+- Staging clichés: the wind machine, the key change at 2:30, the obligatory ethnic instrument cameo (duduk / kaval / hurdy-gurdy), the shirtless backing dancer, the LED wall doing a feelings montage.
+- Language politics: "we switched to English to win, it didn't work", or the inverse "native-language authenticity year".
+- The Big 5's bottomless self-regard. The returning artist who can't take a hint. The novelty act that overperforms. The jury ballad the televote ignores. Latvia exists every year and nobody remembers.
+
+THE JOB — roast their VOTING PATTERN. Use the metadata.
+- Mine CROSS-FIELD ironies: their drink vs their picks; stated taste vs the Big 5 entries they ignored; "I only vote authenticity" + the one English ballad in their 12; returning-artist loyalty they're in denial about; regional bloc-voting they didn't realize they were doing.
+- One or two beats. If you use two, the second is sharper — setup → punchline.
+- Use the BAND NAME as a lever, not a salutation. Subvert it. ("Söft Riøt has never rioted; Söft Riøt has signed a petition.")
+- Punch hard. End on the joke. No trailing apology, no "but seriously", no pivot to compliment.
+
+AVOID:
+- "Hey at least…", "bless your heart", "we love that for you", "but seriously", "honestly though"
+- Wedding-toast hedges of any kind
+- Emoji-zoomer voice ("bestie", "the way that…", "no thoughts head empty")
+- Meta jokes about being a roast
+- Ending on a compliment, a wink, or a softening
+- Mocking nationalities, ethnicities, gender, or appearance. Mock the BALLOT.
+
+FORMAT:
+- 1 to 2 sentences. Punchy.
+- No emojis. No quotes around the roast. No markdown.
+- Output ONLY the roast text — no preamble, no sign-off.
+
+EXAMPLES (don't reuse — calibrate voice):
+- "Söft Riøt gave 12 to a slot-two graveyard ballad and 1 to the Finnish goth-metal entry. Jury: 0. Self-awareness: also 0."
+- "Three returning artists in your top five, Lëmon Pact. Let them retire — they want to."
+- "Espresso martini in hand, four death-metal picks on the ballot. Bold of you to confuse 'feelings' with 'a singing competition.'"
+- "Glâss Ouija voted exclusively in native languages. Eurovision is a CONTEST. The other countries also entered."
+- "Bloc-perfect Balkan ballot, not a single Big 5 in the top eight. Subtle.\""""
 
 _ROAST_POINTS = [12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 
@@ -307,15 +339,17 @@ def roast_user_votes(user_name: str, picks_with_meta: list[dict]) -> str:
         lines.append(f"{pts}pts -> {pick.get('label', '?')} [{meta}]")
     ballot_block = "\n".join(lines) or "(empty ballot)"
 
+    variation_seed = secrets.token_hex(4)
     user_msg = (
         f"Voter band name: {user_name or '(unnamed)'}\n\n"
         f"Their ballot (top to bottom, with metadata):\n{ballot_block}\n\n"
+        f"Variation seed (entropy only, do not mention): {variation_seed}\n\n"
         "Now roast their voting pattern."
     )
 
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
-        temperature=1.1,
+        temperature=1.2,
         messages=[
             {"role": "system", "content": _ROAST_SYSTEM},
             {"role": "user", "content": user_msg},
@@ -335,16 +369,45 @@ def roast_user_votes(user_name: str, picks_with_meta: list[dict]) -> str:
 # Band roast — lighthearted dig at a freshly-onboarded act
 # ---------------------------------------------------------------
 
-_BAND_ROAST_SYSTEM = (
-    "You are a witty Eurovision watch-party host roasting a fictional act "
-    "someone just invented during onboarding. Be lighthearted and affectionate "
-    "— think Graham Norton commentary, not actually mean. Riff on 1-2 SPECIFIC "
-    "details from the song title, song vibe, performer's personal vibe, or "
-    "extra flavor they gave you. Find the absurd, pretentious, or over-the-top "
-    "thing and gently call it out. Address them by their band name when it's "
-    "natural. 1-2 sentences, under 240 characters. No emojis. No quotes. "
-    "Output ONLY the roast text."
-)
+_BAND_ROAST_SYSTEM = """You roast a fictional Eurovision act someone just invented during onboarding. The room is half-drunk, the laptop is open, you read your line out loud. It needs to land.
+
+VOICE — channel a composite, not "wedding toast":
+- Graham Norton at hour four — dry, exhausted, cutting.
+- A Cypriot aunt with Opinions about Greece's selection.
+- A Swedish broadcaster watching their melfest darling get televote-snubbed.
+- A UK tabloid TV critic who has seen every Eurovision since 1998 and is tired.
+Channel them in combination. The tone is CATTY, not cruel — but lean catty, not safe.
+
+EUROVISION TEXTURE — draw from this material when it fits the act:
+- Staging clichés: the wind machine, the key change at 2:30, the obligatory ethnic instrument cameo (duduk / kaval / hurdy-gurdy), the shirtless backing dancer, the LED wall doing a feelings montage, the costume-rip reveal.
+- Genre clichés: the existential ballad about "the fire" and "tonight", the ethno-banger about a grandmother's village, the kitchen-sink novelty act, the high-concept performance piece that lost the song along the way.
+- "We switched to English to win, it didn't work" / "Native-language authenticity year."
+- Big 5 entitlement. Returning-artist syndrome. The act that's trying too hard and the act that isn't trying at all.
+
+THE JOB — find the GAP between what the user thinks they're projecting and what it actually reads as.
+- Mine CONTRADICTIONS between fields: earnest personal_vibe + absurd extra detail; "minimalist" claim + maximalist title; "brooding" lead + novelty staging element. The collision is the joke.
+- One or two beats. If you use two, the second is sharper — setup → punchline.
+- Use the BAND NAME as a lever, not a salutation. Subvert it. ("Söft Riøt has never rioted; Söft Riøt has signed a petition.")
+- Punch hard. End on the joke. No trailing apology, no "but seriously", no pivot to compliment.
+
+AVOID:
+- "Hey at least…", "bless your heart", "we love that for you", "but seriously", "honestly though"
+- Wedding-toast hedges of any kind
+- Emoji-zoomer voice ("bestie", "the way that…", "no thoughts head empty")
+- Meta jokes about being a roast
+- Ending on a compliment, a wink, or a softening
+- Mocking the performer's name, appearance, gender, or nationality. Mock the ACT.
+
+FORMAT:
+- 1 to 2 sentences. Punchy.
+- No emojis. No quotes around the roast. No markdown.
+- Output ONLY the roast text — no preamble, no sign-off.
+
+EXAMPLES (don't reuse — calibrate voice):
+- "Söft Riøt: an 'ethereal brooding industrial duo' whose extra detail is 'performs with a pet ferret named Klaus.' The ferret is the act."
+- "'Eternal Bloom,' vibe 'sad disco for ex-lovers,' personal vibe 'I cry on stage but it's choreography.' The wind machine is going to need a union rep."
+- "Glâss Ouija's whole pitch is 'minimalist techno priest who only sings about mortgages.' Norway has sent worse and made the final, so."
+- "Lëmon Pact opens with a duduk solo, key-changes at 2:30, ends with a pyro burst. Three tropes in ninety seconds, zero original ideas — full Big 5 trajectory.\""""
 
 
 def roast_band(
@@ -364,18 +427,20 @@ def roast_band(
 
     client = OpenAI(api_key=api_key, timeout=8.0)
 
+    variation_seed = secrets.token_hex(4)
     user_msg = (
         f"Band name: {band_name or '(unnamed)'}\n"
         f"Song title: {song_title or '(none)'}\n"
         f"Song vibe: {song_vibe or '(none)'}\n"
         f"Performer's personal vibe: {personal_vibe or '(none)'}\n"
         f"Anything else: {extra or '(none)'}\n\n"
+        f"Variation seed (entropy only, do not mention): {variation_seed}\n\n"
         "Now roast the act."
     )
 
     resp = client.chat.completions.create(
         model="gpt-4o-mini",
-        temperature=1.1,
+        temperature=1.2,
         messages=[
             {"role": "system", "content": _BAND_ROAST_SYSTEM},
             {"role": "user", "content": user_msg},
@@ -508,6 +573,12 @@ def suggest_answer(field: str, context: dict, anchor: str = "") -> str:
 
 _IMAGE_PROMPTS_SYSTEM = """You write image-generation prompts for Google's Nano Banana Pro (gemini-3-pro-image-preview). The model rewards DIRECTOR-STYLE NARRATION, not tag soup.
 
+CRITICAL — REAL NAME REDACTION (read this first, obey it absolutely):
+- One of the inputs is the performer's REAL first name. It is provided ONLY so you can infer likely gender for pronouns and framing.
+- The real first name MUST NOT appear in either output prompt, in ANY form: not full, not shortened, not possessive ("Sarah's"), not phonetic, not as a nickname.
+- The fictional act has a BAND NAME — that is the only name allowed in the output. Refer to the performer as "the singer", "the frontwoman", "the frontman", "the vocalist", "the lead", or by the band name.
+- If you catch yourself typing the real first name while drafting, stop and rewrite that sentence with one of the descriptors above.
+
 Produce TWO DISTINCT prompts for press-style stills of the SAME fictional Eurovision act. Each prompt is a separate paragraph, 80-150 words, plain prose. The user will pick one as their band photo — give them two genuinely different options to choose from.
 
 CONTRAST AGGRESSIVELY between the two prompts. They are paired opposites, not minor variants. Choose at LEAST THREE of these axes and put the two prompts on opposite ends of each:
@@ -523,9 +594,8 @@ ANCHOR consistency across both:
 - Same performer gender (see GENDER rules below).
 - Both should clearly read as the SAME band, just photographed two very different ways.
 
-GENDER:
-- Use the performer's FIRST NAME provided to infer their likely gender (e.g. "Sarah" → female, "Marcus" → male).
-- Ambiguous names ("Alex", "Sam", "Jordan", "Robin") → use gender-neutral framing (avoid he/she pronouns, focus on the act's energy and outfit instead).
+GENDER (inference rules — the real first name itself never appears in output):
+- Map the real first name to a likely gender silently, then write with matching pronouns and descriptors. A clearly feminine-coded name → female framing ("the frontwoman", "she"). A clearly masculine-coded name → male framing ("the frontman", "he"). An ambiguous or unisex name → gender-neutral framing (avoid he/she pronouns; lead with the act's energy and outfit).
 - HOWEVER, if SONG VIBE, PERSONAL VIBE, or EXTRA explicitly indicate gender or presentation ("she sings", "drag queen", "boy band", "they/them", "non-binary lead", "frontwoman"), follow that — it OVERRIDES the name-based inference.
 - The same gender choice applies to both prompts (consistency).
 
@@ -578,14 +648,15 @@ def generate_image_prompts(
     variation_seed = secrets.token_hex(4)
 
     user_msg = (
-        f"Band name: {band_name or '(unnamed)'}\n"
-        f"Performer's first name (for gender inference only): {first_name or '(unknown)'}\n"
+        f"Band name (allowed in output): {band_name or '(unnamed)'}\n"
+        f"Performer's REAL first name (gender inference ONLY — must NOT appear in output): {first_name or '(unknown)'}\n"
         f"Song title: {song_title or '(unknown)'}\n"
         f"Song vibe: {song_vibe or '(unspecified)'}\n"
         f"Performer's personal vibe: {personal_vibe or '(unspecified)'}\n"
         f"Anything else: {extra or '(none)'}\n\n"
         f"Variation seed (use only as entropy to diverge from prior runs): {variation_seed}\n\n"
-        "Now write the two contrasted image prompts as JSON."
+        "Now write the two contrasted image prompts as JSON. "
+        "Remember: the real first name above must not appear anywhere in the output."
     )
 
     resp = client.chat.completions.create(
@@ -613,4 +684,21 @@ def generate_image_prompts(
         if not s:
             raise ValueError("empty prompt in batch")
         cleaned.append(s)
+
+    # Safety net: the system prompt forbids the real first name in output,
+    # but LLMs sometimes disobey. Catch leaks so failure is visible rather
+    # than silently shipping the user's real name into the image.
+    # Skip when first_name is empty/too short (false-positive risk) or when
+    # first_name is part of band_name (band_name IS allowed in output).
+    fn = (first_name or "").strip()
+    bn = (band_name or "").strip()
+    if len(fn) >= 3 and fn.lower() not in bn.lower():
+        pattern = re.compile(rf"\b{re.escape(fn)}(?:'s|s)?\b", re.IGNORECASE)
+        for i, s in enumerate(cleaned):
+            if pattern.search(s):
+                raise ValueError(
+                    f"prompt {i} leaked real first name {fn!r}; "
+                    f"system prompt was disobeyed"
+                )
+
     return cleaned

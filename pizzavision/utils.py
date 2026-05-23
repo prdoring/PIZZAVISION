@@ -128,12 +128,17 @@ def uniq_sorted(names):
             seen[key] = name.strip()
     return sorted(seen.values(), key=lambda n: canonical(n))
 
-def find_all_tied_winners(scores, highest=True):
+def find_all_tied_winners(scores, highest=True, allow_zero=False):
     if not scores:
         return []
     best = max(scores.values()) if highest else min(scores.values())
-    if best == 0:
-        return []          # nobody scored in this category
+    # `best == 0` normally means "nobody scored" → skip the award. But for
+    # inverted-score awards (Contrarian, Slummin' It, Introvert), zero is a
+    # meaningful peak — it means a voter achieved a perfect "lowest" result
+    # (zero similarity, zero GDP, zero population). Callers pass allow_zero
+    # in that case so the winner isn't silently dropped.
+    if best == 0 and not allow_zero:
+        return []
     return [u for u, s in scores.items() if s == best]
 
 def calculate_ranked_choice(votes, vo):
@@ -177,7 +182,10 @@ def calculate_ranked_choice(votes, vo):
     return (sorted_results, point_distributions)
 
 def calculate_awards(vote_store, options_data):
-    users_raw = vote_store.all()
+    # Drop voters who never ranked anything — otherwise an empty rank reads as
+    # "0 similarity / 0 GDP / 0 population" and lets a non-voter sweep the
+    # lowest-score awards (Contrarian, Slummin' It, Introvert).
+    users_raw = [u for u in vote_store.all() if u.get('rank')]
     songs_raw = options_data['options']
 
     # build a lookup that survives accented differences
@@ -377,7 +385,9 @@ def calculate_awards(vote_store, options_data):
                 return f"{winners_str} had equally popular taste among the group - they're all trendsetters!"
                 
             elif award_code == "Contrarian":
-                return f"{winners_str} were equally unique in their picks - our tied contrarians!"
+                n_pairings = max(len(users) - 1, 1)
+                avg_sim = abs(scores[winner_names[0]]) / n_pairings
+                return f"{winners_str} all averaged only {avg_sim:.1f} similarity points per pairing — tied for the most distinct top 11s in the room."
                 
             elif award_code == "Twinzies":
                 # This one is naturally a pair already
@@ -435,14 +445,14 @@ def calculate_awards(vote_store, options_data):
         # Calculate insights based on award type
         if award_code == "Pop Diva":
             pop_songs = get_genre_songs("pop")
-            pop_count = sum(1 for song in pop_songs if song in winner_ranks[:10])
-            avg_pop_count = sum(sum(1 for song in pop_songs if song in u['rank'][:10]) for u in users_raw) / len(users_raw)
-            return f"The winner of this award placed {pop_count} pop songs in their top 10, compared to the group average of {avg_pop_count:.1f}."
+            pop_count = sum(1 for song in pop_songs if song in winner_ranks[:11])
+            avg_pop_count = sum(sum(1 for song in pop_songs if song in u['rank'][:11]) for u in users_raw) / len(users_raw)
+            return f"The winner of this award placed {pop_count} pop songs in their top 11, compared to the group average of {avg_pop_count:.1f}."
             
         elif award_code == "Rockstar":
-            # Find their highest ranked rock song
+            # Find their highest ranked rock song among point-scoring picks
             rock_songs = get_genre_songs("rock")
-            winner_top_rock = next((song for song in winner_ranks if song in rock_songs), None)
+            winner_top_rock = next((song for song in winner_ranks[:11] if song in rock_songs), None)
             if winner_top_rock:
                 winner_pos = winner_ranks.index(winner_top_rock)
                 avg_pos = sum(u['rank'].index(winner_top_rock) if winner_top_rock in u['rank'] else len(u['rank']) for u in users_raw) / len(users_raw)
@@ -456,14 +466,13 @@ def calculate_awards(vote_store, options_data):
             
         elif award_code == "Mr. Roboto":
             electronic_songs = get_genre_songs("electronic")
-            top_electronic = [s for s in winner_ranks[:5] if s in electronic_songs]
-            return f"The winner of this award placed {len(top_electronic)} electronic songs in their top 5."
+            top_electronic = [s for s in winner_ranks[:11] if s in electronic_songs]
+            return f"The winner of this award placed {len(top_electronic)} electronic songs in their top 11."
             
         elif award_code == "Crooner":
             ballad_songs = get_genre_songs("ballad")
-            total_ballads = len(ballad_songs)
-            winner_ballads = sum(1 for s in winner_ranks if s in ballad_songs)
-            return f"The winner of this award gave points to {winner_ballads} ballads!"
+            winner_ballads = sum(1 for s in winner_ranks[:11] if s in ballad_songs)
+            return f"The winner of this award placed {winner_ballads} ballads in their top 11."
             
         elif award_code == "Big 5":
             big5_points = scores[winner]
@@ -479,7 +488,7 @@ def calculate_awards(vote_store, options_data):
             
         elif award_code == "Red George":
             soviet_songs = [s['label'] for s in songs_raw if s.get('former_soviet')]
-            favorite = next((s for s in winner_ranks if s in soviet_songs), None)
+            favorite = next((s for s in winner_ranks[:11] if s in soviet_songs), None)
             if favorite:
                 return f"The winner of this award's favorite former Soviet entry was '{favorite.split(':', 1)[1].strip()}'."
             return f""
@@ -490,21 +499,19 @@ def calculate_awards(vote_store, options_data):
             
         elif award_code == "Polyglot":
             native_songs = [s['label'] for s in songs_raw if s.get('language') == 'native']
-            native_in_top = sum(1 for s in winner_ranks[:7] if s in native_songs)
-            return f"The winner of this award placed {native_in_top} native language songs in their top 7."
+            native_in_top = sum(1 for s in winner_ranks[:11] if s in native_songs)
+            return f"The winner of this award placed {native_in_top} native language songs in their top 11."
             
         elif award_code == "Tastemaker":
             # Find a song that appeared most commonly in other users' top ranks
             winner_top_song = winner_ranks[0]
-            others_with_same = sum(1 for u in users_raw if u['user'] != winner and winner_top_song in u['rank'][:5])
-            return f"The winner of this award's #1 pick appeared in {others_with_same} other voters' top 5."
+            others_with_same = sum(1 for u in users_raw if u['user'] != winner and winner_top_song in u['rank'][:11])
+            return f"The winner of this award's #1 pick appeared in {others_with_same} other voters' top 11."
             
         elif award_code == "Contrarian":
-            unique_picks = 0
-            for song in winner_ranks[:10]:
-                if not any(song in u['rank'][:10] for u in users_raw if u['user'] != winner):
-                    unique_picks += 1
-            return f"The winner of this award had {unique_picks} songs in their top 10 that didn't appear in anyone else's top 10."
+            n_pairings = max(len(users) - 1, 1)
+            avg_sim = abs(scores[winner]) / n_pairings
+            return f"The winner of this award averaged only {avg_sim:.1f} similarity points with each other voter (out of 110 possible) — the most distinct top 11 in the room."
             
         elif award_code == "Twinzies":
             # For pairs
@@ -518,14 +525,14 @@ def calculate_awards(vote_store, options_data):
             
         elif award_code == "A Bottle Of Red":
             red_wine_songs = [s['label'] for s in songs_raw if s.get('drink') == 'red wine']
-            fav_red = next((s for s in winner_ranks if s in red_wine_songs), None)
+            fav_red = next((s for s in winner_ranks[:11] if s in red_wine_songs), None)
             if fav_red:
                 return f"The winner of this award's favorite red wine song was '{fav_red.split(':', 1)[1].strip()}'."
             
         elif award_code == "A Bottle Of White":
             white_wine_songs = [s['label'] for s in songs_raw if s.get('drink') == 'white wine']
-            white_count = len([s for s in winner_ranks[:10] if s in white_wine_songs])
-            return f"The winner of this award had {white_count} white wine songs in their top 10."
+            white_count = len([s for s in winner_ranks[:11] if s in white_wine_songs])
+            return f"The winner of this award had {white_count} white wine songs in their top 11."
             
         elif award_code == "A Bottle Of Beer":
             beer_pts = scores[winner]
@@ -758,16 +765,22 @@ def calculate_awards(vote_store, options_data):
         elif award_code == "Tastemaker":
             other_ranks = [u['rank'] for u in users_raw if u['user'] != winner]
             for idx, lbl in enumerate(winner_ranks[:3]):
-                also = sum(1 for r in other_ranks if lbl in r[:5])
-                out.append(f"{ESC_POINTS[idx]}pts → {lbl} (also top-5 for {also}/{len(other_ranks)} others)")
+                also = sum(1 for r in other_ranks if lbl in r[:11])
+                out.append(f"{ESC_POINTS[idx]}pts → {lbl} (also top-11 for {also}/{len(other_ranks)} others)")
         elif award_code == "Contrarian":
-            others_top10 = set()
-            for u in users_raw:
-                if u['user'] != winner:
-                    others_top10.update(u['rank'][:10])
-            unique = [(ESC_POINTS[idx], lbl) for idx, lbl in enumerate(winner_ranks[:len(ESC_POINTS)])
-                      if lbl not in others_top10]
-            out.extend(f"{pts}pts → {lbl} (in no one else's top 10)" for pts, lbl in unique[:3])
+            pick_counts = []
+            for idx, lbl in enumerate(winner_ranks[:len(ESC_POINTS)]):
+                others_with = sum(1 for u in users_raw
+                                  if u['user'] != winner and lbl in u['rank'][:11])
+                pick_counts.append((others_with, ESC_POINTS[idx], lbl))
+            # Most distinct picks first; break ties by higher points awarded.
+            pick_counts.sort(key=lambda x: (x[0], -x[1]))
+            for others_with, pts, lbl in pick_counts[:3]:
+                if others_with == 0:
+                    out.append(f"{pts}pts → {lbl} (in no one else's top 11)")
+                else:
+                    others_word = "other's" if others_with == 1 else "others'"
+                    out.append(f"{pts}pts → {lbl} (in only {others_with} {others_word} top 11)")
 
         elif award_code == "Juggler":
             vb = vote_behavior.get(winner, {})
@@ -864,8 +877,8 @@ def calculate_awards(vote_store, options_data):
 
         return out
 
-    def push_award(code_name, pretty, scores_dict):
-        winners = find_all_tied_winners(scores_dict)
+    def push_award(code_name, pretty, scores_dict, allow_zero=False):
+        winners = find_all_tied_winners(scores_dict, allow_zero=allow_zero)
         if winners:
             insight = calculate_insight(code_name, winners, scores_dict)
             stats = calculate_stats(code_name, winners, scores_dict)
@@ -911,25 +924,29 @@ def calculate_awards(vote_store, options_data):
         )
 
     # similarity matrix
-    # Tastemaker / Contrarian use full ranking. Twinzies only compares the
-    # top picks each voter actually invested effort in — junk at the tail
-    # of a 25-song ballot shouldn't be the thing crowning the closest pair.
+    # Tastemaker / Contrarian compare each voter's point-scoring picks (top 11)
+    # so the score lines up with every other award's scoring window. Twinzies
+    # uses a slightly wider window (top 12) to give a touch more signal for the
+    # closest-pair comparison without dragging in tail junk from a 25-song ballot.
+    SIM_WINDOW = len(ESC_POINTS)  # top 11
     TWINZIES_WINDOW = 12
     sim_total = defaultdict(int)
     pair_sim = {}
     for i, u1 in enumerate(users):
         r1_full = users_raw[i]['rank']
+        r1_sim = r1_full[:SIM_WINDOW]
         r1_top = r1_full[:TWINZIES_WINDOW]
         for j in range(i + 1, len(users)):
             u2 = users[j]
             r2_full = users_raw[j]['rank']
+            r2_sim = r2_full[:SIM_WINDOW]
             r2_top = r2_full[:TWINZIES_WINDOW]
-            full_score = sum(
-                max(10 - abs(r1_full.index(lbl) - r2_full.index(lbl)), 0)
-                for lbl in set(r1_full) & set(r2_full)
+            sim_score = sum(
+                max(10 - abs(r1_sim.index(lbl) - r2_sim.index(lbl)), 0)
+                for lbl in set(r1_sim) & set(r2_sim)
             )
-            sim_total[u1] += full_score
-            sim_total[u2] += full_score
+            sim_total[u1] += sim_score
+            sim_total[u2] += sim_score
             top_score = sum(
                 max(10 - abs(r1_top.index(lbl) - r2_top.index(lbl)), 0)
                 for lbl in set(r1_top) & set(r2_top)
@@ -938,8 +955,10 @@ def calculate_awards(vote_store, options_data):
             pair_sim[key] = top_score
 
     push_award("Tastemaker", "👑 Tastemaker 👑", sim_total)
-    push_award("Contrarian", "🙃 Contrarian 🙃", sim_total if not sim_total else
-               {u: -s for u, s in sim_total.items()})  # invert for lowest
+    push_award("Contrarian", "🙃 Contrarian 🙃",
+               sim_total if not sim_total else
+               {u: -s for u, s in sim_total.items()},  # invert for lowest
+               allow_zero=True)
 
     # Big 5
     push_award("Big 5", "4️⃣ Big <s>5</s> 4 4️⃣", {u: p['big5'] for u, p in user_points.items()})
@@ -998,14 +1017,16 @@ def calculate_awards(vote_store, options_data):
     push_award("Moneybags", "💰 Moneybags 💰", gdp_scores)
     push_award("Slummin' It", "🪙 Slummin' It 🪙",
                gdp_scores if not gdp_scores else
-               {u: -s for u, s in gdp_scores.items()})
+               {u: -s for u, s in gdp_scores.items()},
+               allow_zero=True)
 
     # population-weighted
     pop_scores = {u: p['population_weighted'] for u, p in user_points.items()}
     push_award("Extrovert", "🗣️ Extrovert 🗣️", pop_scores)
     push_award("Introvert", "🤫 Introvert 🤫",
                pop_scores if not pop_scores else
-               {u: -s for u, s in pop_scores.items()})
+               {u: -s for u, s in pop_scores.items()},
+               allow_zero=True)
 
     # --- vote-behavior awards (driven by mutation_count + top1_history) ---
 

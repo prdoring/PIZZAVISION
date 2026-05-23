@@ -359,7 +359,12 @@
   var bgFlashStart = -1;
 
   function pickVisibleAngle() {
-    return Math.PI * 0.5 + (Math.random() - 0.5) * Math.PI * 1.4;
+    // Bias hard toward straight-up. Focus sits at y=-0.55 (below the
+    // visible area), so anything near horizontal skims the bottom edge
+    // where the effect barely shows. ±π/3 keeps variation between
+    // consecutive triggers but ensures every effect travels through the
+    // upper hemisphere where it's visible.
+    return Math.PI * 0.5 + (Math.random() - 0.5) * (Math.PI * 2 / 3);
   }
 
   function compileShader(gl, type, source) {
@@ -402,13 +407,30 @@
     var s = canvas.style;
     s.position = "fixed";
     s.top = "0";
-    s.left = "0";
-    s.width = "100%";
-    s.height = "100%";
     s.display = "block";
     s.zIndex = "-1";
     s.pointerEvents = "none";
+    applyResponsiveLayout(canvas);
     return canvas;
+  }
+
+  function applyResponsiveLayout(canvas) {
+    var s = canvas.style;
+    var isMobile = window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+    if (isMobile) {
+      // Overscan on phones so the slow-moving pattern fills past the safe area
+      // even as the URL bar shows/hides.
+      s.left = "-10%";
+      s.width = "120%";
+      s.height = "130vh";
+    } else {
+      s.left = "0";
+      s.width = "100%";
+      // 100lvh pins to the URL-bar-hidden viewport so the shader doesn't
+      // resample when mobile chrome retracts. 100% is the lvh fallback.
+      s.height = "100%";
+      s.height = "100lvh";
+    }
   }
 
   function init() {
@@ -532,6 +554,25 @@
       }
     }
 
+    function resizeCanvas() {
+      // Cap DPR at 1 on phone-sized viewports — a 3× DPR phone rendering
+      // a fullscreen fragment shader is several million extra pixels per
+      // frame for what's a slow-moving background. Desktop still gets up
+      // to 2× for crispness on Retina displays.
+      var isMobile = window.matchMedia && window.matchMedia("(max-width: 768px)").matches;
+      applyResponsiveLayout(canvas);
+      var dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1 : 2);
+      var w = Math.floor(canvas.clientWidth * dpr);
+      var h = Math.floor(canvas.clientHeight * dpr);
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w;
+        canvas.height = h;
+      }
+    }
+    resizeCanvas();
+    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("orientationchange", resizeCanvas);
+
     function draw(wallMs) {
       if (disposed) return;
       if (lastFrameTs >= 0) {
@@ -539,13 +580,6 @@
       }
       lastFrameTs = wallMs;
 
-      var dpr = Math.min(window.devicePixelRatio || 1, 2);
-      var w = Math.floor(canvas.clientWidth * dpr);
-      var h = Math.floor(canvas.clientHeight * dpr);
-      if (canvas.width !== w || canvas.height !== h) {
-        canvas.width = w;
-        canvas.height = h;
-      }
       gl.viewport(0, 0, canvas.width, canvas.height);
       gl.uniform2f(locs.resolution, canvas.width, canvas.height);
       gl.uniform1f(locs.time, shaderTime * 0.001);
@@ -656,6 +690,8 @@
       disposed = true;
       window.cancelAnimationFrame(animFrame);
       document.removeEventListener("visibilitychange", handleVis);
+      window.removeEventListener("resize", resizeCanvas);
+      window.removeEventListener("orientationchange", resizeCanvas);
       clearInterval(cleanup);
     });
 
