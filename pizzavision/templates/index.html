@@ -1934,6 +1934,26 @@
         #prevote-overlay .pv-state-card.prevote-card .prevote-waiting {
             margin: 0 auto;
         }
+        /* Roast can run 2-3 sentences (~320 chars). On short viewports
+           (small phones in portrait, anything in landscape) that pushes
+           the stacked card past the parent overflow:hidden cut. Shrink
+           the roast type so it fits without losing the waiting dots. */
+        @media (max-height: 700px) {
+            #prevote-overlay .pv-state-card.prevote-card .vote-roast-text {
+                font-size: 13px;
+                line-height: 1.4;
+            }
+            #prevote-overlay .pv-state-card.prevote-card .vote-roast {
+                min-height: 48px;
+                padding: 10px 12px;
+            }
+        }
+        @media (max-height: 560px) {
+            #prevote-overlay .pv-state-card.prevote-card .vote-roast-text {
+                font-size: 12px;
+                line-height: 1.35;
+            }
+        }
         /* Spinner kept ONLY for the brief AI roast loads — see .vote-roast-spinner */
         @keyframes prevoteSpin {
             to { transform: rotate(360deg); }
@@ -2899,6 +2919,7 @@
                  'pv_onboarding_state', 'pv_onboarding_answers',
                  'pv_onboarding_options', 'pv_onboarding_pinned',
                  'pv_onboarding_seen_names', 'pv_pending_band_name',
+                 'pv_prefetched_hash',
                  'pv_song_title', 'pv_image_url']
                     .forEach(function (k) {
                         try { localStorage.removeItem(k); } catch (e) {}
@@ -3027,6 +3048,16 @@
             // the polling loop would early-return forever.
             var imagePickerState = null;
             var imagePickerPollId = null;
+            // Buffer for band_image_candidate_ready socket events received
+            // DURING THE PREFETCH WINDOW (user is still on the name-pick
+            // step, so imagePickerState is null and the normal socket
+            // handler would drop them). resetImagePicker replays these on
+            // entry to the images step so the hero paints instantly in
+            // the "prefetch already finished" case instead of flashing
+            // the loading state for one poll round-trip.
+            // Cleared on start-over (clearOnboardingLS) and when a fresh
+            // prefetch is fired with different onboarding answers.
+            var prefetchedCandidates = {};
             // Same reason for IMAGE_STATUS_LINES: resetImagePicker calls
             // startImagePickerStatusCycle which reads
             // IMAGE_STATUS_LINES.length immediately. If the array is
@@ -3353,6 +3384,62 @@
                 localStorage.removeItem('pv_onboarding_options');
                 localStorage.removeItem('pv_onboarding_pinned');
                 localStorage.removeItem('pv_onboarding_seen_names');
+                localStorage.removeItem('pv_prefetched_hash');
+                // In-memory buffer of prefetch-window socket events.
+                // Doesn't live in LS, but its lifetime is the same as the
+                // hash above — start-over invalidates both.
+                prefetchedCandidates = {};
+            }
+
+            // Hash of the onboarding answers that drive the image prompt.
+            // Stored to localStorage so a refresh during the pick step
+            // doesn't re-fire prefetch_band_images (the in-flight server
+            // task is still running). Re-fires only when the user edits
+            // an answer and returns to the pick step.
+            function answerPrefetchHash(answers) {
+                var a = answers || {};
+                return JSON.stringify({
+                    first_name:    (a.first_name || '').trim(),
+                    song_title:    (a.song_title || '').trim(),
+                    song_vibe:     (a.song_vibe || '').trim(),
+                    personal_vibe: (a.personal_vibe || '').trim(),
+                    extra:         (a.extra || '').trim()
+                });
+            }
+
+            // Fire the image-pipeline prefetch on entering the band-name
+            // pick step, with the answers we have so far (no band name
+            // yet — the server passes '' and the prompt LLM falls back
+            // to "the act" framing). While the user reads the 3 name
+            // options, Gemini is already drawing the 2 photos in the
+            // background.
+            //
+            // The matching onboarding_complete handler on the server
+            // sees `image_status` already set and skips re-triggering
+            // gen — it only persists the band name. If the user rerolls
+            // images later, the existing regenerate_band_images path
+            // reads the band name back off the row, so reroll prompts
+            // naturally pick up the chosen name.
+            function maybePrefetchBandImages() {
+                if (!clientId) return;
+                var answers = loadAnswers();
+                var hash = answerPrefetchHash(answers);
+                var lastHash = localStorage.getItem('pv_prefetched_hash');
+                if (hash === lastHash) {
+                    console.log('[onboarding] prefetch skipped — already fired for current answers');
+                    return;
+                }
+                // Drop the previous buffer — the server will wipe the old
+                // candidate slots in _prepare_image_generation, so any URLs
+                // we cached from a prior prefetch now point at deleted
+                // files. Fresh prefetch, fresh buffer.
+                prefetchedCandidates = {};
+                localStorage.setItem('pv_prefetched_hash', hash);
+                console.log('[onboarding] firing prefetch_band_images');
+                socket.emit('prefetch_band_images', {
+                    clientId: clientId,
+                    answers: answers
+                });
             }
 
             function renderProgress(step) {
@@ -3393,6 +3480,7 @@
 
                 if (step === 'pick') {
                     renderNameOptions();
+                    maybePrefetchBandImages();
                 }
 
                 // Restore prior input value (resume support) and focus.
@@ -3991,9 +4079,29 @@
             function resetImagePicker() {
                 console.log('[image-pick] resetImagePicker called, clientId=', clientId);
                 imagePickerState = _emptyImagePickerState();
+                // Replay any candidates received via socket during the
+                // prefetch window (user was on the name-pick step). If
+                // prefetch already finished, both slots paint instantly
+                // and we skip the "Generating photos…" status cycle
+                // entirely.
+                Object.keys(prefetchedCandidates).forEach(function (k) {
+                    var idx = parseInt(k, 10);
+                    var url = prefetchedCandidates[k];
+                    if (!isNaN(idx) && url) handleCandidateReady(idx, url);
+                });
                 renderImagePicker();
                 stopImagePickerPolling();
-                startImagePickerStatusCycle();
+                // Only run the status cycle if at least one slot is still
+                // pending. With prefetch landed pre-pick, both are ready
+                // and the cycle would just flash for one poll round-trip.
+                var anyPending = false;
+                for (var k in imagePickerState.candidates) {
+                    if (imagePickerState.candidates[k].state === 'pending') {
+                        anyPending = true;
+                        break;
+                    }
+                }
+                if (anyPending) startImagePickerStatusCycle();
                 if (!clientId) {
                     console.warn('[image-pick] no clientId; cannot poll state');
                     return;
@@ -4063,9 +4171,15 @@
                     });
 
                     // Hard prompt-gen failure -- no point polling further.
+                    // Defensive: with the server-side pizza fallback this
+                    // should be unreachable, but if it ever fires we still
+                    // want the reroll button enabled, so mark both slots
+                    // failed before showing the error.
                     if (state.status === 'failed' && !(state.candidates || []).length) {
                         stopImagePickerPolling();
-                        showImagePickerHardError('Image generation unavailable. Please refresh to try again.');
+                        handleCandidateFailed(0);
+                        handleCandidateFailed(1);
+                        showImagePickerHardError('Image generation unavailable. Tap reroll to try again.');
                         return;
                     }
 
@@ -4170,7 +4284,7 @@
                 $reroll.prop('disabled', anyPending);
 
                 if (imagePickerState.allFailed) {
-                    showImagePickerHardError("Couldn't generate any photos. Please refresh to try again.");
+                    showImagePickerHardError("Couldn't generate any photos. Tap reroll to try again.");
                 }
             }
 
@@ -4298,6 +4412,11 @@
             socket.on('band_image_candidate_ready', function (data) {
                 console.log('[image-pick] band_image_candidate_ready:', data);
                 if (!data || typeof data.idx !== 'number' || !data.url) return;
+                // Always buffer — covers the prefetch window where the
+                // user is still on the name-pick step and imagePickerState
+                // is null. resetImagePicker replays this on entry to the
+                // images step.
+                prefetchedCandidates[data.idx] = data.url;
                 handleCandidateReady(data.idx, data.url);
             });
 
@@ -4315,7 +4434,7 @@
                     handleCandidateFailed(2);
                 }
                 var msg = (data && data.error) ? String(data.error).slice(0, 200) : 'Image generation unavailable.';
-                showImagePickerHardError("Couldn't generate photos: " + msg + ' — please refresh to try again.');
+                showImagePickerHardError("Couldn't generate photos: " + msg + ' — tap reroll to try again.');
             });
 
             socket.on('band_image_finalized', function (data) {
@@ -4561,6 +4680,7 @@
                     ['clientId','userName','itemsOrder',
                      'pv_onboarding_state','pv_onboarding_answers','pv_onboarding_options',
                      'pv_onboarding_pinned',
+                     'pv_prefetched_hash',
                      'instructionsDismissed']
                         .forEach(function (k) { localStorage.removeItem(k); });
                     location.reload(true);

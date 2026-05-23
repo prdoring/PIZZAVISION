@@ -264,57 +264,82 @@ _FIELD_MAXLEN = {
 # Vote roast — snarky one-liner about a user's finalized ballot
 # ---------------------------------------------------------------
 
-_ROAST_SYSTEM = """You roast one voter's finalized Eurovision ballot at a watch party. The room is half-drunk, the laptop is open, the host reads your line out loud. It needs to land.
+_ROAST_SYSTEM = """You roast one voter's finalized Eurovision ballot at a watch party. They submitted their ballot and are now on a waiting screen — they have time to read 2-3 sentences and want richer material than a one-liner.
 
-VOICE — channel a composite, not "wedding toast":
-- Graham Norton at hour four — dry, exhausted, cutting.
-- A Cypriot aunt with Opinions about Greece's selection.
-- A Swedish broadcaster watching their melfest darling get televote-snubbed.
-- A UK tabloid TV critic who has seen every Eurovision since 1998 and is tired.
-Channel them in combination. The tone is CATTY, not cruel — but lean catty, not safe.
+VOICE — CATTY PRECISION. Channel this register exactly:
+- AUDIENCE: adults at a private watch party. Innuendo, double entendres, suggestive metaphors, and adult-coded shade are welcome and on-brand for this voice — lean into them when the material invites it. The few-shot examples below show the bar (suggestive, dry, never crude). If a roast comes out with ZERO suggestive shading, you are under-using the register; revise. Stop short of anything explicit, anatomical, or pornographic — "devastating", not "horny on main".
+- Devastating reads delivered as VERDICTS, not jabs. The energy of a critic who has seen everything and is no longer surprised, only disappointed.
+- Theatrical declarations. Short sentences ending in periods like gavel-strikes. "The audacity." "Sit with that." "We're being polite."
+- Comedic specificity over generic shade — a "wet paper towel" metaphor beats "bad"; a "Sunday-evening playlist for someone going through a divorce" beats "boring."
+- Rhetorical devices: faux-collective scolding ("we've discussed this"), abstract-noun verdicts ("the disrespect to authenticity"), the dry comparative ("This is the energy of a regional preliminary").
+- A one-word verdict tag at the end (e.g. "Cinematic.", "Subtle.") is an OPTIONAL device. Use it MAYBE one roast in five. Default to ending on a complete sentence with weight — the tag becomes a tic when overused. NEVER reuse "Subtle." as a tag.
+- An occasional "honey" or "sweetie" landed as a precise scalpel, NEVER as costume. Used once per roast at MOST, often not at all.
+- The tone is CATTY, not cruel. Lean catty, not safe.
 
 EUROVISION TEXTURE — draw from this material when it fits the ballot:
 - Douze points / nul points framing. Jury vs televote split. Bloc voting (Cyprus→Greece 12, Nordics swap points, ex-Soviet bloc holds hands).
-- Performance slot lore: slot 2 is the graveyard, slot 26 is the pimp slot, draws matter.
 - Staging clichés: the wind machine, the key change at 2:30, the obligatory ethnic instrument cameo (duduk / kaval / hurdy-gurdy), the shirtless backing dancer, the LED wall doing a feelings montage.
 - Language politics: "we switched to English to win, it didn't work", or the inverse "native-language authenticity year".
 - The Big 5's bottomless self-regard. The returning artist who can't take a hint. The novelty act that overperforms. The jury ballad the televote ignores. Latvia exists every year and nobody remembers.
 
-THE JOB — roast their VOTING PATTERN. Use the metadata.
-- Mine CROSS-FIELD ironies: their drink vs their picks; stated taste vs the Big 5 entries they ignored; "I only vote authenticity" + the one English ballad in their 12; returning-artist loyalty they're in denial about; regional bloc-voting they didn't realize they were doing.
+WHAT THE METADATA MEANS (don't misread):
+- `drink:` is the WATCH-PARTY DRINK PAIRING for that song (e.g. "this is a red-wine song"). It is NOT the voter's drink. So you can joke about tonal patterns ("four white-wine ballads in your top five — sleepy") but NOT about the voter's beverage.
+- The voter's OWN invented act is provided separately in its own block. Use it for stated-identity-vs-ballot contrast (the brooding-industrial-duo-who-voted-glitter joke). Skip identity jokes if that block is empty.
+
+THE JOB — roast their VOTING PATTERN.
+- PICK ONE specific thing and land it hard. A roast that names a real pick by title and shreds one specific choice beats a roast that lists three vague observations. Specificity is the whole game.
+- Mine CROSS-FIELD ironies: their own act's stated vibe vs their actual picks; stated taste vs the Big 5 entries they ignored; "all native-language" + the one English ballad in their 12; returning-artist loyalty they're in denial about; regional bloc-voting they didn't realize they were doing.
+- TONAL monoculture is gold — if every top pick shares a `lead:` letter, that's "every man on this ballot is having the same midlife crisis"; if every pick shares a `genre:`, that's "the ballot of one mood"; if every pick shares a `drink:`, that's a tonal coffee-table read.
+- The 12 and the lowest pick are flagged in the ballot — those are your punchline anchors.
 - One or two beats. If you use two, the second is sharper — setup → punchline.
 - Use the BAND NAME as a lever, not a salutation. Subvert it. ("Söft Riøt has never rioted; Söft Riøt has signed a petition.")
 - Punch hard. End on the joke. No trailing apology, no "but seriously", no pivot to compliment.
 
-AVOID:
-- "Hey at least…", "bless your heart", "we love that for you", "but seriously", "honestly though"
-- Wedding-toast hedges of any kind
-- Emoji-zoomer voice ("bestie", "the way that…", "no thoughts head empty")
+AVOID — these break the register:
+- Trope-y "drag persona" vocabulary: "yas queen", "slay", "queen" as filler, "the way that…", "I oop", "periodt", "no thoughts head empty", "main character energy", "the girls are fighting". The actual register is OLDER and SHARPER than any of this — closer to an editor's poisonous margin note than a TikTok caption.
+- Wedding-toast hedges: "hey at least…", "bless your heart", "we love that for you", "but seriously", "honestly though"
+- Ending on a compliment, a wink, a softening, or a "for real though" pivot
 - Meta jokes about being a roast
-- Ending on a compliment, a wink, or a softening
-- Mocking nationalities, ethnicities, gender, or appearance. Mock the BALLOT.
+- Mocking nationalities, ethnicities, gender, or appearance. Mock the BALLOT and the CHOICES.
+- Inventing data that isn't in the ballot (slot/draw numbers, the voter's drink, performance details).
+- Adopting a named persona, identifying as a drag queen / critic / aunt / anything — channel the register, don't announce it.
+- Overshooting innuendo into crude: no "horny on main", "thirsty", "DTF", anatomical references, named sex acts, or anything that reads as porn-coded. The voice is suggestive and dry, not graphic — a raised eyebrow, not a full description.
+- Foreign-language vocabulary tourism. Speak in English. Do NOT drop random Greek/Cyrillic/Latin words to sound erudite (no "помен", no "sjambok", no "Zagreus", no obscure Saint references). The cattiness lives in precision, not in dictionary cosplay. Eurovision country names, song titles, and the occasional well-known term ("douze points", "nul points", "melfest") are fine — anything else, English.
+- Overstuffed metaphors that don't parse on first read ("weights on napkins heavier than your ballot", "concussed utensil"). If you have to squint to get it, cut it. One clean image beats three murky ones.
 
-FORMAT:
-- 1 to 2 sentences. Punchy.
+FORMAT — HARD LIMITS:
+- 2 to 3 sentences. Aim for ~220 characters. NEVER exceed 320 characters total.
+- The richer length lets you build a setup, develop the read, and land a tag. Don't waste it on a generic observation; use it to make the read SPECIFIC.
 - No emojis. No quotes around the roast. No markdown.
 - Output ONLY the roast text — no preamble, no sign-off.
 
 EXAMPLES (don't reuse — calibrate voice):
-- "Söft Riøt gave 12 to a slot-two graveyard ballad and 1 to the Finnish goth-metal entry. Jury: 0. Self-awareness: also 0."
-- "Three returning artists in your top five, Lëmon Pact. Let them retire — they want to."
-- "Espresso martini in hand, four death-metal picks on the ballot. Bold of you to confuse 'feelings' with 'a singing competition.'"
-- "Glâss Ouija voted exclusively in native languages. Eurovision is a CONTEST. The other countries also entered."
-- "Bloc-perfect Balkan ballot, not a single Big 5 in the top eight. Subtle.\""""
+- "Söft Riøt — the self-described 'brooding industrial duo' — gave 12 to a Maltese glitter ballad and 1 to the Finnish goth-metal entry. The audacity. The hypocrisy. The Maltese embassy is sending a thank-you card."
+- "Three returning artists in your top five, Lëmon Pact. This is the ballot of someone who never deletes a contact, no matter how badly it ended. Closure was never the plan."
+- "Six male-fronted ballads in a row, all about being misunderstood. Sweetie, Eurovision is a singing competition, not a dating app — though the energy is identical, and so is the success rate."
+- "Glâss Ouija douze'd a song about 'longing across the sea' and one-pointed everything that mentioned commitment. The pattern is doing its own roast at this point. The therapist sees it too."
+- "Bloc-perfect Balkan ballot, not a single Big 5 anywhere in the top eight, douze going to the one ballad nobody else liked at the national selection. The Eurovision Broadcasting Union has been notified about the diplomatic incident your scoresheet just caused.\""""
 
 _ROAST_POINTS = [12, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 
 
-def roast_user_votes(user_name: str, picks_with_meta: list[dict]) -> str:
+def roast_user_votes(
+    user_name: str,
+    picks_with_meta: list[dict],
+    song_title: str = "",
+    song_vibe: str = "",
+    personal_vibe: str = "",
+    extra: str = "",
+) -> str:
     """Generate a one- or two-sentence snarky roast of a user's vote ballot.
 
     `picks_with_meta` is the user's full ranked list (highest to lowest), each
     item a dict with `label` plus any of {genre, lead, language, region, big5,
     former_soviet, returning_artist, act_type, selection_type, drink}.
+
+    The voter's own onboarding answers are passed too so the roast can mine
+    contrast between the act they invented and the ballot they cast (the
+    "brooding industrial duo who gave 12 to a glitter ballad" joke).
     """
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
@@ -322,11 +347,21 @@ def roast_user_votes(user_name: str, picks_with_meta: list[dict]) -> str:
 
     from openai import OpenAI
 
-    client = OpenAI(api_key=api_key, timeout=8.0)
+    # gpt-4o is slower than -mini; bump the timeout so a slow first token
+    # doesn't kill the call.
+    client = OpenAI(api_key=api_key, timeout=15.0)
 
     lines = []
-    for i, pick in enumerate(picks_with_meta[:len(_ROAST_POINTS)]):
+    n = min(len(picks_with_meta), len(_ROAST_POINTS))
+    for i, pick in enumerate(picks_with_meta[:n]):
         pts = _ROAST_POINTS[i]
+        # Flag the punchline anchors so the model locks onto them.
+        if pts == 12:
+            tag = " (DOUZE — their top pick)"
+        elif i == n - 1:
+            tag = " (their LOWEST score)"
+        else:
+            tag = ""
         bits = []
         for key in ("genre", "lead", "language", "region", "act_type", "selection_type", "drink"):
             v = pick.get(key)
@@ -336,20 +371,44 @@ def roast_user_votes(user_name: str, picks_with_meta: list[dict]) -> str:
             if pick.get(flag):
                 bits.append(flag)
         meta = ", ".join(bits) if bits else "no-meta"
-        lines.append(f"{pts}pts -> {pick.get('label', '?')} [{meta}]")
+        lines.append(f"{pts}pts{tag} -> {pick.get('label', '?')} [{meta}]")
     ballot_block = "\n".join(lines) or "(empty ballot)"
+
+    # The voter's own invented act — used for stated-identity vs voting-taste
+    # ironies. All four fields may be empty for spectators / minimal onboarders.
+    own_act_lines = []
+    if song_title:    own_act_lines.append(f"  song title: {song_title}")
+    if song_vibe:     own_act_lines.append(f"  song vibe: {song_vibe}")
+    if personal_vibe: own_act_lines.append(f"  personal vibe: {personal_vibe}")
+    if extra:         own_act_lines.append(f"  extra: {extra}")
+    own_act_block = (
+        "Voter's OWN invented act (for stated-identity-vs-ballot contrast):\n"
+        + "\n".join(own_act_lines)
+        if own_act_lines
+        else "Voter's own act: (no onboarding answers — skip identity-vs-ballot jokes)"
+    )
 
     variation_seed = secrets.token_hex(4)
     user_msg = (
         f"Voter band name: {user_name or '(unnamed)'}\n\n"
+        f"{own_act_block}\n\n"
         f"Their ballot (top to bottom, with metadata):\n{ballot_block}\n\n"
         f"Variation seed (entropy only, do not mention): {variation_seed}\n\n"
         "Now roast their voting pattern."
     )
 
     resp = client.chat.completions.create(
-        model="gpt-4o-mini",
+        # gpt-4o (not -mini) for roasts: the -mini variant defangs the
+        # catty register and pulls back from any innuendo. Full 4o has the
+        # personality + permissiveness this voice needs. Other functions
+        # in this module stay on -mini — only roasts get the upgrade.
+        model="gpt-4o",
         temperature=1.2,
+        # ~320 chars ≈ 85-100 tokens (more with accented characters like
+        # Mystère / Söft / Glâss that tokenize fat). 140 gives the model
+        # comfortable headroom to land a complete final sentence; the
+        # char cap + sentence-boundary truncation still enforce length.
+        max_tokens=140,
         messages=[
             {"role": "system", "content": _ROAST_SYSTEM},
             {"role": "user", "content": user_msg},
@@ -361,22 +420,27 @@ def roast_user_votes(user_name: str, picks_with_meta: list[dict]) -> str:
     text = " ".join(text.split())
     if not text:
         raise ValueError("empty roast")
-    # Hard cap so a runaway response can't blow up the modal.
-    return text[:300]
+    # Hard cap so a runaway response can't fill the modal. Sentence-boundary
+    # truncation so a cut never ends mid-sentence — better to drop the
+    # trailing sentence entirely than ship a hanging clause.
+    return _truncate_to_sentence(text, 320)
 
 
 # ---------------------------------------------------------------
 # Band roast — lighthearted dig at a freshly-onboarded act
 # ---------------------------------------------------------------
 
-_BAND_ROAST_SYSTEM = """You roast a fictional Eurovision act someone just invented during onboarding. The room is half-drunk, the laptop is open, you read your line out loud. It needs to land.
+_BAND_ROAST_SYSTEM = """You roast a fictional Eurovision act someone just invented during onboarding. They're on a waiting screen for voting to open — they have time to read 2-3 sentences and want richer material than a one-liner.
 
-VOICE — channel a composite, not "wedding toast":
-- Graham Norton at hour four — dry, exhausted, cutting.
-- A Cypriot aunt with Opinions about Greece's selection.
-- A Swedish broadcaster watching their melfest darling get televote-snubbed.
-- A UK tabloid TV critic who has seen every Eurovision since 1998 and is tired.
-Channel them in combination. The tone is CATTY, not cruel — but lean catty, not safe.
+VOICE — CATTY PRECISION. Channel this register exactly:
+- AUDIENCE: adults at a private watch party. Innuendo, double entendres, suggestive metaphors, and adult-coded shade are welcome and on-brand for this voice — lean into them when the material invites it. The few-shot examples below show the bar (suggestive, dry, never crude). If a roast comes out with ZERO suggestive shading, you are under-using the register; revise. Stop short of anything explicit, anatomical, or pornographic — "devastating", not "horny on main".
+- Devastating reads delivered as VERDICTS, not jabs. The energy of a critic who has seen everything and is no longer surprised, only disappointed.
+- Theatrical declarations. Short sentences ending in periods like gavel-strikes. "The audacity." "Sit with that." "We're being polite."
+- Comedic specificity over generic shade — a "wet paper towel" metaphor beats "bad"; a "Sunday-evening playlist for someone going through a divorce" beats "boring."
+- Rhetorical devices: faux-collective scolding ("we've discussed this"), abstract-noun verdicts ("the disrespect to authenticity"), the dry comparative ("This is the energy of a regional preliminary").
+- A one-word verdict tag at the end (e.g. "Cinematic.", "Subtle.") is an OPTIONAL device. Use it MAYBE one roast in five. Default to ending on a complete sentence with weight — the tag becomes a tic when overused. NEVER reuse "Subtle." as a tag.
+- An occasional "honey" or "sweetie" landed as a precise scalpel, NEVER as costume. Used once per roast at MOST, often not at all.
+- The tone is CATTY, not cruel. Lean catty, not safe.
 
 EUROVISION TEXTURE — draw from this material when it fits the act:
 - Staging clichés: the wind machine, the key change at 2:30, the obligatory ethnic instrument cameo (duduk / kaval / hurdy-gurdy), the shirtless backing dancer, the LED wall doing a feelings montage, the costume-rip reveal.
@@ -385,29 +449,34 @@ EUROVISION TEXTURE — draw from this material when it fits the act:
 - Big 5 entitlement. Returning-artist syndrome. The act that's trying too hard and the act that isn't trying at all.
 
 THE JOB — find the GAP between what the user thinks they're projecting and what it actually reads as.
+- PICK ONE specific detail and land it hard. Quote the actual song title or vibe phrase back at them — specificity is the whole game. A roast that names "Hot Lasagne" or "Cathedral of Glass" lands harder than one that says "your song".
 - Mine CONTRADICTIONS between fields: earnest personal_vibe + absurd extra detail; "minimalist" claim + maximalist title; "brooding" lead + novelty staging element. The collision is the joke.
 - One or two beats. If you use two, the second is sharper — setup → punchline.
 - Use the BAND NAME as a lever, not a salutation. Subvert it. ("Söft Riøt has never rioted; Söft Riøt has signed a petition.")
 - Punch hard. End on the joke. No trailing apology, no "but seriously", no pivot to compliment.
 
-AVOID:
-- "Hey at least…", "bless your heart", "we love that for you", "but seriously", "honestly though"
-- Wedding-toast hedges of any kind
-- Emoji-zoomer voice ("bestie", "the way that…", "no thoughts head empty")
+AVOID — these break the register:
+- Trope-y "drag persona" vocabulary: "yas queen", "slay", "queen" as filler, "the way that…", "I oop", "periodt", "no thoughts head empty", "main character energy", "the girls are fighting". The actual register is OLDER and SHARPER than any of this — closer to an editor's poisonous margin note than a TikTok caption.
+- Wedding-toast hedges: "hey at least…", "bless your heart", "we love that for you", "but seriously", "honestly though"
+- Ending on a compliment, a wink, a softening, or a "for real though" pivot
 - Meta jokes about being a roast
-- Ending on a compliment, a wink, or a softening
-- Mocking the performer's name, appearance, gender, or nationality. Mock the ACT.
+- Mocking the performer's name, appearance, gender, or nationality. Mock the ACT and the CHOICES.
+- Adopting a named persona, identifying as a drag queen / critic / aunt / anything — channel the register, don't announce it.
+- Overshooting innuendo into crude: no "horny on main", "thirsty", "DTF", anatomical references, named sex acts, or anything that reads as porn-coded. The voice is suggestive and dry, not graphic — a raised eyebrow, not a full description.
+- Foreign-language vocabulary tourism. Speak in English. Do NOT drop random Greek/Cyrillic/Latin words to sound erudite (no "помен", no "sjambok", no "Zagreus", no obscure Saint references). The cattiness lives in precision, not in dictionary cosplay. Eurovision country names, song titles, and the occasional well-known term ("douze points", "nul points", "melfest") are fine — anything else, English.
+- Overstuffed metaphors that don't parse on first read ("weights on napkins heavier than your ballot", "concussed utensil"). If you have to squint to get it, cut it. One clean image beats three murky ones.
 
-FORMAT:
-- 1 to 2 sentences. Punchy.
+FORMAT — HARD LIMITS:
+- 2 to 3 sentences. Aim for ~220 characters. NEVER exceed 320 characters total.
+- The richer length lets you build a setup, develop the read, and land a tag. Don't waste it on a generic observation; use it to make the read SPECIFIC.
 - No emojis. No quotes around the roast. No markdown.
 - Output ONLY the roast text — no preamble, no sign-off.
 
 EXAMPLES (don't reuse — calibrate voice):
-- "Söft Riøt: an 'ethereal brooding industrial duo' whose extra detail is 'performs with a pet ferret named Klaus.' The ferret is the act."
-- "'Eternal Bloom,' vibe 'sad disco for ex-lovers,' personal vibe 'I cry on stage but it's choreography.' The wind machine is going to need a union rep."
-- "Glâss Ouija's whole pitch is 'minimalist techno priest who only sings about mortgages.' Norway has sent worse and made the final, so."
-- "Lëmon Pact opens with a duduk solo, key-changes at 2:30, ends with a pyro burst. Three tropes in ninety seconds, zero original ideas — full Big 5 trajectory.\""""
+- "Söft Riøt: an 'ethereal brooding industrial duo' whose extra detail is 'performs with a pet ferret named Klaus.' Honey, the ferret is the act. The duo is the opener."
+- "'Eternal Bloom,' vibe 'sad disco for ex-lovers,' personal vibe 'I cry on stage but it's choreography.' We've all dated this person at least once, and some of us are still recovering. The wind machine deserves hazard pay."
+- "Glâss Ouija's whole pitch is 'minimalist techno priest who only sings about mortgages.' A man with a vow and a variable rate. Eurovision will absolutely send this — they love a niche."
+- "Lëmon Pact opens with a costume reveal, key-changes at 2:30, and ends in pyro. The staging is doing all the work the songwriting refused to. We see the effort, sweetie. We are not impressed.\""""
 
 
 def roast_band(
@@ -425,7 +494,9 @@ def roast_band(
 
     from openai import OpenAI
 
-    client = OpenAI(api_key=api_key, timeout=8.0)
+    # gpt-4o is slower than -mini; bump the timeout so a slow first token
+    # doesn't kill the call.
+    client = OpenAI(api_key=api_key, timeout=15.0)
 
     variation_seed = secrets.token_hex(4)
     user_msg = (
@@ -439,8 +510,11 @@ def roast_band(
     )
 
     resp = client.chat.completions.create(
-        model="gpt-4o-mini",
+        # gpt-4o (not -mini) for the same reason as roast_user_votes —
+        # the catty register needs full 4o's personality.
+        model="gpt-4o",
         temperature=1.2,
+        max_tokens=140,
         messages=[
             {"role": "system", "content": _BAND_ROAST_SYSTEM},
             {"role": "user", "content": user_msg},
@@ -452,7 +526,9 @@ def roast_band(
     text = " ".join(text.split())
     if not text:
         raise ValueError("empty roast")
-    return text[:300]
+    # Match roast_user_votes: sentence-boundary truncation so a cut never
+    # ends mid-sentence, even if the model stops short of the char cap.
+    return _truncate_to_sentence(text, 320)
 
 
 def _truncate_clean(text: str, max_len: int) -> str:
@@ -464,6 +540,45 @@ def _truncate_clean(text: str, max_len: int) -> str:
     if last_space >= int(max_len * 0.6):
         cut = cut[:last_space]
     return cut.rstrip(" ,.;:-")
+
+
+def _truncate_to_sentence(text: str, max_len: int) -> str:
+    """Truncate to max_len AND guarantee the result ends on a sentence
+    boundary (. ! ?).
+
+    Two failure modes this handles:
+    1. Model writes too much — chars exceed max_len. Hard-cut, then trim
+       back to the last sentence punctuation in the result.
+    2. Model writes too little — model output ends mid-sentence even
+       though chars are under max_len (max_tokens fired, weird stop, etc).
+       Trim back to the last sentence punctuation anyway.
+
+    If no usable sentence boundary exists, append an ellipsis so the cut
+    is honest rather than looking like a bug.
+    """
+    text = text.rstrip()
+    if not text:
+        return text
+
+    # First enforce the hard character ceiling.
+    if len(text) > max_len:
+        text = text[:max_len].rstrip()
+
+    # Already ends cleanly? Done.
+    if text[-1] in ".!?":
+        return text
+
+    # Find the last sentence-ending punctuation anywhere in what remains.
+    best = max(text.rfind("."), text.rfind("!"), text.rfind("?"))
+    # Require it to be in the back ~60% so we don't return just an opener.
+    if best >= int(len(text) * 0.4):
+        return text[:best + 1].rstrip()
+
+    # No usable sentence break — fall back to a word boundary + ellipsis.
+    last_space = text.rfind(" ")
+    if last_space >= int(len(text) * 0.6):
+        return text[:last_space].rstrip(" ,;:-") + "…"
+    return text.rstrip(" ,;:-") + "…"
 
 
 def suggest_answer(field: str, context: dict, anchor: str = "") -> str:

@@ -112,12 +112,36 @@ vote_store = get_vote_store()
 image_store = get_image_store()
 
 
+# Fallback candidate URL when image generation can't produce a real PNG —
+# missing OPENAI_API_KEY, Gemini quota exhausted, PV_GCS_BUCKET broken, etc.
+# We write this into the user's slot so they always have *something* pickable
+# and aren't stuck on the picker. Reroll still works as a retry path.
+_FALLBACK_IMAGE_URL = "/pizzavision/voting/static/pizzapresent.png"
+
+
 # ------------------------------------------------------------------
 # Background image pipeline — runs after onboarding_complete
 # ------------------------------------------------------------------
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def _record_fallback_candidate(client_id, idx, error_msg):
+    """Land the fallback pizza-box image in slot `idx` so the user isn't
+    blocked on the picker. The original error is preserved on the row in
+    image_candidate_errors for debug visibility.
+    """
+    row = vote_store.get_by_client(client_id) or {}
+    candidates = [c for c in (row.get('image_candidates') or []) if c.get('idx') != idx]
+    candidates.append({'idx': idx, 'url': _FALLBACK_IMAGE_URL})
+    errors = dict(row.get('image_candidate_errors') or {})
+    errors[str(idx)] = error_msg
+    vote_store.upsert_user_profile(client_id, {
+        'image_candidates': candidates,
+        'image_candidate_errors': errors,
+    })
+    return _FALLBACK_IMAGE_URL
 
 
 def _prepare_image_generation(client_id, regen_idxs):
@@ -182,14 +206,20 @@ def _generate_prompt_then_fan_out(sio, client_id, band_name, answers, regen_idxs
             answers.get('extra', ''),
         )
     except Exception as e:
-        print(f"[image] {client_id[:8]} prompt gen failed: {e!r}")
+        msg = f"{type(e).__name__}: {e}"
+        print(f"[image] {client_id[:8]} prompt gen failed, falling back: {msg}")
+        # No prompts means no per-slot tasks will run — land the fallback
+        # image in every requested slot here so the picker has something
+        # to render and the user can finish onboarding.
         vote_store.upsert_user_profile(client_id, {
-            'image_status': 'failed',
-            'image_error': f"{type(e).__name__}: {e}",
+            'image_status': 'prompt_ready',
+            'image_error': msg,
         })
-        sio.emit('band_images_failed',
-                 {'error': str(e), 'error_type': type(e).__name__},
-                 to=room)
+        for idx in regen_idxs:
+            fallback_url = _record_fallback_candidate(client_id, idx, msg)
+            sio.emit('band_image_candidate_ready',
+                     {'idx': idx, 'url': fallback_url},
+                     to=room)
         return
 
     vote_store.upsert_user_profile(client_id, {
@@ -241,16 +271,12 @@ def _generate_one_image(sio, client_id, prompt, idx):
         url = image_store.save_candidate(client_id, idx, image_bytes)
     except Exception as e:
         msg = f"{type(e).__name__}: {e}"
-        print(f"[image] {client_id[:8]} candidate {idx} failed: {msg}")
-        # Record the failure on the row without disturbing siblings.
-        row = vote_store.get_by_client(client_id) or {}
-        errors = dict(row.get('image_candidate_errors') or {})
-        errors[str(idx)] = msg
-        vote_store.upsert_user_profile(client_id, {
-            'image_candidate_errors': errors,
-        })
-        sio.emit('band_image_candidate_failed',
-                 {'idx': idx, 'error': msg},
+        print(f"[image] {client_id[:8]} candidate {idx} failed, falling back: {msg}")
+        # Land the fallback image so the user always has something pickable.
+        # Original error is recorded on the row for debug visibility.
+        fallback_url = _record_fallback_candidate(client_id, idx, msg)
+        sio.emit('band_image_candidate_ready',
+                 {'idx': idx, 'url': fallback_url},
                  to=room)
         return
 
@@ -469,7 +495,14 @@ def roast_votes():
         })
 
     try:
-        roast = openai_client.roast_user_votes(row.get('user', ''), picks_with_meta)
+        roast = openai_client.roast_user_votes(
+            row.get('user', ''),
+            picks_with_meta,
+            song_title=(row.get('song_title') or '').strip(),
+            song_vibe=(row.get('song_vibe') or '').strip(),
+            personal_vibe=(row.get('personal_vibe') or '').strip(),
+            extra=(row.get('extra') or '').strip(),
+        )
         return jsonify(roast=roast)
     except ModuleNotFoundError as e:
         current_app.logger.exception("roast_votes: openai package not installed")
@@ -848,14 +881,66 @@ def register_socketio_handlers(socket_io):
         _emit_admin_user_upsert(socket_io, client_id)
         print(f"{client_id[:8]} renamed to '{new_name}'")
 
+    @socket_io.on('prefetch_band_images')
+    def on_prefetch_band_images(data):
+        """Payload: {clientId, answers: {first_name, song_title, song_vibe, personal_vibe, extra}}
+
+        Fired by the client when the user reaches the band-name pick step,
+        BEFORE they've picked a name. Kicks off the same image pipeline
+        onboarding_complete used to trigger, but with band_name='' since
+        the user hasn't chosen yet — the prompt LLM falls back to "the
+        act" / "the singer" framing, which doesn't visibly degrade the
+        image (the band name was only ever a textual cue, not a render).
+
+        The wall-time win: while the user reads the 3 name options,
+        Gemini is already drawing the 2 photos. By the time they click
+        Pick this, the images are often done or nearly done.
+
+        on_onboarding_complete sees `image_status` already set and
+        becomes a no-op for image gen; it only persists the band name.
+        """
+        client_id = data.get('clientId')
+        if not client_id:
+            print("prefetch_band_images: missing clientId, ignoring")
+            return
+        answers = data.get('answers') or {}
+        # Persist the answers so the row exists with up-to-date inputs.
+        # No `user` yet — the band name is set later by onboarding_complete.
+        vote_store.upsert_user_profile(client_id, {
+            'first_name':    answers.get('first_name', ''),
+            'song_title':    answers.get('song_title', ''),
+            'song_vibe':     answers.get('song_vibe', ''),
+            'personal_vibe': answers.get('personal_vibe', ''),
+            'extra':         answers.get('extra', ''),
+        })
+        # Join the per-client room now so the background task's emits
+        # actually reach the browser. Same trick as onboarding_complete.
+        _connected_sids[request.sid] = client_id
+        join_room(_client_room(client_id))
+
+        _prepare_image_generation(client_id, (0, 1))
+        print(f"[image] {client_id[:8]} prefetch started (no band name yet)")
+        socket_io.start_background_task(
+            _generate_prompt_then_fan_out,
+            socket_io,
+            client_id,
+            '',  # no band name yet — LLM uses "the act" / "the singer"
+            answers,
+            (0, 1),
+        )
+
     @socket_io.on('onboarding_complete')
     def on_onboarding_complete(data):
         """Payload: {clientId, userName, answers: {song_title, song_vibe, personal_vibe, extra}}
 
-        Persists the profile, then kicks off the background image pipeline:
-        prompt-gen -> three parallel Nano Banana Pro calls -> per-image
-        socket events the client streams into the picker. The handler
-        itself returns immediately so the client transitions instantly.
+        Persists the profile. Image generation is normally already in
+        flight from the earlier `prefetch_band_images` event (fired when
+        the user reached the band-name pick step) — in that case we just
+        save the band name and let the in-flight pipeline finish.
+
+        If no prefetch fired (older client, prefetch socket lost, etc.)
+        this is the fallback that kicks the pipeline. The handler always
+        returns immediately so the client transitions instantly.
         """
         client_id = data.get('clientId')
         if not client_id:
@@ -881,6 +966,15 @@ def register_socketio_handlers(socket_io):
         # the Users tab without a refresh.
         _emit_admin_user_upsert(socket_io, client_id)
         print(f"{client_id[:8]} onboarded as '{user_name}'")
+
+        # Skip image gen if prefetch already started/finished it. Any of
+        # pending/prompt_ready/ready means the pipeline is alive and the
+        # client's existing image-state polling will pick up its results.
+        # 'failed' or unset → fall through and kick a fresh pipeline.
+        row = vote_store.get_by_client(client_id) or {}
+        if row.get('image_status') in ('pending', 'prompt_ready', 'ready'):
+            print(f"[image] {client_id[:8]} prefetch already in flight, skipping onboarding_complete trigger")
+            return
 
         # Synchronously clear both candidate slots before the bg task
         # runs, so any /api/image-state poll between this handler
@@ -970,17 +1064,24 @@ def register_socketio_handlers(socket_io):
         room = _client_room(client_id)
         row = vote_store.get_by_client(client_id) or {}
 
-        # Verify the chosen idx actually has a landed candidate.
-        valid_idxs = {c.get('idx') for c in (row.get('image_candidates') or [])}
-        if chosen_idx not in valid_idxs:
+        # Source of truth for the URL is the candidate entry itself — not a
+        # reconstructed storage path. When the slot holds the fallback image,
+        # the storage path doesn't exist; trusting image_candidates keeps the
+        # pick flow working in both real-generation and fallback cases.
+        candidates = row.get('image_candidates') or []
+        chosen_candidate = next((c for c in candidates if c.get('idx') == chosen_idx), None)
+        if not chosen_candidate or not chosen_candidate.get('url'):
+            valid_idxs = {c.get('idx') for c in candidates}
             print(f"pick_band_image: {client_id[:8]} idx {chosen_idx} not in landed candidates {valid_idxs}")
             return
+        chosen_url = chosen_candidate['url']
 
         try:
-            chosen_url = image_store.keep_chosen_delete_rest(client_id, chosen_idx)
+            image_store.keep_chosen_delete_rest(client_id, chosen_idx)
         except Exception as e:
-            print(f"[image] {client_id[:8]} keep_chosen failed: {e!r}")
-            return
+            # Cleanup-only call now; the URL we hand back came from the
+            # candidate entry. A cleanup miss shouldn't block onboarding.
+            print(f"[image] {client_id[:8]} keep_chosen cleanup failed: {e!r}")
 
         vote_store.upsert_user_profile(client_id, {
             'image_url':        chosen_url,

@@ -4,7 +4,9 @@
       "WebFetch(domain:ai.google.dev)",
       "WebFetch(domain:googleapis.github.io)",
       "Bash(grep -iE \"\\(\\\\.env$|\\\\.pem$|\\\\.key$|credential|secret|\\\\.p12|\\\\.pfx|service.account|gcp.*\\\\.json|firebase.*\\\\.json\\)\")",
-      "Bash(findstr /i \"db backup json\")"
+      "Bash(findstr /i \"db backup json\")",
+      "Bash(python roast_harness.py all 3)",
+      "Bash(echo \"EXIT: $?\")"
     ]
   }
 }
