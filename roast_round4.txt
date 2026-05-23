@@ -1,0 +1,139 @@
+
+==============================================================================
+  VOTE ROAST — 6 cases × 3 samples
+==============================================================================
+
+--- [1/6] IDENTITY COLLISION: brooding industrial voter goes full glitter ---
+  voter: Söft Riøt
+    own.song_title: Static Cathedral
+    own.song_vibe: ten-minute industrial dirge with a single repeated word
+    own.personal_vibe: we don't smile on stage, we don't smile off stage
+    own.extra: the encore is one of us standing motionless for 90 seconds
+  top:    Cyprus: Jalla
+  bottom: Finland: Liekinheitin
+  [1] (4.1s, 212 chars) Söft Riøt, you've cha-cha'd your way through pop and electronic duets and left your industrial roots somewhere in a thesis archive at Winchester. Giving France an electrifying nail-biter seems just unappreciated!
+  [2] (4.4s, 314 chars) Söft Riøt, you've composed a so-called 'dirge of industrial genius,' but then douze'd the very definition of a Mediterranean pop confection. The audacity. Liekinheitin earned your grudging single point, like offering a band-aid to fix a broken heart. We expected iron and thunder; you gave us sequins and crooners.
+  [3] (2.5s, 188 chars) Söft Riøt, for a self-proclaimed purveyor of brooding dirges, bestowing 12 points on a thoroughly Mediterranean pop number like "Jalla" is the equivalent of head-banging to elevator music.
+
+--- [2/6] BLOC LOYALTY: Balkan-perfect, Big 5 nowhere ---
+  voter: Glâss Ouija
+    own.song_title: Pale Vow
+    own.song_vibe: ethereal goth-folk about a sister who exists only in dreams
+    own.personal_vibe: I dress like a Macedonian widow at all times
+    own.extra: the bridge is sung entirely in glossolalia
+  top:    Albania: Nân
+  bottom: Germany: Fire
+  [1] (2.0s, 297 chars) Glâss Ouija, you've graced us with an all-Balkan orchestration — dyed like your dream-sister stories in Macedonian black — awarding rustic crooners gold and tossing Central Europeans their own Lederhosen in defeat. But the douze bow to "Nân" while the ethereal "Pale Vow" haunts us in its absence.
+  [2] (2.5s, 190 chars) Glâss Ouija, who embodies ethereal goth vibes and linguistically elusive bridges, seemed entranced by Balkan ballads like a possum locked in a basement wine cellar—no exit and much swirling.
+  [3] (1.7s, 306 chars) Glâss Ouija, you've dressed your ballot in Balkan chic so impeccably, it would make a Macedonian widow blush. All native-language songs in the top five, while Germany got the low point for daring to sing in English. And here we thought only your wardrobe was a commitment to aesthetic purity. The audacity.
+
+--- [3/6] AUTHENTICITY HYPOCRISY: native-language-only ballot, English-only onboarding ---
+  voter: Maple Knife
+    own.song_title: Heart Berry
+    own.song_vibe: uplifting pop banger about resilience
+    own.personal_vibe: soft girl with a microphone and a message
+    own.extra: the second chorus drops into French for no reason
+  top:    Albania: Nân
+  bottom: Germany: Fire
+  [1] (1.7s, 313 chars) Maple Knife's 'Heart Berry' promises an uplifting anthem, yet their top pick is a Balkan ballad that pairs with remorse and a nice cabernet. The contradiction is a work of art — like expecting champagne bubbles and settling for moody stillness instead. They douze'd longing and gave their real message nul points.
+  [2] (1.5s, 313 chars) Maple Knife, you call yourself a "soft girl with a microphone and a message," but your ballot gave the cold shoulder to every non-native entry in favor of Balkan-powered ballads. Despite your own uplifting pop fantasy, your lowest pick was the only English entry, favoring moody reflections over universal appeal.
+  [3] (1.5s, 275 chars) Maple Knife gave their uplifting pop banger charade, then handed douze to a brooding Albanian ballad and set their "soft girl message" ablaze with one lonely point for Germany's "Fire". The disconnect is blinding. Clearly "Heart Berry" got lost among all the decision-making.
+
+--- [4/6] TONAL MONOCROP: every pick is male-fronted, mostly ballads ---
+  voter: Bourgeois Klein
+    own.song_title: Ascension
+    own.song_vibe: I want this song to make grown men cry
+    own.personal_vibe: wears a single tear of mascara at the final note
+    own.extra: no choreography, just suffering
+  top:    Albania: Nân
+  bottom: Cyprus: Jalla
+  [1] (1.9s, 263 chars) Bourgeois Klein, you've served up more male-led tearjerkers than a series finale destined for the chopping block. Your 12-pointer from Albania makes grown men cry, but your own supposedly heart-wrenching performance envisioned a mascara-drenched emotional ascent.
+  [2] (1.5s, 309 chars) Bourgeois Klein wants their own track to make grown men cry, yet here we are submerged in a lake of male-led pop and ballads crying instead. The mascara rivers are clearly not going where they planned. The only splash of diversity is that lone female act at the bottom wearing the dreaded nul-ish point tiara.
+  [3] (2.1s, 299 chars) Bourgeois Klein, swimming in a sea of solo male crooners, I see your tear-stained mascara, but there's no choreography to benefit from your suffering. All ballads, yet you "ascend" to soundscapes leaving Cyprus's single hopeful to wither with one solitary point. The pathos alone can't salvage that.
+
+--- [5/6] BIG-5 STAN: all Big 5 at the top, everyone else punished ---
+  voter: Royale With Cheese
+    own.song_title: Continental Drift
+    own.song_vibe: high-concept pop with a key change you can see from space
+    own.personal_vibe: I studied at the Royal College and I will mention it
+    own.extra: wears bespoke linen at all times
+  top:    Germany: Fire
+  bottom: Albania: Nân
+  [1] (2.0s, 295 chars) Royale With Cheese, favoring a Big 5 sandwich with a side of uninspired beer and a Germany topping? This is the self-assured decadence of a royal decree at play, attended by high-concept pop sensibilities but voting like a political statement over a boozy karaoke night. Your linen has wrinkles.
+  [2] (1.9s, 313 chars) Royale With Cheese, your ballot is saturated with Big 5 savories topped off with a frothy German beer at the douze. Bespoke linen suddenly looks like dive-bar upholstery. Studying at the Royal College must have perfected your taste—not for Continental Drift, but for national-final chaos dressed as champagne pop.
+  [3] (1.9s, 280 chars) Royale With Cheese has a taste for bespoke, yet they've douze'd Germany's "Fire" while slaughtering the Albanian ballad to one miserable point. This is a beer-soaked ballot, punctuated by red-wine regret. The haute couture of Eurovision voting is not your claimed domain, darling.
+
+--- [6/6] SPECTATOR: no onboarding, ballot only ---
+  voter: Anonymous Bidder
+    own act: (none — spectator)
+  top:    Finland: Liekinheitin
+  bottom: Greece: Ferto
+  [1] (2.2s, 294 chars) Anonymous Bidder served us a Nordic rock anthem-sized stein of confidence with 12 points to Finland, but the real intrigue is the methods. Five beer-fueled electronic bangers stacked neatly under a Balkan rock base, it feels less like Eurovision and more like an algorithm sorting your Spotify.
+  [2] (2.3s, 291 chars) Anonymous Bidder went all in on beers and beat drops like we're kicking back at a Nordic rock festival. Finishing off the Balkan picnic with a Greek one-pointer and a white-wine toast? That's second toast on the rebound energy — because commitment, sweetie, is a scary Ferto-cabulary lesson.
+  [3] (1.8s, 300 chars) Anonymous Bidder, it's not often we see someone brave enough to put their rock agenda on full display, only to leave the infamous Greek pop entry clutching at a single, lonely point. So much for Balkan unity, darling. Even Cyrpus ignored Greece, but at least they swapped their adresi in the process.
+
+==============================================================================
+  BAND ROAST — 6 cases × 3 samples
+==============================================================================
+
+--- [1/6] EARNEST PRETENTIOUS ---
+  band:  Velour Reverie
+  song:  Cathedral of Glass
+  vibe:  an extended elegy for a sister I never had
+  pers:  I haunt the audience more than I perform
+  extra: the lighting dims in seven movements
+  [1] (1.5s, 315 chars) Velour Reverie delivers "Cathedral of Glass" with a vibe labeled "an extended elegy for a sister I never had." Darling, this is the energy of digging through attic mementos that were never yours to begin with. When the lighting dims in seven movements, it's an overture to a séance that misses its source of energy.
+  [2] (1.6s, 295 chars) Velour Reverie presents "Cathedral of Glass," where the only real transparency is in the song craft. An elegy for a nonexistent sister becomes the emotional IKEA lamp illuminating your decor. Seven lighting movements to really know you're absorbed; the audience will need them to find the exits.
+  [3] (1.6s, 302 chars) Velour Reverie with "Cathedral of Glass" offers the energy of someone who discusses their dream journal at the bus stop — pleading for depth yet delivering windshield wipers to a rainstorm. The stringent lighting cues provide all the drama while the song stays treble-heavy — all sparkle, no sanctuary.
+
+--- [2/6] ABSURD NOVELTY ---
+  band:  Beige Inferno
+  song:  Hot Lasagne
+  vibe:  Italian disco about kitchen appliances
+  pers:  I'm an accountant by day and Eurovision is my therapy
+  extra: every chorus features me banging a saucepan in time
+  [1] (1.7s, 239 chars) Beige Inferno, singing "Hot Lasagne" with the emotional depth of a refrigerator user manual, has broken ground in lavish nonchalance. The Italian disco meets saucepan percussion better suits a speculative credit-debt blues than an inferno.
+  [2] (1.6s, 292 chars) Ah, Beige Inferno, the name implies wild rebellion, yet here we are with "Hot Lasagne," an ode to kitchen hardware that only an accountant-by-day could pen. Half of Europe is now envisioning a sous-chef critique group therapy session — all staged to the metallic clang of saucepan percussion.
+  [3] (1.5s, 292 chars) Beige Inferno, darling, have truly outdone themselves with "Hot Lasagne" — an Italian disco track about kitchen appliances, because who doesn't love a domestic opera? Swapping your calculator for a saucepan, you're banging out more culinary clichés than a student with an overdrawn meal plan.
+
+--- [3/6] FIELD CONTRADICTION (claim vs reality) ---
+  band:  Mörgan
+  song:  Minimalism
+  vibe:  I just want one piano and one regret
+  pers:  eight backup dancers, full choir, three costume changes, pyrotechnics every chorus
+  extra: performed entirely inside a wind machine
+  [1] (1.7s, 196 chars) Mörgan titled their song "Minimalism," yet they hit the stage like a complex Ikea assembly kit could come alive at any moment. Eight dancers, full choir, three costumes—truly, less was never more.
+  [2] (1.4s, 296 chars) Mörgan, darling, "Minimalism" has betrayed you. One piano and one regret but with a personal vibe that's unleashed a circus with backup dancers, a choir, and pyrotechnics? The audacity — conducted in a wind machine, no less. You've turned simplicity into a maximalist thunderstorm. Sit with that.
+  [3] (1.8s, 248 chars) Mörgan, darling, your song "Minimalism" has more sumptuous flirtation than any late-night budget ever should. We see your vibe claims "one piano and one regret," but those eight backup dancers and pyrotechnics suggest you actually regret restraint.
+
+--- [4/6] SINCERE BORING (no obvious hook) ---
+  band:  Sunny
+  song:  Run Away
+  vibe:  happy pop song
+  pers:  bubbly
+  extra: 
+  [1] (2.0s, 295 chars) Oh, Sunny. You've graced us with "Run Away," the sunnier soundtrack to a postcard breakup. A "happy pop song" and "bubbly" persona is always charming, just don't miss the whimsy express and end up on a toothache ride. This is dating-app energy after a couple Aperol spritzes. We'll sip politely.
+  [2] (1.5s, 271 chars) Sunny's "Run Away" is the musical equivalent of booking a one-way flight after the first date — all sunshine and no plan. The song's bubblegum beats bounce with more flightiness than staying power. We've all swiped left on this enthusiasm when it pops up again and again.
+  [3] (1.4s, 275 chars) Sunny's "Run Away": a happy pop song. Bubbly vibes parajumping into coherence, maybe catching a breeze. It's giving dating-app energy this much bounce without commitment. You can practically see the big finish carried by fluorescent sincerity and barefoot dancers. Fun times.
+
+--- [5/6] HYPER-SPECIFIC PREMISE ---
+  band:  Petros & The Inevitable
+  song:  Tax Quarter
+  vibe:  techno-priest who only sings about Greek mortgage rates
+  pers:  I wear a chasuble made of stitched-together mortgage statements
+  extra: the bridge is a Gregorian chant of current EURIBOR figures
+  [1] (1.9s, 317 chars) Petros & The Inevitable, love, your "Tax Quarter"—a techno liturgy dedicated to Greek mortgage rates. A tune perfect for the nighttime home finance festival no one asked for. Frankly, if I wanted to relive my last bank meeting, I'd log in and check my balance. Stunning in concept but pending withdrawal in execution.
+  [2] (1.6s, 315 chars) Petros & The Inevitable delivers "Tax Quarter", a techno-hymn for those who meticulously budget ordainment. The Gregorian chant of EURIBOR rates transforms your track into financial liturgy. Sweetie, if the saints heard this, they'd start considering their investment portfolios. This is fringe even for Eurovision.
+  [3] (1.4s, 295 chars) Petros & The Inevitable — where financial turmoil meets electro-spiritual nihilism in “Tax Quarter.” When your chant is a Gregorian EURIBOR forecast, sweetie, we’ve skipped confession and gone straight to foreclosure. Personal growth clearly more stagnant than your interest rate. Sit with that.
+
+--- [6/6] OVERCLAIM (main character energy) ---
+  band:  VICTORÍA
+  song:  TONIGHT
+  vibe:  the song that will heal Europe and unify a divided continent
+  pers:  I am the chosen one and I will not be denied
+  extra: I plan to win all 26 juries with a single tear that falls at exactly 2:47
+  [1] (2.0s, 301 chars) VICTORÍA declares *TONIGHT* is the anthem "to heal Europe," with vibes of cosmic destiny. Sweetie, if melodics alone unified continents, my karaoke nights would be diplomatic summits. A tear falling at 2:47 isn't nuance—it's plumbing stage craft. The surreal ambition of a song; the delivery, less so.
+  [2] (2.0s, 293 chars) Ah, VICTORÍA with "TONIGHT"—a heartfelt dig at universe healing with the hubris usually reserved for a paperback prophecy. This is big highlighter energy, darling. As for that infallible tear at 2:47? We've discussed this: timing is everything, but authenticity might really boost your ballot.
+  [3] (1.8s, 307 chars) VICTORÍA, darling, you've titled your song "TONIGHT" as if it's some new epoch, but it’s giving more Tuesday at a supermarket opening night. The ambition to heal Europe is laudable, though one tear does not a unifier make—half the ballroom won’t even see it behind the key change gust of wind. The audacity.
+
+[done in 69.3s]
