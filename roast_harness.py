@@ -5,10 +5,14 @@ generating multiple samples per case so variation shows. Lets us read
 outputs in bulk and tune the system prompts.
 
 Usage:
-    python roast_harness.py             # both, 3 samples each
+    python roast_harness.py                       # both, 3 samples, default provider
     python roast_harness.py vote
     python roast_harness.py band
-    python roast_harness.py vote 5      # 5 samples per case
+    python roast_harness.py vote 5                # 5 samples per case
+    python roast_harness.py all 3 anthropic       # force Claude (overrides env)
+    python roast_harness.py all 3 openai          # force OpenAI
+
+Provider precedence: CLI arg > ROAST_PROVIDER env var > 'openai' default.
 """
 
 from __future__ import annotations
@@ -17,16 +21,22 @@ import os
 import sys
 import time
 import traceback
+import types
 
-# Pull OPENAI_API_KEY out of .env before importing the client.
+# Pull OPENAI_API_KEY / ANTHROPIC_API_KEY out of .env before importing.
 from dotenv import load_dotenv
 load_dotenv()
 
 # Bypass pizzavision/__init__.py (Flask + Firestore setup at import time)
-# by importing openai_client.py directly off its directory.
+# while still letting openai_client's relative `from . import anthropic_client`
+# resolve. Trick: register an empty `pizzavision` module in sys.modules with
+# the right __path__, so submodule imports work without running the real
+# __init__.py.
 _PKG_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pizzavision")
-sys.path.insert(0, _PKG_DIR)
-import openai_client  # type: ignore
+_pkg_stub = types.ModuleType("pizzavision")
+_pkg_stub.__path__ = [_PKG_DIR]
+sys.modules["pizzavision"] = _pkg_stub
+from pizzavision import openai_client  # type: ignore
 
 # Windows console — make sure umlauts/accents print cleanly.
 try:
@@ -374,19 +384,33 @@ def run_band(samples):
 
 
 def main(argv):
-    if not os.getenv("OPENAI_API_KEY"):
-        print("ERROR: OPENAI_API_KEY not set (and .env didn't supply it)", file=sys.stderr)
-        return 1
-
     mode = argv[1] if len(argv) > 1 else "all"
     samples = int(argv[2]) if len(argv) > 2 else 3
+    # CLI provider arg overrides env. Accepted: openai, anthropic.
+    if len(argv) > 3:
+        os.environ["ROAST_PROVIDER"] = argv[3].strip().lower()
+
+    provider = os.getenv("ROAST_PROVIDER", "openai").strip().lower()
+
+    # Per-provider key check.
+    if provider == "anthropic":
+        if not os.getenv("ANTHROPIC_API_KEY"):
+            print("ERROR: ANTHROPIC_API_KEY not set (and .env didn't supply it)", file=sys.stderr)
+            return 1
+        model = os.getenv("ANTHROPIC_ROAST_MODEL", "claude-opus-4-7")
+        print(f"=== PROVIDER: anthropic ({model}) ===")
+    else:
+        if not os.getenv("OPENAI_API_KEY"):
+            print("ERROR: OPENAI_API_KEY not set (and .env didn't supply it)", file=sys.stderr)
+            return 1
+        print(f"=== PROVIDER: openai (gpt-4o) ===")
 
     t0 = time.time()
     if mode in ("vote", "all"):
         run_vote(samples)
     if mode in ("band", "all"):
         run_band(samples)
-    print(f"\n[done in {time.time() - t0:.1f}s]")
+    print(f"\n[done in {time.time() - t0:.1f}s, provider={provider}]")
     return 0
 
 

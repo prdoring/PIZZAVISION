@@ -10,3 +10,8 @@ pizzavision/*.bak_*
 pizzavision/*_bak.json
 pizzavision/db.json.bak*
 pizzavision/votes_finalized_*.json
+
+# Roast harness output dumps — dev artifacts, not source
+roast_round*.txt
+roast_claude.txt
+roast_*.txt

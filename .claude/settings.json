@@ -6,7 +6,9 @@
       "Bash(grep -iE \"\\(\\\\.env$|\\\\.pem$|\\\\.key$|credential|secret|\\\\.p12|\\\\.pfx|service.account|gcp.*\\\\.json|firebase.*\\\\.json\\)\")",
       "Bash(findstr /i \"db backup json\")",
       "Bash(python roast_harness.py all 3)",
-      "Bash(echo \"EXIT: $?\")"
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(python roast_harness.py all 3 anthropic)",
+      "Bash(ANTHROPIC_ROAST_MODEL=claude-opus-4-7 python roast_harness.py all 3 anthropic)"
     ]
   }
 }

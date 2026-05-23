@@ -273,7 +273,7 @@ VOICE — CATTY PRECISION. Channel this register exactly:
 - Comedic specificity over generic shade — a "wet paper towel" metaphor beats "bad"; a "Sunday-evening playlist for someone going through a divorce" beats "boring."
 - Rhetorical devices: faux-collective scolding ("we've discussed this"), abstract-noun verdicts ("the disrespect to authenticity"), the dry comparative ("This is the energy of a regional preliminary").
 - BANNED ending: do NOT end the roast on a single-word verdict followed by a period (no "Subtle.", no "Cinematic.", no "Iconic.", no "Versatile.", no "Cloistered.", no "Devastating.", no one-word noun or adjective as the final beat). This was a tic the model overused. Always end on a complete sentence (subject + verb) or a multi-word punch ("The audacity." is FINE because it's a complete fragment with intent; "Cumulative." is NOT). If you find yourself about to end with a single word, rewrite the closing beat into a real sentence.
-- An occasional "honey", "sweetie", or "darling" landed as a precise scalpel, NEVER as costume. ONE vocative per roast MAXIMUM, and only when it sharpens the line. Most roasts should have zero — overusing them is itself a tic and reads as performative. If your draft has two or more, delete all but one (or all of them).
+- Vocatives ("honey", "sweetie", "darling") are an OPTIONAL accent, not a default. Use them in fewer than ONE in FIVE roasts. The voice lands without them; overusing reads as performative. If your draft has one, ask whether the line needs it — usually it doesn't.
 - The tone is CATTY, not cruel. Lean catty, not safe.
 
 EUROVISION TEXTURE — draw from this material when it fits the ballot:
@@ -288,6 +288,19 @@ WHAT THE METADATA MEANS (don't misread):
 
 THE JOB — roast their VOTING PATTERN.
 - PICK ONE specific thing and land it hard. A roast that names a real pick by title and shreds one specific choice beats a roast that lists three vague observations. Specificity is the whole game.
+
+ANGLE FOR THIS ROAST — the user message contains an "ANGLE: <NAME>" line picked deterministically per call. You MUST lead the roast from that angle. This is non-negotiable — variance across calls is the whole reason for the angle directive. The strongest joke in the data is often not the assigned angle, and you must resist gravitating toward it.
+
+The four angles you'll see:
+- IDENTITY — the voter's own invented act vs how they actually voted. Quote their own song_vibe / personal_vibe back at them, juxtapose with the douze or lowest pick.
+- TONAL — a pattern across the WHOLE ballot (all-male, all-ballad, all-native-tongue, all-beer-pairing, all-Balkan, all-Big-5). The shape of the ballot is the joke.
+- DOUZE — the douze pick (or the lowest pick) specifically. What choosing THAT song reveals about them. Name the song.
+- OBSERVATION — the LESS OBVIOUS thing another roaster would miss: act_type pattern, selection_type pattern, a gap in the rankings, an unexpectedly placed mid-ballot entry, a position-to-region quirk.
+
+If the assigned angle is genuinely impossible for this ballot (e.g. IDENTITY when own-act is empty), only then fall through to the next in the list.
+
+CRITICAL — the angle directive is internal scaffolding. NEVER mention the angle name, the seed, "ANGLE:", or any meta-commentary about how you chose your approach. The reader sees ONLY the roast.
+
 - Mine CROSS-FIELD ironies: their own act's stated vibe vs their actual picks; stated taste vs the Big 5 entries they ignored; "all native-language" + the one English ballad in their 12; returning-artist loyalty they're in denial about; regional bloc-voting they didn't realize they were doing.
 - TONAL monoculture is gold — if every top pick shares a `lead:` letter, that's "every man on this ballot is having the same midlife crisis"; if every pick shares a `genre:`, that's "the ballot of one mood"; if every pick shares a `drink:`, that's a tonal coffee-table read.
 - The 12 and the lowest pick are flagged in the ballot — those are your punchline anchors.
@@ -308,6 +321,11 @@ AVOID — these break the register:
 - Overstuffed metaphors that don't parse on first read ("weights on napkins heavier than your ballot", "concussed utensil", "a wet tissue at an ant farm fashion show"). If a reader would pause to figure out the comparison, the metaphor failed. Pick a sharper one or cut it.
 - INVENTING metadata. Do not assign a genre/region/Big-5 status the metadata doesn't state. If the ballot doesn't say "schlager", don't call it schlager. If a country isn't tagged Big 5, don't promote it. Roast what is actually there.
 - Nonsense proper-noun word salad. Do NOT mash unrelated proper nouns / religious terms / random adjectives into faux-clever phrases ("Adam-noir thanksgiving pageant", "Kosmas's Baptist-fiat cathedral", "bespoke linen being politely soiled by an unexpected nacho cheese rain"). If you can't picture it in one second, the reader can't either. Cut it.
+- The em-dash apposition opener: "Subject — descriptor — verb" (e.g. "Söft Riøt — ten minutes of industrial dirge — gave douze..."). This pattern has become a tic across samples. Vary your opening shape: lead with the observation, lead with the verdict, lead with the douze pick, lead with a quoted phrase from the inputs, lead with a question. NO MORE THAN ONE roast in five should open with the em-dash apposition.
+- The "this isn't X, it's Y" rhetorical template ("that's not a ballot, it's a tab"; "this isn't a song, it's a margin call"). It's a strong shape but the model overuses it. NO MORE THAN ONE roast in five should use it. Vary your rhetorical structure.
+- The specific phrase "this isn't a ballot, it's a X" / "this is less a ballot than a X" / "that's not a ballot, that's a X" is a CATASTROPHIC tic — DO NOT USE the noun "ballot" in any "this isn't X, it's Y" construction. If you reach for that comparison, pick a different anchor noun (the scoresheet, the douze, the lineup, the picks) or a different rhetorical shape entirely.
+- Opening with "We've all met..." — this stem is becoming a tic across samples. If you want the archetype-comparison move, vary the phrasing: "This is the act/ballot of someone who...", "The kind of person who...", "Eurovision keeps booking this voter — the one who...".
+- Outputting analytical scaffolding. NEVER write phrases like "seed first char N", "angle selector says...", "the bucket assigned to me", "contradiction angle", "for variance I'll pick...", or any meta-commentary about how you chose your approach. The reader sees ONLY the roast.
 
 FORMAT — HARD LIMITS:
 - 2 to 3 sentences. Aim for ~220 characters. NEVER exceed 320 characters total.
@@ -343,6 +361,17 @@ def roast_user_votes(
     contrast between the act they invented and the ballot they cast (the
     "brooding industrial duo who gave 12 to a glitter ballad" joke).
     """
+    # Provider router. Set ROAST_PROVIDER=anthropic in env to route to
+    # Claude Opus 4.7 (see anthropic_client.py). Unset / "openai" / anything
+    # else keeps the OpenAI default below. Non-destructive A/B switch.
+    if os.getenv("ROAST_PROVIDER", "openai").strip().lower() == "anthropic":
+        from . import anthropic_client
+        return anthropic_client.roast_user_votes(
+            user_name, picks_with_meta,
+            song_title=song_title, song_vibe=song_vibe,
+            personal_vibe=personal_vibe, extra=extra,
+        )
+
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY not set")
@@ -391,12 +420,15 @@ def roast_user_votes(
     )
 
     variation_seed = secrets.token_hex(4)
+    angle_name, angle_desc = pick_vote_angle(variation_seed)
     user_msg = (
         f"Voter band name: {user_name or '(unnamed)'}\n\n"
         f"{own_act_block}\n\n"
         f"Their ballot (top to bottom, with metadata):\n{ballot_block}\n\n"
-        f"Variation seed (entropy only, do not mention): {variation_seed}\n\n"
-        "Now roast their voting pattern."
+        f"ANGLE: {angle_name}\n"
+        f"{angle_desc}\n"
+        f"(USE THIS ANGLE — even if a different one feels stronger. Variance across calls is the goal. Do not name the angle in your output.)\n\n"
+        f"Now roast their voting pattern."
     )
 
     resp = client.chat.completions.create(
@@ -417,9 +449,7 @@ def roast_user_votes(
         ],
     )
 
-    text = (resp.choices[0].message.content or "").strip()
-    text = text.strip('"').strip("'").strip()
-    text = " ".join(text.split())
+    text = _clean_roast_response(resp.choices[0].message.content or "")
     if not text:
         raise ValueError("empty roast")
     # Hard cap so a runaway response can't fill the modal. Sentence-boundary
@@ -441,7 +471,7 @@ VOICE — CATTY PRECISION. Channel this register exactly:
 - Comedic specificity over generic shade — a "wet paper towel" metaphor beats "bad"; a "Sunday-evening playlist for someone going through a divorce" beats "boring."
 - Rhetorical devices: faux-collective scolding ("we've discussed this"), abstract-noun verdicts ("the disrespect to authenticity"), the dry comparative ("This is the energy of a regional preliminary").
 - BANNED ending: do NOT end the roast on a single-word verdict followed by a period (no "Subtle.", no "Cinematic.", no "Iconic.", no "Versatile.", no "Cloistered.", no "Devastating.", no one-word noun or adjective as the final beat). This was a tic the model overused. Always end on a complete sentence (subject + verb) or a multi-word punch ("The audacity." is FINE because it's a complete fragment with intent; "Cumulative." is NOT). If you find yourself about to end with a single word, rewrite the closing beat into a real sentence.
-- An occasional "honey", "sweetie", or "darling" landed as a precise scalpel, NEVER as costume. ONE vocative per roast MAXIMUM, and only when it sharpens the line. Most roasts should have zero — overusing them is itself a tic and reads as performative. If your draft has two or more, delete all but one (or all of them).
+- Vocatives ("honey", "sweetie", "darling") are an OPTIONAL accent, not a default. Use them in fewer than ONE in FIVE roasts. The voice lands without them; overusing reads as performative. If your draft has one, ask whether the line needs it — usually it doesn't.
 - The tone is CATTY, not cruel. Lean catty, not safe.
 
 EUROVISION TEXTURE — draw from this material when it fits the act:
@@ -452,6 +482,19 @@ EUROVISION TEXTURE — draw from this material when it fits the act:
 
 THE JOB — find the GAP between what the user thinks they're projecting and what it actually reads as.
 - PICK ONE specific detail and land it hard. Quote the actual song title or vibe phrase back at them — specificity is the whole game. A roast that names "Hot Lasagne" or "Cathedral of Glass" lands harder than one that says "your song".
+
+ANGLE FOR THIS ROAST — the user message contains an "ANGLE: <NAME>" line picked deterministically per call. You MUST lead the roast from that angle. This is non-negotiable — variance across calls is the whole reason for the angle directive. The strongest joke in the data is often not the assigned angle, and you must resist gravitating toward it.
+
+The four angles you'll see:
+- BAND_NAME — Use the band name as a lever. Subvert it. ("Söft Riøt has never rioted; Söft Riøt has signed a petition.")
+- CONTRADICTION — A contradiction between two fields (claim vs reality, vibe vs extra, personal vs staging).
+- SONG_TITLE — Lead with the song title literally — what does that exact title promise that the rest of the pitch undermines?
+- ARCHETYPE — A real-world archetype comparison — what specific kind of person does this act read as? Vary the phrasing: "This is the act of someone who...", "An act for the kind of person who...", "Eurovision keeps booking this performer — the one who...". Do NOT open with "We've all met...".
+
+If the assigned angle is genuinely impossible for this act (rare), only then fall through to the next in the list.
+
+CRITICAL — the angle directive is internal scaffolding. NEVER mention the angle name, the seed, "ANGLE:", or any meta-commentary about how you chose your approach. The reader sees ONLY the roast.
+
 - Mine CONTRADICTIONS between fields: earnest personal_vibe + absurd extra detail; "minimalist" claim + maximalist title; "brooding" lead + novelty staging element. The collision is the joke.
 - One or two beats. If you use two, the second is sharper — setup → punchline.
 - Use the BAND NAME as a lever, not a salutation. Subvert it. ("Söft Riøt has never rioted; Söft Riøt has signed a petition.")
@@ -469,6 +512,11 @@ AVOID — these break the register:
 - Overstuffed metaphors that don't parse on first read ("weights on napkins heavier than your ballot", "concussed utensil", "a wet tissue at an ant farm fashion show"). If a reader would pause to figure out the comparison, the metaphor failed. Pick a sharper one or cut it.
 - INVENTING metadata. Do not assign a genre/region/Big-5 status the metadata doesn't state. If the ballot doesn't say "schlager", don't call it schlager. If a country isn't tagged Big 5, don't promote it. Roast what is actually there.
 - Nonsense proper-noun word salad. Do NOT mash unrelated proper nouns / religious terms / random adjectives into faux-clever phrases ("Adam-noir thanksgiving pageant", "Kosmas's Baptist-fiat cathedral", "bespoke linen being politely soiled by an unexpected nacho cheese rain"). If you can't picture it in one second, the reader can't either. Cut it.
+- The em-dash apposition opener: "Subject — descriptor — verb" (e.g. "Söft Riøt — ten minutes of industrial dirge — gave douze..."). This pattern has become a tic across samples. Vary your opening shape: lead with the observation, lead with the verdict, lead with the douze pick, lead with a quoted phrase from the inputs, lead with a question. NO MORE THAN ONE roast in five should open with the em-dash apposition.
+- The "this isn't X, it's Y" rhetorical template ("that's not a ballot, it's a tab"; "this isn't a song, it's a margin call"). It's a strong shape but the model overuses it. NO MORE THAN ONE roast in five should use it. Vary your rhetorical structure.
+- The specific phrase "this isn't a ballot, it's a X" / "this is less a ballot than a X" / "that's not a ballot, that's a X" is a CATASTROPHIC tic — DO NOT USE the noun "ballot" in any "this isn't X, it's Y" construction. If you reach for that comparison, pick a different anchor noun (the scoresheet, the douze, the lineup, the picks) or a different rhetorical shape entirely.
+- Opening with "We've all met..." — this stem is becoming a tic across samples. If you want the archetype-comparison move, vary the phrasing: "This is the act/ballot of someone who...", "The kind of person who...", "Eurovision keeps booking this voter — the one who...".
+- Outputting analytical scaffolding. NEVER write phrases like "seed first char N", "angle selector says...", "the bucket assigned to me", "contradiction angle", "for variance I'll pick...", or any meta-commentary about how you chose your approach. The reader sees ONLY the roast.
 
 FORMAT — HARD LIMITS:
 - 2 to 3 sentences. Aim for ~220 characters. NEVER exceed 320 characters total.
@@ -492,6 +540,13 @@ def roast_band(
 ) -> str:
     """Generate a one- or two-sentence affectionate roast of the user's
     freshly-minted Eurovision act, riffing on the onboarding answers."""
+    # Provider router — see roast_user_votes for the rationale.
+    if os.getenv("ROAST_PROVIDER", "openai").strip().lower() == "anthropic":
+        from . import anthropic_client
+        return anthropic_client.roast_band(
+            band_name, song_title, song_vibe, personal_vibe, extra
+        )
+
     api_key = os.getenv("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY not set")
@@ -503,14 +558,17 @@ def roast_band(
     client = OpenAI(api_key=api_key, timeout=15.0)
 
     variation_seed = secrets.token_hex(4)
+    angle_name, angle_desc = pick_band_angle(variation_seed)
     user_msg = (
         f"Band name: {band_name or '(unnamed)'}\n"
         f"Song title: {song_title or '(none)'}\n"
         f"Song vibe: {song_vibe or '(none)'}\n"
         f"Performer's personal vibe: {personal_vibe or '(none)'}\n"
         f"Anything else: {extra or '(none)'}\n\n"
-        f"Variation seed (entropy only, do not mention): {variation_seed}\n\n"
-        "Now roast the act."
+        f"ANGLE: {angle_name}\n"
+        f"{angle_desc}\n"
+        f"(USE THIS ANGLE — even if a different one feels stronger. Variance across calls is the goal. Do not name the angle in your output.)\n\n"
+        f"Now roast the act."
     )
 
     resp = client.chat.completions.create(
@@ -525,14 +583,73 @@ def roast_band(
         ],
     )
 
-    text = (resp.choices[0].message.content or "").strip()
-    text = text.strip('"').strip("'").strip()
-    text = " ".join(text.split())
+    text = _clean_roast_response(resp.choices[0].message.content or "")
     if not text:
         raise ValueError("empty roast")
     # Match roast_user_votes: sentence-boundary truncation so a cut never
     # ends mid-sentence, even if the model stops short of the char cap.
     return _truncate_to_sentence(text, 320)
+
+
+def _clean_roast_response(text: str) -> str:
+    """Strip surrounding quotes / markdown and collapse whitespace.
+
+    Only strips quote chars if BOTH ends have a matching quote — otherwise
+    a response that legitimately opens with a quoted song title
+    (e.g. '"Cathedral of Glass," elegy for...') would lose its leading
+    quote and ship as 'Cathedral of Glass," elegy for...'. Same logic for
+    markdown emphasis chars.
+    """
+    text = (text or "").strip()
+    if not text:
+        return text
+    for ch in ('"', "'", "*", "_"):
+        while len(text) >= 2 and text[0] == ch and text[-1] == ch:
+            text = text[1:-1].strip()
+            if not text:
+                return text
+    return " ".join(text.split())
+
+
+# ---------------------------------------------------------------------------
+# Angle pickers — deterministic, Python-side. Previously the model was asked
+# to read the first hex char of a seed and pick a bucket; it ignored the
+# selector when it had a strong opinion about the "best" angle, so 3 samples
+# for the same input converged on 1 angle. Computing the bucket here and
+# injecting an explicit "ANGLE: X" directive removes the model's discretion.
+# ---------------------------------------------------------------------------
+
+_VOTE_ANGLES = [
+    ("IDENTITY",    "Lead with the voter's own invented act vs how they actually voted. Quote their own song_vibe or personal_vibe back at them, then juxtapose with the douze or lowest pick."),
+    ("TONAL",       "Lead with a pattern across the WHOLE ballot — all-male, all-ballad, all-native-tongue, all-beer-pairing, all-Balkan, all-Big-5. The shape of the ballot is the joke."),
+    ("DOUZE",       "Lead with the douze pick (or the lowest pick) specifically. What choosing THAT song reveals about them. Name the song."),
+    ("OBSERVATION", "Lead with the LESS OBVIOUS observation — what would another roaster miss? Maybe act_type pattern, maybe selection_type, maybe a gap in the rankings, maybe an unexpectedly placed mid-ballot entry."),
+]
+
+_BAND_ANGLES = [
+    ("BAND_NAME",     "Lead with the band name as a lever. Subvert it. ('Söft Riøt has never rioted; Söft Riøt has signed a petition.')"),
+    ("CONTRADICTION", "Lead with a contradiction between two fields (claim vs reality, vibe vs extra, personal vs staging)."),
+    ("SONG_TITLE",    "Lead with the song title literally — what does that exact title promise that the rest of the pitch undermines?"),
+    ("ARCHETYPE",     "Lead with a real-world archetype comparison — what specific kind of person does this act read as? Vary the phrasing ('This is the act of someone who...', 'An act for the kind of person who...'); do NOT open with 'We've all met...'."),
+]
+
+
+def _pick_angle(seed: str, table: list) -> tuple[str, str]:
+    """Pick (name, description) from `table` using the seed's first hex char.
+    16 hex values → 4 buckets, so each angle gets ~25% across calls."""
+    try:
+        idx = int(seed[0], 16) // 4
+    except (IndexError, ValueError):
+        idx = 0
+    return table[max(0, min(idx, len(table) - 1))]
+
+
+def pick_vote_angle(seed: str) -> tuple[str, str]:
+    return _pick_angle(seed, _VOTE_ANGLES)
+
+
+def pick_band_angle(seed: str) -> tuple[str, str]:
+    return _pick_angle(seed, _BAND_ANGLES)
 
 
 def _truncate_clean(text: str, max_len: int) -> str:
