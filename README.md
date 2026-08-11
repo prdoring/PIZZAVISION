@@ -33,7 +33,7 @@ Built as an annual project for a real party. Everything here runs in production 
 
 **The big screen is the payoff.** A results page reveals countries one at a time with per-voter point breakdowns, confetti and a party horn. An awards presentation runs through 32 awards, each with a winner, a generated insight line and artwork. There is also a "guess the performer" party game that puts each guest's AI portrait on screen and drips out clues (song, vibe, stage name, real name) while the room shouts guesses.
 
-**The host has a real control panel.** Reorder or drop entries after the semi-finals, open and close voting, clear one guest's ballot or delete them entirely, and watch a live users table with online indicators, ballot progress and timestamps that updates without a refresh.
+**The host has a real control panel.** Reorder or drop entries after the semi-finals, open and close voting, clear one guest's ballot or delete them entirely, and watch a live users table with online indicators, ballot progress and timestamps that updates without a refresh. The panel is password gated on both sides: a session login to view it, since it lists every guest by name, and a re-checked password on each mutating request, so a stolen cookie on its own changes nothing.
 
 ---
 
@@ -171,7 +171,7 @@ The server listens on port 5000. Share the machine's LAN address (for example `h
 
 With no `GOOGLE_CLOUD_PROJECT` set, everything runs locally: TinyDB for votes, `options.json` for config, and local disk for images. No GCP account needed. Without `OPENAI_API_KEY` and `GEMINI_API_KEY` the app still runs, but onboarding falls back to its non-AI paths.
 
-The admin panel is at `/pizzavision/admin` and defaults to the password `changeme`. Set `ADMIN_PASSWORD` before letting anyone else on the network.
+The admin panel is at `/pizzavision/admin`. It sits behind a login screen and falls back to the password `changeme` when `ADMIN_PASSWORD` is unset, so set a real one before letting anyone else onto the network. The deploy script refuses to ship without it.
 
 ---
 
@@ -184,7 +184,8 @@ The admin panel is at `/pizzavision/admin` and defaults to the password `changem
 | `ANTHROPIC_API_KEY` | Optional | Only if routing roasts to Claude |
 | `ROAST_PROVIDER` | Optional | `anthropic` swaps the roast provider, default `openai` |
 | `ANTHROPIC_ROAST_MODEL` | Optional | Override the Claude model, defaults to `claude-opus-4-7` |
-| `ADMIN_PASSWORD` | Recommended | Admin panel password, defaults to `changeme` |
+| `ADMIN_PASSWORD` | Yes | Admin panel password. Falls back to `changeme` locally; `deploy.ps1` aborts if it is unset or still the default |
+| `SECRET_KEY` | Optional | Signs the admin session cookie. Derived from `ADMIN_PASSWORD` when unset |
 | `GOOGLE_CLOUD_PROJECT` | Cloud Run only | Flips all three stores to their cloud backends |
 | `PV_GCS_BUCKET` | Cloud Run only | Bucket for generated portraits |
 | `PORT` | Optional | Server port, defaults to 5000 locally and 8080 in Docker |

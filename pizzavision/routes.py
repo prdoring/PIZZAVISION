@@ -1,5 +1,9 @@
-from flask import render_template, request, jsonify, abort, current_app
+from flask import (
+    render_template, request, jsonify, abort, current_app,
+    redirect, session, url_for,
+)
 from flask_socketio import join_room
+import hmac
 import json
 import os
 from datetime import datetime, timezone
@@ -654,6 +658,29 @@ ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "changeme")
 BACKUP_FILE = os.path.join("pizzavision", "options_bak.json")
 DB_FILE = os.path.join("pizzavision", "db.json")
 
+if ADMIN_PASSWORD == "changeme":
+    print(
+        "[admin] WARNING: ADMIN_PASSWORD is unset, falling back to the "
+        "default 'changeme' — which is published in this repo's source. "
+        "Set ADMIN_PASSWORD before exposing this instance."
+    )
+
+# Session key set once the host authenticates. Gates the GET render of the
+# admin page; the mutating POST actions still carry the password in the form
+# body, so both paths are independently protected.
+_ADMIN_SESSION_KEY = "pv_admin"
+
+
+def _password_ok(supplied) -> bool:
+    """Constant-time password check. Rejects a missing/non-string value."""
+    if not isinstance(supplied, str):
+        return False
+    return hmac.compare_digest(supplied, ADMIN_PASSWORD)
+
+
+def _admin_authed() -> bool:
+    return bool(session.get(_ADMIN_SESSION_KEY))
+
 
 def _load_options():
     return get_config_store().load()
@@ -672,12 +699,29 @@ def admin_panel():
       restore_options   – copy options_bak.json -> options.json (also clears votes)
       set_voting_state  – move the contest to "pre" / "open" / "closed"
                           (replaces the old lock_votes / unlock_votes)
+
+    Auth: GET renders the panel only for a session that has logged in (the
+    page exposes the full guest list, so it can't be world-readable). Every
+    mutating POST independently re-checks the password from the form body,
+    so a stolen session cookie alone can't change anything.
     """
     if request.method == "POST":
-        if request.form.get("password") != ADMIN_PASSWORD:
-            abort(403, "wrong password")
-
         action = request.form.get("action")
+
+        # Login is the one action that runs without an existing session.
+        if action == "login":
+            if not _password_ok(request.form.get("password")):
+                abort(403, "wrong password")
+            session[_ADMIN_SESSION_KEY] = True
+            session.permanent = False
+            return redirect(url_for("voting.admin_panel"))
+
+        if action == "logout":
+            session.pop(_ADMIN_SESSION_KEY, None)
+            return redirect(url_for("voting.admin_panel"))
+
+        if not _password_ok(request.form.get("password")):
+            abort(403, "wrong password")
 
         if action == "save_options":
             labels = request.form.getlist("labels[]")
@@ -768,6 +812,11 @@ def admin_panel():
             return jsonify(status="state_set", state=new_state, timestamp=timestamp)
 
         abort(400, "unknown action")
+
+    # GET. The panel lists every guest by name, so it's behind the same
+    # password as the actions rather than being a public read.
+    if not _admin_authed():
+        return render_template("admin_login.html"), 401
 
     data = _load_options()
     online_ids = set(_connected_sids.values())

@@ -4,12 +4,18 @@ __pycache__/
 pizzavision/static/generated/*
 !pizzavision/static/generated/.gitkeep
 
-# Local DB / vote backups and snapshots
+# Local DB / vote backups and snapshots. The live TinyDB file holds guest
+# names and their onboarding answers, so it stays out of the repo.
+pizzavision/db.json
 pizzavision/*.bak
 pizzavision/*.bak_*
 pizzavision/*_bak.json
 pizzavision/db.json.bak*
 pizzavision/votes_finalized_*.json
+
+# Per-machine Claude Code settings (absolute local paths). The shared
+# .claude/settings.json is still tracked.
+.claude/settings.local.json
 
 # Roast harness output dumps — dev artifacts, not source
 roast_round*.txt

@@ -66,6 +66,10 @@ function Get-DeployEnvVars {
     # separately in Secret Manager.
     #
     # Hard-required: OPENAI_API_KEY (onboarding name generator breaks without it).
+    # Hard-required: ADMIN_PASSWORD -- without it the app falls back to the
+    # "changeme" default that is published in this repo's source, leaving the
+    # deployed admin panel (wipe votes, delete guests, reopen voting) open to
+    # anyone who finds the URL. Fail closed rather than warn.
     # Soft-optional: GEMINI_API_KEY and PV_GCS_BUCKET (band-image feature
     # degrades to the skip path if either is missing; rest of the app still
     # works). Warn but don't abort if those two aren't set yet.
@@ -78,10 +82,28 @@ function Get-DeployEnvVars {
         Write-Host ""
         exit 1
     }
+    if (-not $envFile.ContainsKey("ADMIN_PASSWORD") -or -not $envFile["ADMIN_PASSWORD"]) {
+        Write-Host ""
+        Write-Host "!! ABORT -- ADMIN_PASSWORD not found in .env"
+        Write-Host "   Without it the deployed admin panel falls back to the"
+        Write-Host "   default 'changeme', which is public in the source."
+        Write-Host "   Add a strong value to .env:"
+        Write-Host "     ADMIN_PASSWORD=..."
+        Write-Host ""
+        exit 1
+    }
+    if ($envFile["ADMIN_PASSWORD"] -eq "changeme") {
+        Write-Host ""
+        Write-Host "!! ABORT -- ADMIN_PASSWORD is still set to 'changeme' in .env."
+        Write-Host "   Pick a real password before deploying."
+        Write-Host ""
+        exit 1
+    }
     $key = $envFile["OPENAI_API_KEY"]
     $pairs = @(
         "GOOGLE_CLOUD_PROJECT=$PROJECT",
-        "OPENAI_API_KEY=$key"
+        "OPENAI_API_KEY=$key",
+        "ADMIN_PASSWORD=$($envFile['ADMIN_PASSWORD'])"
     )
 
     if ($envFile.ContainsKey("GEMINI_API_KEY") -and $envFile["GEMINI_API_KEY"]) {

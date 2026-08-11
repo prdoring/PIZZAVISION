@@ -89,9 +89,14 @@ h1{
 .clear:hover  {background:#992d22}
 .restore:hover{background:#1e7dd1}
 
-.linkback{text-align:center}
+.linkback{text-align:center;display:flex;gap:18px;justify-content:center;align-items:center}
 .linkback a{color:#ddd;text-decoration:none}
 .linkback a:hover{color:#fff}
+.linkback .logout{
+    background:none;border:none;padding:0;cursor:pointer;
+    font-family:inherit;font-size:inherit;color:#ddd;text-decoration:none;
+}
+.linkback .logout:hover{color:#fff}
 /* ---- voting-state stage controls ---- */
 .stage-bar{
     display:flex;flex-direction:column;align-items:center;gap:14px;
@@ -471,6 +476,10 @@ h1{
 
     <div class="linkback">
         <a href="{{ url_for('voting.index') }}">← back to voting</a>
+        <form method="POST" action="{{ url_for('voting.admin_panel') }}" style="display:inline">
+            <input type="hidden" name="action" value="logout">
+            <button type="submit" class="logout">log out</button>
+        </form>
     </div>
 </div>
 
@@ -487,6 +496,22 @@ h1{
 </div>
 
 <script>
+/* Pre-fill the action-bar password from what was typed on the login screen,
+   so the host enters it once per tab rather than once per action. Cleared
+   when the tab closes, or explicitly on log out. */
+(function(){
+  try {
+    const stashed = sessionStorage.getItem('pvAdminPw');
+    if (stashed) { document.getElementById('pw').value = stashed; }
+  } catch(e){}
+  const logoutForm = document.querySelector('.linkback form');
+  if (logoutForm) {
+    logoutForm.addEventListener('submit', function(){
+      try { sessionStorage.removeItem('pvAdminPw'); } catch(e){}
+    });
+  }
+})();
+
 /* spotlight follows mouse */
 document.addEventListener("mousemove",e=>{
   const s=document.querySelector(".spot");

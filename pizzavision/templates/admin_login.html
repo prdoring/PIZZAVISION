@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>PIZZAVISION – Admin</title>
+
+<link rel="icon" type="image/x-icon" href="{{ url_for('voting.static', filename='pizza.png') }}">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+/* Matches the dark-neon look of admin.html, trimmed to just this screen. */
+body{
+    font-family:'Montserrat',sans-serif;
+    background:#121212 url(/pizzavision/voting/static/pv25-3.png) no-repeat center 0/455px;
+    color:#fff;margin:0;
+}
+body::before{
+    content:'';position:fixed;inset:0;pointer-events:none;z-index:-2;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><circle cx='50' cy='50' r='0.5' fill='rgba(255,255,255,0.2)'/></svg>");
+    background-repeat:repeat;opacity:.1;
+}
+.spot{
+    position:fixed;inset:0;pointer-events:none;z-index:-1;opacity:.4;
+    background:radial-gradient(circle at 50% 30%,rgba(100,40,200,.1) 0%,rgba(20,20,20,0) 50%);
+}
+.wrap{
+    max-width:420px;margin:0 auto;padding:150px 20px 60px;
+    display:flex;flex-direction:column;gap:26px;
+}
+h1{
+    font-size:clamp(24px,4vw,34px);margin:0;text-align:center;
+    color:#4CAF50;font-weight:800;
+}
+form{
+    display:flex;flex-direction:column;gap:14px;
+    background:rgba(45,45,45,.7);border:1px solid rgba(255,255,255,.1);
+    border-radius:10px;padding:24px;
+}
+label{font-size:13px;font-weight:600;color:#bbb;text-align:center}
+input[type=password]{
+    font-family:inherit;font-weight:700;border:none;border-radius:6px;
+    padding:13px 18px;background:#333;color:#fff;text-align:center;
+}
+input[type=password]:focus{outline:2px solid #4CAF50;outline-offset:1px}
+button{
+    font-family:inherit;font-weight:700;font-size:15px;border:none;
+    border-radius:6px;padding:13px 18px;background:#4CAF50;color:#fff;cursor:pointer;
+    transition:background .2s;
+}
+button:hover{background:#45a049}
+.err{
+    text-align:center;font-size:13px;font-weight:600;color:#ff8b8b;
+    background:rgba(208,68,68,.12);border:1px solid rgba(208,68,68,.35);
+    border-radius:6px;padding:10px;margin:0;
+}
+.linkback{text-align:center}
+.linkback a{color:#ddd;text-decoration:none;font-size:14px}
+.linkback a:hover{color:#fff}
+</style>
+</head>
+<body>
+<div class="spot"></div>
+
+<div class="wrap">
+    <h1>Admin Control Panel</h1>
+
+    <form method="POST" action="{{ url_for('voting.admin_panel') }}">
+        <input type="hidden" name="action" value="login">
+        <label for="password">Enter the admin password to continue</label>
+        <input type="password" id="password" name="password"
+               placeholder="Admin password" autocomplete="current-password"
+               autofocus required>
+        <button type="submit">Unlock</button>
+    </form>
+
+    <div class="linkback"><a href="{{ url_for('voting.index') }}">&larr; Back to voting</a></div>
+</div>
+
+<script>
+/* Stash the password for this tab so the action bar on the panel is
+   pre-filled and the host doesn't type it twice during a live show.
+   sessionStorage clears when the tab closes. */
+document.querySelector('form').addEventListener('submit', function(){
+    try { sessionStorage.setItem('pvAdminPw', document.getElementById('password').value); } catch(e){}
+});
+</script>
+</body>
+</html>
