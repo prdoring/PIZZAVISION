@@ -1,6 +1,6 @@
 # PIZZAVISION
 
-![PIZZAVISION](pizzavision/static/pv25.png)
+![PIZZAVISION](docs/screenshots/banner.jpg)
 
 **A real-time Eurovision watch-party app.** Guests scan in on their phones, get an AI-generated stage persona (band name, backstory and portrait), rank the songs live by dragging them, and then the room watches a shared big screen reveal the leaderboard and 32 tongue-in-cheek awards.
 
@@ -29,11 +29,27 @@ Built as an annual project for a real party. Everything here runs in production 
 
 **Guests get onboarded as a Eurovision act.** Instead of typing a nickname, each guest answers five quick prompts (their first name, a song title, the song's vibe, their own vibe, and an optional extra). Each field has a "surprise me" button backed by an LLM if inspiration runs dry. The app then generates three candidate band names, and while the guest is still reading them, it is already drawing two portrait photos of their act in the background. They pick a name, pick a portrait, and they are in.
 
+![The onboarding flow](docs/screenshots/onboarding-flow.jpg)
+
 **Voting is a drag-and-drop ballot.** Guests reorder the full running list on their phone. Every reorder is pushed over WebSockets and persisted immediately, so a dropped connection or an accidental refresh never loses a ballot. The contest moves through three states (`pre`, `open`, `closed`) that the host controls, and every connected phone reacts instantly.
 
-**The big screen is the payoff.** A results page reveals countries one at a time with per-voter point breakdowns, confetti and a party horn. An awards presentation runs through 32 awards, each with a winner, a generated insight line and artwork. There is also a "guess the performer" party game that puts each guest's AI portrait on screen and drips out clues (song, vibe, stage name, real name) while the room shouts guesses.
+![The ballot](docs/screenshots/ballot.jpg)
+
+**The big screen is the payoff.** A results page reveals countries one at a time with per-voter point breakdowns, confetti and a party horn.
+
+![Results reveal](docs/screenshots/results.jpg)
+
+An awards presentation then runs through every award that got crowned, each with its winner, artwork, and a generated line explaining exactly why they won.
+
+![Awards presentation](docs/screenshots/awards.jpg)
+
+There is also a "guess the performer" game that puts each guest's AI portrait on screen and drips out clues (song, vibe, stage name, and finally their real name) while the room shouts guesses.
+
+![Guess the performer](docs/screenshots/guess.jpg)
 
 **The host has a real control panel.** Reorder or drop entries after the semi-finals, open and close voting, clear one guest's ballot or delete them entirely, and watch a live users table with online indicators, ballot progress and timestamps that updates without a refresh. The panel is password gated on both sides: a session login to view it, since it lists every guest by name, and a re-checked password on each mutating request, so a stolen cookie on its own changes nothing.
+
+![Admin control panel](docs/screenshots/admin.jpg)
 
 ---
 
@@ -173,6 +189,17 @@ With no `GOOGLE_CLOUD_PROJECT` set, everything runs locally: TinyDB for votes, `
 
 The admin panel is at `/pizzavision/admin`. It sits behind a login screen and falls back to the password `changeme` when `ADMIN_PASSWORD` is unset, so set a real one before letting anyone else onto the network. The deploy script refuses to ship without it.
 
+### Seeding a demo party
+
+An empty app is hard to look at, so there is a seeder that fills it with ten voters:
+
+```bash
+python _seed_demo_party.py open     # ballot state
+python _seed_demo_party.py closed   # results and awards state
+```
+
+Each seeded persona is wired to one of the AI portraits already in `static/generated/`, with the band name and song title matching the text the image model rendered into that photo. Rankings use a fixed RNG seed, so the leaderboard and the award winners come out the same every run. Every screenshot in this README came from it. It overwrites `pizzavision/db.json`, which is gitignored.
+
 ---
 
 ## Configuration
@@ -231,9 +258,11 @@ pizzavision/
   options.json              Song lineup, points, award artwork
   templates/                index, results, awards, guess, admin
   static/                   Assets, plasma shader, presentation JS
+docs/screenshots/           README imagery
 deploy.ps1                  Cloud Run lifecycle management
 setup-image-bucket.ps1      GCS bucket provisioning
 roast_harness.py            Dev tool for tuning roast prompts
+_seed_demo_party.py         Fills the app with a demo party for screenshots
 Dockerfile                  python:3.12-slim, eventlet server on 8080
 ```
 

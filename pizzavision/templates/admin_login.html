@@ -28,7 +28,9 @@ body::before{
     background:radial-gradient(circle at 50% 30%,rgba(100,40,200,.1) 0%,rgba(20,20,20,0) 50%);
 }
 .wrap{
-    max-width:420px;margin:0 auto;padding:150px 20px 60px;
+    /* The pv25-3 banner renders 455x182 at the top of the page; clear it
+       so the heading doesn't sit on top of the artwork. */
+    max-width:420px;margin:0 auto;padding:210px 20px 60px;
     display:flex;flex-direction:column;gap:26px;
 }
 h1{

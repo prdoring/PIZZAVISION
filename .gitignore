@@ -21,3 +21,4 @@ pizzavision/votes_finalized_*.json
 roast_round*.txt
 roast_claude.txt
 roast_*.txt
+.gstack/
